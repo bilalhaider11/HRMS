@@ -1,0 +1,84 @@
+{
+  "minutes": [
+    {
+      "timeValue": "5min",
+      "value": "67,660.35",
+      "value_progress_percentage": "+3.82",
+      "labels": ["12:00", "12:05", "12:10", "12:15", "12:20"],
+      "line": [100, 101, 99, 102, 103]
+    },
+    {
+      "timeValue": "15min",
+      "value": "27,660.35",
+      "value_progress_percentage": "+0.82",
+      "labels": ["12:00", "12:15", "12:30", "12:45", "13:00"],
+      "line": [100, 102, 98, 105, 103]
+    },
+    {
+      "timeValue": "30min",
+      "value": "32,660.35",
+      "value_progress_percentage": "+1.02",
+      "labels": ["12:00", "12:30", "13:00", "13:30", "14:00"],
+      "line": [100, 102, 98, 105, 103]
+    },
+    {
+      "timeValue": "1H",
+      "value": "76,000.35",
+      "value_progress_percentage": "+4.02",
+      "labels": ["12:00", "13:00", "14:00", "15:00"],
+      "line": [100, 102, 98, 105]
+    },
+    {
+      "timeValue": "24H",
+      "value": "57,660.35",
+      "value_progress_percentage": "+2.84",
+      "labels": [
+       "12:00",
+       "15:00",
+       "18:00",
+       "21:00",
+       "00:00",
+       "03:00",
+       "06:00",
+       "09:00",
+       "12:00"
+
+      ],
+      "line": [50, 51, 50, 52, 53, 52, 54, 55, 54]
+    },
+    {
+      "timeValue": "1W",
+      "value": "80,000.35",
+      "value_progress_percentage": "+5.22",
+      "labels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      "line": [100, 102, 98, 105, 103, 100, 99]
+    },
+    {
+      "timeValue": "1Y",
+      "value": "86,430.35",
+      "value_progress_percentage": "+7.22",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "line": [100, 102, 98, 105, 103, 100, 99, 101, 104, 106, 108, 110]
+    },
+    {
+      "timeValue": "ALL",
+      "value": "78, 900.50",
+      "value_progress_percentage": "+5.54",
+      "labels": ["2020", "2021", "2022", "2023", "2024"],
+      "line": [100, 102, 98, 105, 103]
+    }
+  ]
+}

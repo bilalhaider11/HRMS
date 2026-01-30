@@ -1,0 +1,125 @@
+{
+  "watchlistTableData": [
+    {
+      "coinImg": "firstCoinImg",
+      "title": "ETH",
+      "duration": "24H",
+      "value": "2,692.98",
+      "percentage_value": "1.26%",
+      "percentage_plus_minus": "+",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ],
+      "lineColor": "#FFFFFF"
+    },
+    {
+      "coinImg": "secondCoinImg",
+      "title": "LTC",
+      "duration": "24H",
+      "value": "357.82",
+      "percentage_value": "3.76%",
+      "percentage_plus_minus": "+",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ],
+      "lineColor": "#345D9D"
+    },
+    {
+      "coinImg": "thirdCoinImg",
+      "title": "COMP",
+      "duration": "24H",
+      "value": "821.12",
+      "percentage_value": "0.64%",
+      "percentage_plus_minus": "+",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ],
+      "lineColor": "#00D395"
+    },
+    {
+      "coinImg": "fourthCoinImg",
+      "title": "GRT",
+      "duration": "24H",
+      "value": "1.76",
+      "percentage_value": "3.12%",
+      "percentage_plus_minus": "-",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ],
+      "lineColor": "#6747ED"
+    },
+    {
+      "coinImg": "fifthCoinImg",
+      "title": "DOGE",
+      "duration": "24H",
+      "value": "0.1284",
+      "percentage_value": "4.20%",
+      "percentage_plus_minus": "+",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ],
+      "lineColor": "#BA9F33"
+    },
+    {
+      "coinImg": "sixthCoinImg",
+      "title": "UNI",
+      "duration": "24H",
+      "value": "52,423.85",
+      "percentage_value": "14.87%",
+      "percentage_plus_minus": "-",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ],
+      "lineColor": "#FF007A"
+      
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+    "storeTable": [
+        {
+            "id": 1,
+            "name": "Store Alpha",
+            "uniqueIdentifier": "ALPHA001",
+            "description": "Main branch located in downtown.",
+            "companyId": 101
+        },
+        {
+            "id": 2,
+            "name": "Store Beta",
+            "uniqueIdentifier": "BETA002",
+            "description": "Second branch near the mall.",
+            "companyId": 101
+        },
+        {
+            "id": 3,
+            "name": "Store Gamma",
+            "uniqueIdentifier": "GAMMA003",
+            "description": "Warehouse and outlet combined.",
+            "companyId": 101
+        },
+        {
+            "id": 4,
+            "name": "Store Delta",
+            "uniqueIdentifier": "DELTA004",
+            "description": "Suburban branch with ample parking.",
+            "companyId": 101
+        },
+        {
+            "id": 5,
+            "name": "Store Epsilon",
+            "uniqueIdentifier": "EPSILON005",
+            "description": "High-end store in city center.",
+            "companyId": 101
+        },
+        {
+            "id": 6,
+            "name": "Store Zeta",
+            "uniqueIdentifier": "ZETA006",
+            "description": "Outlet specializing in electronics.",
+            "companyId": 101
+        },
+        {
+            "id": 7,
+            "name": "Store Eta",
+            "uniqueIdentifier": "ETA007",
+            "description": "Clothing and apparel branch.",
+            "companyId": 101
+        },
+        {
+            "id": 8,
+            "name": "Store Theta",
+            "uniqueIdentifier": "THETA008",
+            "description": "Home goods and furniture store.",
+            "companyId": 101
+        },
+        {
+            "id": 9,
+            "name": "Store Iota",
+            "uniqueIdentifier": "IOTA009",
+            "description": "Specialty store for outdoor gear.",
+            "companyId": 101
+        },
+        {
+            "id": 10,
+            "name": "Store Kappa",
+            "uniqueIdentifier": "KAPPA010",
+            "description": "Newest store located near the park.",
+            "companyId": 101
+        }
+    ]
+}

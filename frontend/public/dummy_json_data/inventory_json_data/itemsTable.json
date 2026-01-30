@@ -1,0 +1,84 @@
+{
+  "itemsTable": [
+    {
+      "itemId": 1,
+      "itemName": "Dell Latitude 5420 Laptop",
+      "itemDescription": "Business series laptop for developers",
+      "itemQuantity": 12,
+      "categoryId": 1,
+      "storeId": 1
+    },
+    {
+      "itemId": 2,
+      "itemName": "HP ProDesk 600 G4 Desktop",
+      "itemDescription": "Office desktop for operations team",
+      "itemQuantity": 8,
+      "categoryId": 1,
+      "storeId": 1
+    },
+    {
+      "itemId": 3,
+      "itemName": "Logitech MX Master 3 Mouse",
+      "itemDescription": "Wireless mouse for designers",
+      "itemQuantity": 25,
+      "categoryId": 2,
+      "storeId": 1
+    },
+    {
+      "itemId": 4,
+      "itemName": "Dell 24-inch Monitor",
+      "itemDescription": "Full HD IPS monitor",
+      "itemQuantity": 15,
+      "categoryId": 3,
+      "storeId": 1
+    },
+    {
+      "itemId": 5,
+      "itemName": "TP-Link Gigabit Switch 16-Port",
+      "itemDescription": "Managed network switch",
+      "itemQuantity": 6,
+      "categoryId": 4,
+      "storeId": 1
+    },
+    {
+      "itemId": 6,
+      "itemName": "Cat6 Ethernet Cable 10m",
+      "itemDescription": "High-speed LAN cable",
+      "itemQuantity": 50,
+      "categoryId": 4,
+      "storeId": 1
+    },
+    {
+      "itemId": 7,
+      "itemName": "Apple MacBook Pro M2",
+      "itemDescription": "Laptop for UI/UX and iOS team",
+      "itemQuantity": 4,
+      "categoryId": 1,
+      "storeId": 1
+    },
+    {
+      "itemId": 8,
+      "itemName": "APC UPS 1500VA",
+      "itemDescription": "Backup power for server room",
+      "itemQuantity": 3,
+      "categoryId": 5,
+      "storeId": 1
+    },
+    {
+      "itemId": 9,
+      "itemName": "Sony MDR-7506 Headphones",
+      "itemDescription": "Professional audio monitoring headset",
+      "itemQuantity": 18,
+      "categoryId": 2,
+      "storeId": 1
+    },
+    {
+      "itemId": 10,
+      "itemName": "Logitech K380 Keyboard",
+      "itemDescription": "Wireless multi-device keyboard",
+      "itemQuantity": 20,
+      "categoryId": 2,
+      "storeId": 1
+    }
+  ]
+}

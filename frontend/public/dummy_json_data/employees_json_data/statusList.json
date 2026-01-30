@@ -1,0 +1,14 @@
+{
+    "statusList": [
+        {
+            "active": "Active",
+            "inActive": "In-active",
+            "terminated": "Terminated",
+            "resigned": "Resigned",
+            "retired": "Retired",
+            "onLeave": "On Leave",
+            "suspended": "Suspended",
+            "probationary": "Probationary"
+        }
+    ]
+}

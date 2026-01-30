@@ -1,0 +1,134 @@
+{
+    "teamsTable": [
+        {
+            "teamId": 1,
+            "teamName": "Backend Team",
+            "teamDescription": "Handles API and server logic",
+            "teamLeadId": 3,
+            "teamLeadName": "Ali",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ],
+            "companyId": 101,
+            "companyName": "Celestials Technologies"
+        },
+        {
+            "teamId": 2,
+            "teamName": "Frontend Team",
+            "teamDescription": "UI development and design",
+            "teamLeadId": 4,
+            "teamLeadName": "Usman",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ],
+            "companyId": 101,
+            "companyName": "Celestials Technologies"
+        },
+        {
+            "teamId": 3,
+            "teamName": "QA Team",
+            "teamDescription": "Testing and quality assurance",
+            "teamLeadId": 6,
+            "teamLeadName": "Hassan",
+            "companyId": 101,
+            "companyName": "Celestials Technologies",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ]
+        },
+        {
+            "teamId": 4,
+            "teamName": "DevOps Team",
+            "teamDescription": "Manages CI/CD and deployments",
+            "teamLeadId": 8,
+            "teamLeadName": "Faraz",
+            "companyId": 101,
+            "companyName": "Celestials Technologies",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ]
+        },
+        {
+            "teamId": 5,
+            "teamName": "Security Team",
+            "teamDescription": "Application and network security",
+            "teamLeadId": 9,
+            "teamLeadName": "Zain",
+            "companyId": 101,
+            "companyName": "Celestials Technologies",
+            "teamMembers": [
+                {"id": "1", "name": "abc"},
+                {"id": "2", "name": "def"}
+            ]
+        },
+        {
+            "teamId": 6,
+            "teamName": "Mobile App Team",
+            "teamDescription": "Android and iOS development",
+            "teamLeadId": 11,
+            "teamLeadName": "Talha",
+            "companyId": 101,
+            "companyName": "Celestials Technologies",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ]
+        },
+        {
+            "teamId": 7,
+            "teamName": "AI Team",
+            "teamDescription": "AI/ML model training and development",
+            "teamLeadId": 13,
+            "teamLeadName": "Ahmed",
+            "companyId": 101,
+            "companyName": "Celestials Technologies",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ]
+        },
+        {
+            "teamId": 8,
+            "teamName": "Support Team",
+            "teamDescription": "Customer support operations",
+            "teamLeadId": 14,
+            "teamLeadName": "Sohail",
+            "companyId": 101,
+            "companyName": "Celestials Technologies",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ]
+        },
+        {
+            "teamId": 9,
+            "teamName": "Data Team",
+            "teamDescription": "Data analytics and dashboarding",
+            "teamLeadId": 16,
+            "teamLeadName": "Noman",
+            "companyId": 101,
+            "companyName": "Celestials Technologies",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ]
+        },
+        {
+            "teamId": 10,
+            "teamName": "Cloud Team",
+            "teamDescription": "Cloud infrastructure and services",
+            "teamLeadId": 17,
+            "teamLeadName": "Hamza",
+            "companyId": 101,
+            "companyName": "Celestials Technologies",
+            "teamMembers": [
+                {"id": "1001", "name": "abc"},
+                {"id": "1002", "name": "def"}
+            ]
+        }
+    ]
+}

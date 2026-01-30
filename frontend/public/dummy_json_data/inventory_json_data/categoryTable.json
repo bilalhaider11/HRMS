@@ -1,0 +1,74 @@
+{
+  "categoryTable": [
+    {
+      "categoryId": 1,
+      "categoryName": "Raw Materials",
+      "categoryDescription": "Base materials used in production",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 2,
+      "categoryName": "Finished Goods",
+      "categoryDescription": "Products ready for sale",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 3,
+      "categoryName": "Packaging Materials",
+      "categoryDescription": "Boxes, wraps, bottles and other packing items",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 4,
+      "categoryName": "Office Supplies",
+      "categoryDescription": "Printer ink, paper, pens and general office items",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 5,
+      "categoryName": "Electrical Items",
+      "categoryDescription": "Cables, switches, fittings and related components",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 6,
+      "categoryName": "Safety Equipment",
+      "categoryDescription": "Helmets, gloves, masks and other safety gear",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 7,
+      "categoryName": "Machine Parts",
+      "categoryDescription": "Spare parts for machinery and maintenance",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 8,
+      "categoryName": "Cleaning Supplies",
+      "categoryDescription": "Detergents, brooms, cleaning chemicals",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 9,
+      "categoryName": "IT Accessories",
+      "categoryDescription": "Mouse, keyboards, cables, networking accessories",
+      "companyId": 101,
+      "storeId": 1
+    },
+    {
+      "categoryId": 10,
+      "categoryName": "Consumables",
+      "categoryDescription": "Items consumed during operations like tapes, markers, etc.",
+      "companyId": 101,
+      "storeId": 1
+    }
+  ]
+}

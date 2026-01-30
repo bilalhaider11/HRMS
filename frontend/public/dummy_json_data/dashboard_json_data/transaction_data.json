@@ -1,0 +1,64 @@
+{
+  "transactionTableData": [
+    {
+      "coinImg": "firstCoinImg",
+      "title": "Bitcoin",
+      "subTitle": "BTC",
+      "actionStatus": "Sell",
+      "date": "05/19/21",
+      "time": "14:33",
+      "units": "0.0029",
+      "price": "52,423.85",
+      "total": "152.03",
+      "weekly": "Mon"
+    },
+    {
+      "coinImg": "secondCoinImg",
+      "title": "Ethereum",
+      "subTitle": "ETH",
+      "actionStatus": "Buy",
+      "date": "05/19/21",
+      "time": "09:51",
+      "units": "0.085",
+      "price": "2,351.03",
+      "total": "200.00",
+      "weekly": "thurs"
+    },
+    {
+      "coinImg": "secondCoinImg",
+      "title": "Ethereum",
+      "subTitle": "ETH",
+      "actionStatus": "Buy",
+      "date": "05/19/21",
+      "time": "13:02",
+      "units": "0.0491",
+      "price": "2,032.94",
+      "total": "100.00",
+      "weekly": "Tues"
+    },
+    {
+      "coinImg": "thirdCoinImg",
+      "title": "Uniswap",
+      "subTitle": "UNI",
+      "actionStatus": "Sell",
+      "date": "05/19/21",
+      "time": "21:29",
+      "units": "15.5473",
+      "price": "36.21",
+      "total": "562.97",
+      "weekly": "Fri"
+    },
+    {
+      "coinImg": "fourthCoinImg",
+      "title": "Tezos",
+      "subTitle": "XTZ",
+      "actionStatus": "Buy",
+      "date": "05/19/21",
+      "time": "21:57",
+      "units": "19.5826",
+      "price": "4.72",
+      "total": "92.43",
+      "weekly": "Sat"
+    }
+  ]
+}

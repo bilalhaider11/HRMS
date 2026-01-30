@@ -1,0 +1,48 @@
+{
+    "cards": [
+      {
+        "image": "card1",
+        "amount": "$168,331.09",
+        "percentageUpIcon": "upScale",
+        "percentage_up_this_week": "45%",
+        "period": "This week"
+      },
+      {
+        "image": "card2",
+        "amount": "$24,098",
+        "percentageUpIcon": "upScale",
+        "percentage_up_this_week": "45%",
+        "period": "This week"
+      },
+      {
+        "image": "card3",
+        "amount": "$667,224",
+        "percentageUpIcon": "downScale",
+        "percentage_up_this_week": "45%",
+        "period": "This week"
+      },
+      {
+        "image": "card4",
+        "amount": "$18,783.33",
+        "percentageUpIcon": "upScale",
+        "percentage_up_this_week": "45%",
+        "period": "This week"
+      },
+      {
+        "image": "card1",
+        "amount": "$168,331.09",
+        "percentageUpIcon": "upScale",
+        "percentage_up_this_week": "45%",
+        "period": "This week"
+      },
+      {
+        "image": "card2",
+        "amount": "$24,098",
+        "percentageUpIcon": "upScale",
+        "percentage_up_this_week": "45%",
+        "period": "This week"
+      }
+
+    ]
+  }
+  

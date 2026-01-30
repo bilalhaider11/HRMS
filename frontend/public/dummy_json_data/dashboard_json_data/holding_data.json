@@ -1,0 +1,384 @@
+{
+  "tableData": [
+    {
+      "image": "firstDataImg",
+      "title": "Compound",
+      "shortTitle": "COMP",
+      "value": "3,622.49",
+      "profit_loss_value": "$1,582.31",
+      "profit_loss_percentage": "77.56%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "secondDataImg",
+      "title": "Bitcoin",
+      "shortTitle": "BTC",
+      "value": "1,253.94",
+      "profit_loss_value": "$441.19",
+      "profit_loss_percentage": "54.28%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "thirdDataImg",
+      "title": "Aave",
+      "shortTitle": "AAVE",
+      "value": "460.35",
+      "profit_loss_value": "$132.10",
+      "profit_loss_percentage": "40.24%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "fourthDataImg",
+      "title": "Dogecoin",
+      "shortTitle": "DOGE",
+      "value": "420.69",
+      "profit_loss_value": "$342.82",
+      "profit_loss_percentage": "440.25%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "fifthDataImg",
+      "title": "Uniswap",
+      "shortTitle": "UNI",
+      "value": "285.32",
+      "profit_loss_value": "$59.24",
+      "profit_loss_percentage": "28.75%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "firstDataImg",
+      "title": "Compound",
+      "shortTitle": "COMP",
+      "value": "3,622.49",
+      "profit_loss_value": "$1,582.31",
+      "profit_loss_percentage": "77.56%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "secondDataImg",
+      "title": "Bitcoin",
+      "shortTitle": "BTC",
+      "value": "1,253.94",
+      "profit_loss_value": "$441.19",
+      "profit_loss_percentage": "54.28%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "thirdDataImg",
+      "title": "Aave",
+      "shortTitle": "AAVE",
+      "value": "460.35",
+      "profit_loss_value": "$132.10",
+      "profit_loss_percentage": "40.24%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "fourthDataImg",
+      "title": "Dogecoin",
+      "shortTitle": "DOGE",
+      "value": "420.69",
+      "profit_loss_value": "$342.82",
+      "profit_loss_percentage": "440.25%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "fifthDataImg",
+      "title": "Uniswap",
+      "shortTitle": "UNI",
+      "value": "285.32",
+      "profit_loss_value": "$59.24",
+      "profit_loss_percentage": "28.75%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "firstDataImg",
+      "title": "Compound",
+      "shortTitle": "COMP",
+      "value": "3,622.49",
+      "profit_loss_value": "$1,582.31",
+      "profit_loss_percentage": "77.56%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "secondDataImg",
+      "title": "Bitcoin",
+      "shortTitle": "BTC",
+      "value": "1,253.94",
+      "profit_loss_value": "$441.19",
+      "profit_loss_percentage": "54.28%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "thirdDataImg",
+      "title": "Aave",
+      "shortTitle": "AAVE",
+      "value": "460.35",
+      "profit_loss_value": "$132.10",
+      "profit_loss_percentage": "40.24%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "fourthDataImg",
+      "title": "Dogecoin",
+      "shortTitle": "DOGE",
+      "value": "420.69",
+      "profit_loss_value": "$342.82",
+      "profit_loss_percentage": "440.25%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "fifthDataImg",
+      "title": "Uniswap",
+      "shortTitle": "UNI",
+      "value": "285.32",
+      "profit_loss_value": "$59.24",
+      "profit_loss_percentage": "28.75%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "firstDataImg",
+      "title": "Compound",
+      "shortTitle": "COMP",
+      "value": "3,622.49",
+      "profit_loss_value": "$1,582.31",
+      "profit_loss_percentage": "77.56%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "secondDataImg",
+      "title": "Bitcoin",
+      "shortTitle": "BTC",
+      "value": "1,253.94",
+      "profit_loss_value": "$441.19",
+      "profit_loss_percentage": "54.28%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "thirdDataImg",
+      "title": "Aave",
+      "shortTitle": "AAVE",
+      "value": "460.35",
+      "profit_loss_value": "$132.10",
+      "profit_loss_percentage": "40.24%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "fourthDataImg",
+      "title": "Dogecoin",
+      "shortTitle": "DOGE",
+      "value": "420.69",
+      "profit_loss_value": "$342.82",
+      "profit_loss_percentage": "440.25%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    },
+    {
+      "image": "fifthDataImg",
+      "title": "Uniswap",
+      "shortTitle": "UNI",
+      "value": "285.32",
+      "profit_loss_value": "$59.24",
+      "profit_loss_percentage": "28.75%",
+      "labels": [
+        "12:00",
+        "15:00",
+        "18:00",
+        "21:00",
+        "00:00",
+        "03:00",
+        "06:00",
+        "09:00",
+        "12:00"
+      ]
+    }
+  ]
+}

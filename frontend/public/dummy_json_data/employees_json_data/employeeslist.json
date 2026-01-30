@@ -1,0 +1,277 @@
+{
+  "employeesList": [
+    {
+      "id": "1",
+      "name": "Anas",
+      "bankName": "Mezaan",
+      "bankTitle": "Mr.",
+      "bankAccountNumber": "1234567890",
+      "bankIBAN": "PK36MEZN0000001234567890",
+      "bankBranchCode": "0101",
+      "initialBaseSalary": "1234",
+      "currentBaseSalary": "1234",
+      "date": "2022-04-20",
+      "fullTimeJoinDate": "2022-04-20",
+      "lastIncreament": [
+        {
+          "increamentId": "23",
+          "increamentAmount": 5000,
+          "increamentDate": "2023-02-15"
+        },
+        {
+          "increamentId": "24",
+          "increamentAmount": 3000,
+          "increamentDate": "2021-08-10"
+        }
+      ],
+      "department": "Frontend Developer",
+      "team": "Frontend Team",
+      "homeAddress": "Street 1, City A",
+      "email": "anas@example.com",
+      "password": "password123",
+      "designation": "CEO",
+      "cnic": "12345-6789012-3",
+      "dateOfBirth": "2005-10-22",
+      "actualDateOfBirth": "2005-10-22",
+      "hobbies": "Football",
+      "vehicleRegistrationNumber": "ABC-123",
+      "companyId": "321",
+      "additionalRoles": "",
+      "status": "Active"
+    },
+    {
+      "id": "2",
+      "name": "Sara Khan",
+      "bankName": "HBL",
+      "bankTitle": "Ms.",
+      "bankAccountNumber": "2345678901",
+      "bankIBAN": "PK36HBL0000002345678901",
+      "bankBranchCode": "0202",
+      "initialBaseSalary": "120000",
+      "currentBaseSalary": "120000",
+      "date": "2021-01-15",
+      "fullTimeJoinDate": "2021-01-15",
+      "lastIncreament": [
+        {
+          "increamentId": "20",
+          "increamentAmount": 12000,
+          "increamentDate": "2023-06-20"
+        },
+        {
+          "increamentId": "21",
+          "increamentAmount": 17000,
+          "increamentDate": "2025-08-10"
+        }
+      ],
+      "department": "Backend Developer",
+      "team": "Backend Team",
+      "homeAddress": "Street 2, City B",
+      "email": "sara.khan@example.com",
+      "password": "pass456",
+      "designation": "Senior Developer",
+      "cnic": "23456-7890123-4",
+      "dateOfBirth": "1995-03-10",
+      "actualDateOfBirth": "1995-03-10",
+      "hobbies": "Reading",
+      "vehicleRegistrationNumber": "XYZ-789",
+      "companyId": "322",
+      "additionalRoles": "",
+      "status": "In-active"
+    },
+    {
+      "id": "3",
+      "name": "Ahmed Raza",
+      "bankName": "UBL",
+      "bankTitle": "Mr.",
+      "bankAccountNumber": "3456789012",
+      "bankIBAN": "PK36UBL0000003456789012",
+      "bankBranchCode": "0303",
+      "initialBaseSalary": "100000",
+      "currentBaseSalary": "100000",
+      "date": "2020-06-10",
+      "fullTimeJoinDate": "2020-06-10",
+      "lastIncreament": [
+        {
+          "increamentId": "1",
+          "increamentAmount": 8000,
+          "increamentDate": "2022-11-11"
+        },
+        {
+          "increamentId": "2",
+          "increamentAmount": 7000,
+          "increamentDate": "2021-09-10"
+        }
+      ],
+      "department": "QA",
+      "team": "QA Team",
+      "homeAddress": "Street 3, City C",
+      "email": "ahmed.raza@example.com",
+      "password": "qa7890",
+      "designation": "QA Engineer",
+      "cnic": "34567-8901234-5",
+      "dateOfBirth": "1992-08-20",
+      "actualDateOfBirth": "1992-08-20",
+      "hobbies": "Gaming",
+      "vehicleRegistrationNumber": "LMN-456",
+      "companyId": "323",
+      "additionalRoles": "",
+      "status": "Active"
+    },
+    {
+      "id": "4",
+      "name": "Fatima Noor",
+      "bankName": "Alfalah",
+      "bankTitle": "Ms.",
+      "bankAccountNumber": "4567890123",
+      "bankIBAN": "PK36ALFH0000004567890123",
+      "bankBranchCode": "0404",
+      "initialBaseSalary": "95000",
+      "currentBaseSalary": "95000",
+      "date": "2023-03-05",
+      "fullTimeJoinDate": "2023-03-05",
+      "lastIncreament": [
+        {
+          "increamentId": "3",
+          "increamentAmount": 10000,
+          "increamentDate": "2024-02-14"
+        },
+        {
+          "increamentId": "4",
+          "increamentAmount": 15000,
+          "increamentDate": "2025-12-20"
+        }
+      ],
+      "department": "HR",
+      "team": "HR Team",
+      "homeAddress": "Street 4, City D",
+      "email": "fatima.noor@example.com",
+      "password": "hrsecure",
+      "designation": "HR Manager",
+      "cnic": "45678-9012345-6",
+      "dateOfBirth": "1989-12-12",
+      "actualDateOfBirth": "1989-12-12",
+      "hobbies": "Painting",
+      "vehicleRegistrationNumber": "DEF-321",
+      "companyId": "324",
+      "additionalRoles": "HR",
+      "status": "In-active"
+    },
+    {
+      "id": "5",
+      "name": "Usman Tariq",
+      "bankName": "JS Bank",
+      "bankTitle": "Mr.",
+      "bankAccountNumber": "5678901234",
+      "bankIBAN": "PK36JSBL0000005678901234",
+      "bankBranchCode": "0505",
+      "initialBaseSalary": "110000",
+      "currentBaseSalary": "110000",
+      "date": "2022-09-01",
+      "fullTimeJoinDate": "2022-09-01",
+      "lastIncreament": [
+        {
+          "increamentId": "5",
+          "increamentAmount": 15000,
+          "increamentDate": "2023-03-19"
+        },
+        {
+          "increamentId": "6",
+          "increamentAmount": 10000,
+          "increamentDate": "2022-10-20"
+        }
+      ],
+      "department": "Marketing",
+      "team": "Marketing Team",
+      "homeAddress": "Street 5, City E",
+      "email": "usman.tariq@example.com",
+      "password": "mktpass",
+      "designation": "Marketing Lead",
+      "cnic": "56789-0123456-7",
+      "dateOfBirth": "1990-11-25",
+      "actualDateOfBirth": "1990-11-25",
+      "hobbies": "Cycling",
+      "vehicleRegistrationNumber": "GHI-654",
+      "companyId": "325",
+      "additionalRoles": "Salary Management",
+      "status": "Active"
+    },
+    {
+      "id": "6",
+      "name": "Zainab Ali",
+      "bankName": "MCB",
+      "bankTitle": "Ms.",
+      "bankAccountNumber": "6789012345",
+      "bankIBAN": "PK36MCBL0000006789012345",
+      "bankBranchCode": "0606",
+      "initialBaseSalary": "130000",
+      "currentBaseSalary": "130000",
+      "date": "2020-12-20",
+      "fullTimeJoinDate": "2020-12-20",
+      "lastIncreament": [
+        {
+          "increamentId": "7",
+          "increamentAmount": 11000,
+          "increamentDate": "2023-05-22"
+        },
+        {
+          "increamentId": "8",
+          "increamentAmount": 12000,
+          "increamentDate": "2024-10-21"
+        }
+      ],
+      "department": "Finance",
+      "team": "Accounts",
+      "homeAddress": "Street 6, City F",
+      "email": "zainab.ali@example.com",
+      "password": "finance321",
+      "designation": "Accountant",
+      "cnic": "67890-1234567-8",
+      "dateOfBirth": "1988-07-07",
+      "actualDateOfBirth": "1988-07-07",
+      "hobbies": "Cooking",
+      "vehicleRegistrationNumber": "JKL-987",
+      "companyId": "326",
+      "additionalRoles": "",
+      "status": "In-active"
+    },
+    {
+      "id": "7",
+      "name": "Bilal Aslam",
+      "bankName": "Askari",
+      "bankTitle": "Mr.",
+      "bankAccountNumber": "7890123456",
+      "bankIBAN": "PK36ASKR0000007890123456",
+      "bankBranchCode": "0707",
+      "initialBaseSalary": "140000",
+      "currentBaseSalary": "140000",
+      "date": "2021-07-18",
+      "fullTimeJoinDate": "2021-07-18",
+      "lastIncreament": [
+        {
+          "increamentId": "9",
+          "increamentAmount": 9500,
+          "increamentDate": "2023-08-10"
+        },
+        {
+          "increamentId": "10",
+          "increamentAmount": 800,
+          "increamentDate": "2021-09-12"
+        }
+      ],
+      "department": "IT Support",
+      "team": "Tech Team",
+      "homeAddress": "Street 7, City G",
+      "email": "bilal.aslam@example.com",
+      "password": "techadmin",
+      "designation": "IT Administrator",
+      "cnic": "78901-2345678-9",
+      "dateOfBirth": "1993-04-15",
+      "actualDateOfBirth": "1993-04-15",
+      "hobbies": "Photography",
+      "vehicleRegistrationNumber": "MNO-321",
+      "companyId": "327",
+      "additionalRoles": "",
+      "status": "Active"
+    }
+  ]
+}

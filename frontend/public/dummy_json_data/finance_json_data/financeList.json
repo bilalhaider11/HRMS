@@ -1,0 +1,59 @@
+{
+    "financeAllList": [
+        {
+            "FinanceId": "1",
+            "Date": "2025-10-01",
+            "Description": "Office Office supplies purchase - paper and pens Office supplies purchase - paper and pens Office supplies purchase - paper and pens supplies purchase - paper and pens",
+            "Amount": 2500.75,
+            "TaxDeductions": 125.5,
+            "ChequeNumber": "CHQ-1001",
+            "CategoryID": 201,
+            "AddedBy": "Ali Khan",
+            "CompanyID": 101
+        },
+        {   
+            "FinanceId": "2",
+            "Date": "2025-10-05",
+            "Description": "Client dinner expense",
+            "Amount": 6800,
+            "TaxDeductions": 340,
+            "ChequeNumber": "CHQ-1002",
+            "CategoryID": 204,
+            "AddedBy": "Ali Khan",
+            "CompanyID": 101
+        },
+        {
+            "FinanceId": "3",
+            "Date": "2025-10-10",
+            "Description": "Monthly internet bill",
+            "Amount": 4500,
+            "TaxDeductions": 225,
+            "ChequeNumber": "CHQ-1003",
+            "CategoryID": 201,
+            "AddedBy": "Ali Khan",
+            "CompanyID": 101
+        },
+        {
+            "FinanceId": "4",
+            "Date": "2025-10-15",
+            "Description": "Printer ink replacement",
+            "Amount": 1800,
+            "TaxDeductions": 90,
+            "ChequeNumber": "CHQ-1004",
+            "CategoryID": 207,
+            "AddedBy": "Ali Khan",
+            "CompanyID": 101
+        },
+        {
+            "FinanceId": "5",
+            "Date": "2025-10-20",
+            "Description": "Taxi fare for client meeting",
+            "Amount": 950,
+            "TaxDeductions": 47.5,
+            "ChequeNumber": "CHQ-1005",
+            "CategoryID": 208,
+            "AddedBy": "Ali Khan",
+            "CompanyID": 101
+        }
+    ]
+}

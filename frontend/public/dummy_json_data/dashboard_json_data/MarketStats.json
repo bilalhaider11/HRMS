@@ -1,0 +1,95 @@
+{
+  "tokens": [
+    {
+      "tokenName": "BTC"
+    },
+    {
+      "tokenName": "ETH"
+    },
+    {
+      "tokenName": "BNB"
+    },
+    {
+      "tokenName": "XRP"
+    }
+  ],
+
+  "labels": [
+    "Week 01",
+    "Week 02",
+    "Week 03",
+    "Week 04",
+    "Week 05",
+    "Week 06",
+    "Week 07",
+    "Week 08",
+    "Week 09",
+    "Week 10"
+  ],
+  "labels2": [
+    "2 July 2020",
+    "9 July 2020",
+    "16 July 2020",
+    "23 July 2020",
+    "30 July 2020",
+    "6 Aug 2020",
+    "13 Aug 2020",
+    "20 Aug 2020",
+    "27 Aug 2020",
+    "3 Sep 2020"
+  ],
+  "line1": [
+    200000, 750000, 400000, 600000, 500000, 650000, 550000, 748000, 600000,
+    200000
+  ],
+  "line2": [
+    400000, 400000, 150000, 300000, 600000, 250000, 400000, 500000, 800000,
+    700000
+  ],
+  "basisStatistics": [
+    {
+      "title": "All time Volume",
+      "value": "$167,884.21",
+      "color": "#EB8153",
+      "width": "75%",
+      "radius": 140,
+      "dashArray": 453,
+      "progress": 80,
+      "startX": 10,
+      "endX": 290
+    },
+    {
+      "title": "24 Hour Trade Volume",
+      "value": "$56,411.33",
+      "color": "#71B945",
+      "width": "55%",
+      "radius": 120,
+      "dashArray": 395,
+      "progress": 65,
+      "startX": 30,
+      "endX": 270
+    },
+    {
+      "title": "Locked Value",
+      "value": "$81,981.22",
+      "color": "#4A8CDA",
+      "width": "55%",
+      "radius": 100,
+      "dashArray": 330,
+      "progress": 50,
+      "startX": 50,
+      "endX": 250
+    },
+    {
+      "title": "Active Users",
+      "value": "45628",
+      "color": "#6647BF",
+      "width": "55%",
+      "radius": 80,
+      "dashArray": 270,
+      "progress": 30,
+      "startX": 70,
+      "endX": 230
+    }
+  ]
+}

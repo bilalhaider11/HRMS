@@ -1,0 +1,9 @@
+# VSCode settings inside new_backend
+.vscode/
+
+# Python cache inside new_backend
+__pycache__/
+*.pyc
+
+# Environment variables inside new_backend
+.env

@@ -1,0 +1,64 @@
+{
+  "financeCategories": [
+    {
+      "id": "201",
+      "name": "Salaries",
+      "colorCode": "Blue",
+      "companyId": 101
+    },
+    {
+      "id": "202",
+      "name": "With Holding Income Tax",
+      "colorCode": "Black",
+      "companyId": 101
+    },
+    {
+      "id": "203",
+      "name": "Office Expenses",
+      "colorCode": "Golden / Orange",
+      "companyId": 101
+    },
+    {
+      "id": "204",
+      "name": "Office Rent",
+      "colorCode": "Red",
+      "companyId": 101
+    },
+    {
+      "id": "205",
+      "name": "Loan",
+      "colorCode": "Parrot Green",
+      "companyId": 101
+    },
+    {
+      "id": "206",
+      "name": "Benefits",
+      "colorCode": "Parrot Green",
+      "companyId": 101
+    },
+    {
+      "id": "207",
+      "name": "Utility Bills",
+      "colorCode": "Pink",
+      "companyId": 101
+    },
+    {
+      "id": "208",
+      "name": "Bank Charges",
+      "colorCode": "Purple",
+      "companyId": 101
+    },
+    {
+      "id": "209",
+      "name": "Remittance",
+      "colorCode": "Green",
+      "companyId": 101
+    },
+    {
+      "id": "210",
+      "name": "Cancelled?",
+      "colorCode": "Light Gray",
+      "companyId": 101
+    }
+  ]
+}
