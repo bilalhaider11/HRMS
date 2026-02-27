@@ -1,273 +1,244 @@
 from fastapi import FastAPI, Depends, HTTPException, APIRouter, Request
-from sqlmodel import Session
+from sqlmodel import Session, select
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta, date
+from typing import Optional, List
 import admin_db, auth, employee_db, increment_db, finance_db, store_db, team_db
-from models import CompanyBase, AdminBase, EmployeeBase, AdditionalRoleBase, EmployeeIncrementBase, FinanceBase, StoreBase, ItemCategoryBase, StoreItemsBase, TeamBase
-from typing import Optional
-
-# Initialize FastAPI application
+from models import AdminBase, EmployeeBase, AdditionalRoleBase, EmployeeIncrementBase, FinanceBase, StoreBase, ItemCategoryBase, StoreItemsBase, TeamBase
+from increment_db import IncrementUpdate, IncrementCreate, IncrementResponse
+# Initialize FastAPI app
 app = FastAPI(title="Celestials Management System")
 
-# Middleware to automatically attach token for authenticated requests
+# ------------------ Middleware ------------------
 @app.middleware("http")
-async def auto_auth_middleware(request: Request, call_next, session: Session = Depends(admin_db.get_session)):
-    client_ip = request.client.host  # Get client IP address
-
-    # Skip token injection for admin login endpoint
+async def auto_auth_middleware(request: Request, call_next):
+    client_ip = request.client.host
+    # Skip login endpoint
     if request.url.path.endswith("/admin/login") and request.method == "POST":
-        response = await call_next(request)
-        try:
-            data = await response.body()  # Try to read response body (optional)
-        except Exception:
-            data = None
-        return response
+        return await call_next(request)
 
-    # Attach token to request headers if token exists for this client IP
     with Session(admin_db.engine) as session:
         token_record = admin_db.get_client_token_in_db(client_ip, session)
         if token_record:
             request.headers.__dict__["_list"].append(
                 (b"authorization", f"Bearer {token_record}".encode())
             )
+    return await call_next(request)
 
-    response = await call_next(request)
-    return response
 
-# Endpoint to register a new company
-@app.post("/register_new_company", status_code=201)
-def register_company(company: CompanyBase, session=Depends(admin_db.get_session)):
-    return admin_db.register_company_in_db(company, session)
-
-# Router for admin-specific endpoints
+# ------------------ Admin Endpoints ------------------
 admin_router = APIRouter(prefix="/admin")
 
-# Admin login endpoint
+# Register admin
+@app.post("/register_admin", status_code=201)
+def register_admin(admin: AdminBase, session: Session = Depends(admin_db.get_session)):
+    existing_admin = session.exec(select(admin_db.Admin)).first()
+    if existing_admin:
+        raise HTTPException(status_code=409, detail="Admin already exists")
+    db_admin = admin_db.create_admin_in_db(admin, session)
+    return {"message": "Admin created successfully", "admin_id": db_admin["admin"]}
+
+
+# Admin login
 @admin_router.post("/login", status_code=200)
-def company_login(form_data: OAuth2PasswordRequestForm = Depends(), session=Depends(admin_db.get_session),
-                    request: Request = None):
-    # Authenticate admin credentials
-    admin = auth.authenticate_admin(session, form_data.username, form_data.password)
+def admin_login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(admin_db.get_session),
+                request: Request = None):
+    admin = session.exec(select(admin_db.Admin).where(admin_db.Admin.email == form_data.username)).first()
     if not admin or admin.password != form_data.password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Generate access token
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     token = auth.create_access_token(data={"user_id": admin.id}, expires_delta=access_token_expires)
 
-    # Store token for the client IP
     client_ip = request.client.host
     admin_db.add_jwt_token_in_db(client_ip, token, session)
 
     return {"access_token": token, "token_type": "bearer"}
 
-# Endpoint to register a new admin
-@app.post("/register_admin", status_code=201)
-def register_admin(admin: AdminBase, session: Session = Depends(admin_db.get_session)):
-    admin_db.create_admin_in_db(admin, session)
-    return 'Admin Created successfully'
 
-# Get the profile details of the current admin
+# Get company profile
 @admin_router.get("/company_profile")
-def get_company_profile(admin: AdminBase = Depends(auth.get_current_user)):
-    return {"Comapany Name": admin.company_name, "Website": admin.website,
-            "Address": admin.address, "Phone No.": admin.phone, "Email" : admin.email}
-
-# Update company profile information
-@admin_router.patch("/update_company_profile")
-def update_company_profile(company_id: int, company: CompanyBase, current_admin: AdminBase = Depends(auth.get_current_user),
-                            session: Session = Depends(admin_db.get_session)):
-    return admin_db.update_company_profile_in_db(company_id, company, session, current_admin)
+def get_company_profile(session: Session = Depends(admin_db.get_session)):
+    admin = session.exec(select(admin_db.Admin)).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="No admin found. Please register first.")
+    return {
+        "company_name": admin.company_name,
+        "website": admin.website,
+        "address": admin.address,
+        "phone": admin.phone,
+        "email": admin.email
+    }
 
 # Update admin password
 @admin_router.patch("/update_password")
-def update_password(old:str, new: str, current_admin: AdminBase = Depends(auth.get_current_user),
-                    session: Session = Depends(admin_db.get_session)):
-    return admin_db.update_password_in_db(old, new, current_admin, session)
+def update_password(old_password: str, new_password: str, session: Session = Depends(admin_db.get_session)):
+    admin = session.exec(select(admin_db.Admin)).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="No admin found. Please register first.")
+    if admin.password != old_password:
+        raise HTTPException(status_code=401, detail="Old password is incorrect")
+    return admin_db.update_password_in_db(old_password, new_password, admin, session)
 
-# Register a new employee with optional additional roles
+
+# ------------------ Employee Endpoints ------------------
 @admin_router.post("/create_employee")
-def register_new_employee(employee: EmployeeBase, lst: list[AdditionalRoleBase],
-                            current_admin: AdminBase = Depends(auth.get_current_user),
-                            session: Session = Depends(admin_db.get_session)):
-    return employee_db.register_new_employee_in_db(employee, lst, current_admin, session)
-
-# Update existing employee details
-@admin_router.patch("/update_employee_details")
-def update_employee_details(employee_id: str, employee: EmployeeBase, current_admin: AdminBase = Depends(auth.get_current_user),
-                            session: Session = Depends(admin_db.get_session)):
-    return employee_db.update_employee_details_in_db(employee_id, employee, current_admin, session)
-
-# Deactivate an employee account
-@admin_router.patch("/deactivate_employee")
-def deactivate_employee(employee_id: str, current_admin: AdminBase = Depends(auth.get_current_user),
-                        session: Session = Depends(admin_db.get_session)):
-    return employee_db.deactivate_employee_in_db(employee_id, current_admin, session)
-
-# Display all employees with pagination and optional filtering by department or team
-@admin_router.get("/display_all_employees")
-def display_all_employee(page: int = 1, page_size: int = 10, department: Optional[str] = None, team: Optional[str] = None,
-                            current_admin: AdminBase = Depends(auth.get_current_user),
-                            session: Session = Depends(admin_db.get_session)):
-    return employee_db.display_all_employee_in_db(page, page_size, department, team, current_admin, session)
-
-# Update roles for an employee
-@admin_router.put("/update_roles")
-def update_roles(employee_id: str, lst: list[AdditionalRoleBase], current_admin: AdminBase = Depends(auth.get_current_user),
+def create_employee(employee: EmployeeBase, lst: List[AdditionalRoleBase],
                     session: Session = Depends(admin_db.get_session)):
-    return employee_db.update_roles_in_db(employee_id, lst, current_admin, session)
+    return employee_db.register_new_employee_in_db(employee, lst, session=session)
 
-# Create a salary increment record for an employee
-@admin_router.post("/create_increment")
-def create_increment_in_db(new_increment: EmployeeIncrementBase, session: Session = Depends(admin_db.get_session), 
-                            current_admin: AdminBase = Depends(auth.get_current_user)):
-    return increment_db.create_increment_in_db(new_increment, session, current_admin)
+@admin_router.patch("/update_employee_details")
+def update_employee(employee_id: str, employee: EmployeeBase, session: Session = Depends(admin_db.get_session)):
+    return employee_db.update_employee_details_in_db(employee_id, employee, session=session)
 
-# Retrieve increments for a specific employee
-@admin_router.get("/get_increments")
-def get_increment_by_id(id: str, session: Session = Depends(admin_db.get_session),
-                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return increment_db.get_increment_by_id_in_db(id, session, current_admin)
+@admin_router.patch("/deactivate_employee")
+def deactivate_employee(employee_id: str, session: Session = Depends(admin_db.get_session)):
+    return employee_db.deactivate_employee_in_db(employee_id, session=session)
 
-# Update an existing increment record
-@admin_router.patch("/update_increment")
-def update_increment(increment_id: int, new_increment: EmployeeIncrementBase, session: Session = Depends(admin_db.get_session),
-                        current_admin: AdminBase = Depends(auth.get_current_user)):
-    return increment_db.update_increment_in_db(increment_id, new_increment, session, current_admin)
+@admin_router.get("/display_all_employees")
+def display_employees(page: int = 1, page_size: int = 10, department: Optional[str] = None, team: Optional[str] = None,
+                      session: Session = Depends(admin_db.get_session)):
+    return employee_db.display_all_employee_in_db(page, page_size, department, team, session=session)
 
-# Delete an increment record
-@admin_router.delete("/delete_increment")
-def delete_increment(id: str, session: Session = Depends(admin_db.get_session),
-                        current_admin: AdminBase = Depends(auth.get_current_user)):
-    return increment_db.delete_increment_in_db(id, session, current_admin)
+@admin_router.put("/update_roles")
+def update_roles(employee_id: str, lst: List[AdditionalRoleBase], session: Session = Depends(admin_db.get_session)):
+    return employee_db.update_roles_in_db(employee_id, lst, session=session)
 
-# Finance endpoints router
+
+# ------------------ Employee Increment Endpoints ------------------
+@admin_router.post("/create_increment", response_model=IncrementResponse)
+def create_increment(new_increment: IncrementCreate, session: Session = Depends(admin_db.get_session)):
+    """
+    User enters business ID (string) here. Backend will lookup Employee.id internally.
+    """
+    return increment_db.create_increment_in_db(new_increment, session=session)
+
+
+# ---------------- GET Increment by ID ----------------
+@admin_router.get("/get_increment/{increment_id}", response_model=IncrementResponse)
+def get_increment(increment_id: int, session: Session = Depends(admin_db.get_session)):
+    """
+    Get increment by primary key id.
+    """
+    return increment_db.get_increment_by_id_in_db(increment_id, session=session)
+
+
+# ---------------- UPDATE Increment ----------------
+@admin_router.patch("/update_increment/{increment_id}", response_model=IncrementResponse)
+def update_increment(increment_id: int, new_increment: IncrementUpdate, session: Session = Depends(admin_db.get_session)):
+    """
+    Update increment. Use primary key id in path, not business ID.
+    """
+    return increment_db.update_increment_in_db(increment_id, new_increment, session=session)
+
+
+# ---------------- DELETE Increment ----------------
+@admin_router.delete("/delete_increment/{increment_id}")
+def delete_increment(increment_id: int, session: Session = Depends(admin_db.get_session)):
+    """
+    Delete increment by primary key id.
+    """
+    return increment_db.delete_increment_in_db(increment_id, session=session)
+
+
+# ------------------ Finance Endpoints ------------------
 finance_router = APIRouter(prefix="/finance")
-# Create a new finance record
+
 @finance_router.post("/create_finance_record")
-def create_finance(finance: FinanceBase, session: Session = Depends(admin_db.get_session),
-                        current_admin: AdminBase = Depends(auth.get_current_user)):
-    return finance_db.create_finance_in_db(finance, session, current_admin)
+def create_finance(finance: FinanceBase, session: Session = Depends(admin_db.get_session)):
+    return finance_db.create_finance_in_db(finance, session=session)
 
-# Edit an existing finance record
 @finance_router.patch("/edit_finance_record")
-def edit_finance_record(finance_id: int,finance: FinanceBase, session: Session = Depends(admin_db.get_session),
-                        current_admin: AdminBase = Depends(auth.get_current_user)):
-    return finance_db.edit_finance_record_in_db(finance_id, finance, session, current_admin)
+def edit_finance(finance_id: int, finance: FinanceBase, session: Session = Depends(admin_db.get_session)):
+    return finance_db.edit_finance_record_in_db(finance_id, finance, session=session)
 
-# Delete a finance record
 @finance_router.delete("/delete_finance_record")
-def delete_finance_record(finance_id: int, session: Session = Depends(admin_db.get_session),
-                        current_admin: AdminBase = Depends(auth.get_current_user)):
-    return finance_db.delete_finance_record_in_db(finance_id, session, current_admin)
+def delete_finance(finance_id: int, session: Session = Depends(admin_db.get_session)):
+    return finance_db.delete_finance_record_in_db(finance_id, session=session)
 
-# Get all finance records with optional filtering by date range or categorytheme
 @finance_router.get("/get_finance_records")
-def get_finance_records(page: int = 1, page_size: int = 10, start_date: Optional[date] = None,
-                        end_date: Optional[date] = None, category_id: Optional[int] = None,
-                        session: Session = Depends(admin_db.get_session), current_admin: AdminBase = Depends(auth.get_current_user)):
-    return finance_db.get_finance_records_in_db(page, page_size, start_date, end_date, category_id, session, current_admin)
+def get_finance_records(page: int = 1, page_size: int = 10,
+                        start_date: Optional[date] = None, end_date: Optional[date] = None,
+                        category_id: Optional[int] = None, session: Session = Depends(admin_db.get_session)):
+    return finance_db.get_finance_records_in_db(page, page_size, start_date, end_date, category_id, session=session)
 
-# Store endpoints router
-store_router = APIRouter(prefix='/store')
 
-# Create a new store
-@store_router.post("/new_store", status_code=201)
-def create_new_store(store: StoreBase, session: Session = Depends(admin_db.get_session),
-                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.create_new_store_in_db(store, session, current_admin)
+# ------------------ Store Endpoints ------------------
+store_router = APIRouter(prefix="/store")
 
-# Update store details
+@store_router.post("/new_store")
+def create_store(store: StoreBase, session: Session = Depends(admin_db.get_session)):
+    return store_db.create_new_store_in_db(store, session=session)
+
 @store_router.patch("/update_store")
-def update_store_details(store_id: int, store: StoreBase, session: Session = Depends(admin_db.get_session),
-                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.update_store_details_in_db(store_id, store, session, current_admin)
+def update_store(store_id: int, store: StoreBase, session: Session = Depends(admin_db.get_session)):
+    return store_db.update_store_details_in_db(store_id, store, session=session)
 
-# Get all stores with pagination
 @store_router.get("/get_all_stores")
-def get_all_stores(page: int, page_size: int, session: Session = Depends(admin_db.get_session),
-                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.get_all_stores_in_db(page, page_size, session, current_admin)
+def get_all_stores(page: int, page_size: int, session: Session = Depends(admin_db.get_session)):
+    return store_db.get_all_stores_in_db(page, page_size, session=session)
 
-# Get store details by ID
+@store_router.post("/create_category_for_store_items")
+def create_item_category(item_category: ItemCategoryBase, session: Session = Depends(admin_db.get_session)):
+    return store_db.create_new_category_for_store_items_in_db(item_category, session=session)
+
+@store_router.patch("/update_category_for_store_items")
+def update_item_category(item_category_id: int, item_category: ItemCategoryBase, session: Session = Depends(admin_db.get_session)):
+    return store_db.update_category_for_store_items_in_db(item_category_id, item_category, session=session)
+
+
 @store_router.get("/get_store_by_id")
-def get_store_by_id(store_id: int, session: Session = Depends(admin_db.get_session),
-                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.get_store_by_id_in_db(store_id, session, current_admin)
+def get_store_by_id(store_id: int, session: Session = Depends(admin_db.get_session)):
 
-# Create a new category for store items
-@store_router.post("/create_category_for_store_items", status_code=201)
-def create_category_for_store_items(item_category: ItemCategoryBase, session: Session = Depends(admin_db.get_session),
-                                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.Create_new_Category_for_store_items_in_db(item_category, session, current_admin)
+    return store_db.get_store_by_id_in_db(store_id, session=session)
+@store_router.get("/get_category_by_id")
+def get_category_by_id(
+    item_category_id: int,
+    store_id: int,
+    session: Session = Depends(admin_db.get_session)
+):
+    return store_db.get_category_by_id_in_db(item_category_id, store_id, session=session)
 
-# Update category details
-@store_router.patch("/Update_details_of_Category_for_store_items")
-def Update_details_of_Category_for_store_items(item_category_id: int, item_category: ItemCategoryBase, session: Session = Depends(admin_db.get_session),
-                                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.Update_details_of_Category_for_store_items_in_db(item_category_id, item_category, session, current_admin)
+@store_router.get("/get_all_categories")
+def get_all_categories(page: int, page_size: int, store_id: int, session: Session = Depends(admin_db.get_session)):
+    return store_db.get_all_categories_in_db(page, page_size, store_id, session=session)
 
-# Get category by ID
-@store_router.get('/get_category_by_id')
-def get_category_by_id(item_category_id:int, session: Session = Depends(admin_db.get_session),
-                                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.get_category_by_id_in_db(item_category_id, session, current_admin)
+@store_router.post("/create_store_items")
+def create_store_items(item: StoreItemsBase, session: Session = Depends(admin_db.get_session)):
+    return store_db.create_store_item_in_db(item, session=session)
 
-# Get all categories with pagination
-@store_router.get('/get_all_categories')
-def get_all_categories(page:int, page_size:int, store_id: int, session: Session = Depends(admin_db.get_session),
-                                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.get_all_categories_in_db(page, page_size, store_id, session, current_admin)
+@store_router.patch("/update_store_items_details")
+def update_store_items(item_id: int, item: StoreItemsBase, session: Session = Depends(admin_db.get_session)):
+    return store_db.update_store_item_in_db(item_id, item, session=session)
 
-# Create store items
-@store_router.post('/Create_store_items')
-def Create_store_items(item: StoreItemsBase, session: Session = Depends(admin_db.get_session),
-                                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.Create_new_Category_for_store_items_in_db(item, session, current_admin)
-
-# Update store item details
-@store_router.patch('/Update_store_items_details')
-def Update_store_items_details(item_id: int, item: StoreItemsBase, session: Session = Depends(admin_db.get_session),
-                                    current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.Update_store_items_details_in_db(item_id, item, session, current_admin)
-
-# Get store item by ID
 @store_router.get("/get_store_item_by_id")
-def get_store_item_by_id(item_id: int, session: Session = Depends(admin_db.get_session),
-                        current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.get_store_item_by_id_in_db(item_id, session, current_admin)
+def get_store_item(item_id: int, session: Session = Depends(admin_db.get_session)):
+    return store_db.get_store_item_by_id_in_db(item_id, session=session)
 
-# Get all store items with pagination
 @store_router.get("/get_store_items")
-def get_store_items_in_db(page:int, page_size:int, category_id: int, store_id: int, session: Session = Depends(admin_db.get_session),
-                            current_admin: AdminBase = Depends(auth.get_current_user)):
-    return store_db.get_store_items_in_db(page, page_size, category_id, store_id, session, current_admin)
+def get_store_items(page: int, page_size: int, category_id: int, store_id: int, session: Session = Depends(admin_db.get_session)):
+    return store_db.get_store_items_in_db(page, page_size, category_id, store_id, session=session)
 
-# Create a new team
-@admin_router.post('/create_team')
-def create_team(team: TeamBase, session: Session = Depends(admin_db.get_session),
-                current_admin: AdminBase = Depends(auth.get_current_user)):
-    return team_db.create_team_in_db(team, session, current_admin)
 
-# Get team by ID
-@admin_router.get('/get_team_by_id')
-def get_team_by_id(team_id: int, session: Session = Depends(admin_db.get_session),
-                current_admin: AdminBase = Depends(auth.get_current_user)):
-    return team_db.get_team_by_id_in_db(team_id, session, current_admin)
+# ------------------ Team Endpoints ------------------
+@admin_router.post("/create_team")
+def create_team(team: TeamBase, session: Session = Depends(admin_db.get_session)):
+    return team_db.create_team_in_db(team, session=session)
 
-# Edit team details
-@admin_router.patch('/edit_team')
-def edit_team(team_id: int, team: TeamBase, session: Session = Depends(admin_db.get_session),
-                current_admin: AdminBase = Depends(auth.get_current_user)):
-    return team_db.edit_team_in_db(team_id, team, session, current_admin)
+@admin_router.get("/get_team_by_id")
+def get_team(team_id: int, session: Session = Depends(admin_db.get_session)):
+    return team_db.get_team_by_id_in_db(team_id, session=session)
 
-# Delete a team
-@admin_router.delete('/delete_team')
-def delete_team(team_id: int, session: Session = Depends(admin_db.get_session),
-                current_admin: AdminBase = Depends(auth.get_current_user)):
-    return team_db.delete_team_in_db(team_id, session, current_admin)
+@admin_router.patch("/edit_team")
+def edit_team(team_id: int, team: TeamBase, session: Session = Depends(admin_db.get_session)):
+    return team_db.edit_team_in_db(team_id, team, session=session)
 
-# Include routers in the main FastAPI app
+@admin_router.delete("/delete_team")
+def delete_team(team_id: int, session: Session = Depends(admin_db.get_session)):
+    return team_db.delete_team_in_db(team_id, session=session)
+
+
+# ------------------ Include Routers ------------------
 app.include_router(admin_router)
 app.include_router(finance_router)
 app.include_router(store_router)

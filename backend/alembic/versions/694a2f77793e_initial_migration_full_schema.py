@@ -1,16 +1,8 @@
-<<<<<<<< HEAD:new_backend/alembic/versions/6f8b9188fd83_initializing_db.py
-"""Initializing .db
+"""Initial migration - full schema
 
-Revision ID: 6f8b9188fd83
+Revision ID: 694a2f77793e
 Revises: 
-Create Date: 2025-11-19 18:19:49.226145
-========
-"""INIT
-
-Revision ID: 7083532c5cc4
-Revises: 
-Create Date: 2025-11-24 21:45:06.887168
->>>>>>>> main:new_backend/alembic/versions/7083532c5cc4_init.py
+Create Date: 2026-02-25 13:39:56.142299
 
 """
 from typing import Sequence, Union
@@ -21,11 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-<<<<<<<< HEAD:new_backend/alembic/versions/6f8b9188fd83_initializing_db.py
-revision: str = '6f8b9188fd83'
-========
-revision: str = '7083532c5cc4'
->>>>>>>> main:new_backend/alembic/versions/7083532c5cc4_init.py
+revision: str = '694a2f77793e'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -40,7 +28,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_additional_roles_id'), 'additional_roles', ['id'], unique=True)
+    op.create_index(op.f('ix_additional_roles_id'), 'additional_roles', ['id'], unique=False)
     op.create_table('admin',
     sa.Column('company_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('website', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -52,16 +40,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_admin_id'), 'admin', ['id'], unique=False)
-    op.create_table('company',
-    sa.Column('company_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('website', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('address', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('company_id')
-    )
-    op.create_index(op.f('ix_company_company_id'), 'company', ['company_id'], unique=False)
     op.create_table('employee',
     sa.Column('employee_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -88,9 +66,7 @@ def upgrade() -> None:
     sa.Column('hobbies', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('vehicle_registration_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=True),
     sa.Column('status', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['company_id'], ['company.company_id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_employee_id'), 'employee', ['id'], unique=False)
@@ -98,45 +74,41 @@ def upgrade() -> None:
     sa.Column('category_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('color_code', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('category_id', sa.Integer(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['company_id'], ['company.company_id'], ),
     sa.PrimaryKeyConstraint('category_id')
     )
     op.create_index(op.f('ix_financecategory_category_id'), 'financecategory', ['category_id'], unique=False)
+    op.create_table('jwt_tokens',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('client_ip', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('token', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('created_at', sa.Date(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_jwt_tokens_id'), 'jwt_tokens', ['id'], unique=False)
     op.create_table('store',
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('unique_identifier', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['company_id'], ['company.company_id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_store_id'), 'store', ['id'], unique=False)
     op.create_table('employee_additional_roles',
-    sa.Column('employee_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('employee_id', sa.Integer(), nullable=False),
     sa.Column('role_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['employee_id'], ['employee.employee_id'], ),
+    sa.ForeignKeyConstraint(['employee_id'], ['employee.id'], ),
     sa.ForeignKeyConstraint(['role_id'], ['additional_roles.id'], ),
     sa.PrimaryKeyConstraint('employee_id', 'role_id')
     )
     op.create_table('employee_increment_history',
-    sa.Column('employee_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('employee_id', sa.Integer(), nullable=False),
     sa.Column('increment_amount', sa.Float(), nullable=False),
     sa.Column('effective_date', sa.Date(), nullable=False),
     sa.Column('notes', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['company_id'], ['company.company_id'], ),
-    sa.ForeignKeyConstraint(['employee_id'], ['employee.employee_id'], ),
+    sa.ForeignKeyConstraint(['employee_id'], ['employee.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-<<<<<<<< HEAD:new_backend/alembic/versions/6f8b9188fd83_initializing_db.py
-    op.create_table('item_category',
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('store_id', sa.Integer(), nullable=False),
-========
     op.create_table('finance',
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -146,39 +118,29 @@ def upgrade() -> None:
     sa.Column('category_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('added_by', sa.Integer(), nullable=True),
-    sa.Column('company_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['added_by'], ['admin.id'], ),
     sa.ForeignKeyConstraint(['category_id'], ['financecategory.category_id'], ),
-    sa.ForeignKeyConstraint(['company_id'], ['company.company_id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_finance_id'), 'finance', ['id'], unique=False)
     op.create_table('item_category',
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('store_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
->>>>>>>> main:new_backend/alembic/versions/7083532c5cc4_init.py
+    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('store_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['company_id'], ['company.company_id'], ),
     sa.ForeignKeyConstraint(['store_id'], ['store.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_item_category_id'), 'item_category', ['id'], unique=False)
-<<<<<<<< HEAD:new_backend/alembic/versions/6f8b9188fd83_initializing_db.py
-========
     op.create_table('team',
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('team_lead_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('team_lead_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['company_id'], ['company.company_id'], ),
-    sa.ForeignKeyConstraint(['team_lead_id'], ['employee.employee_id'], ),
+    sa.ForeignKeyConstraint(['team_lead_id'], ['employee.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_team_id'), 'team', ['id'], unique=False)
->>>>>>>> main:new_backend/alembic/versions/7083532c5cc4_init.py
     op.create_table('store_items',
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
@@ -191,31 +153,19 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_store_items_id'), 'store_items', ['id'], unique=False)
-<<<<<<<< HEAD:new_backend/alembic/versions/6f8b9188fd83_initializing_db.py
-========
     op.create_table('teams_to_employee',
-    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('team_id', sa.Integer(), nullable=False),
-    sa.Column('team_lead_id', sa.Integer(), nullable=False),
+    sa.Column('employee_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['employee_id'], ['employee.id'], ),
     sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
-    sa.ForeignKeyConstraint(['team_lead_id'], ['employee.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('team_id', 'employee_id')
     )
-    op.create_index(op.f('ix_teams_to_employee_id'), 'teams_to_employee', ['id'], unique=False)
->>>>>>>> main:new_backend/alembic/versions/7083532c5cc4_init.py
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-<<<<<<<< HEAD:new_backend/alembic/versions/6f8b9188fd83_initializing_db.py
-    op.drop_index(op.f('ix_store_items_id'), table_name='store_items')
-    op.drop_table('store_items')
-    op.drop_index(op.f('ix_item_category_id'), table_name='item_category')
-    op.drop_table('item_category')
-========
-    op.drop_index(op.f('ix_teams_to_employee_id'), table_name='teams_to_employee')
     op.drop_table('teams_to_employee')
     op.drop_index(op.f('ix_store_items_id'), table_name='store_items')
     op.drop_table('store_items')
@@ -225,17 +175,16 @@ def downgrade() -> None:
     op.drop_table('item_category')
     op.drop_index(op.f('ix_finance_id'), table_name='finance')
     op.drop_table('finance')
->>>>>>>> main:new_backend/alembic/versions/7083532c5cc4_init.py
     op.drop_table('employee_increment_history')
     op.drop_table('employee_additional_roles')
     op.drop_index(op.f('ix_store_id'), table_name='store')
     op.drop_table('store')
+    op.drop_index(op.f('ix_jwt_tokens_id'), table_name='jwt_tokens')
+    op.drop_table('jwt_tokens')
     op.drop_index(op.f('ix_financecategory_category_id'), table_name='financecategory')
     op.drop_table('financecategory')
     op.drop_index(op.f('ix_employee_id'), table_name='employee')
     op.drop_table('employee')
-    op.drop_index(op.f('ix_company_company_id'), table_name='company')
-    op.drop_table('company')
     op.drop_index(op.f('ix_admin_id'), table_name='admin')
     op.drop_table('admin')
     op.drop_index(op.f('ix_additional_roles_id'), table_name='additional_roles')

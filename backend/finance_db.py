@@ -1,39 +1,44 @@
 from fastapi import HTTPException
-from sqlmodel import select
-from models import Finance, Company
+from sqlmodel import select, Session
+from models import Finance, FinanceCategory, Admin
+
+
+# --- Utility: get the single admin ID ---
+def get_single_admin_id(session: Session) -> int:
+    admin = session.exec(select(Admin)).first()
+    if not admin:
+        raise HTTPException(status_code=500, detail="No admin exists in the system")
+    return admin.id
 
 
 # --- Create a new finance record ---
-def create_finance_in_db(finance, session, current_admin):
-    # Get company of current admin
-    company = session.exec(select(Company).where(Company.company_name == current_admin.company_name)).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company Doesn't Found for Admin")
-    
+def create_finance_in_db(finance, session: Session):
+    admin_id = get_single_admin_id(session)
+
     # Check for duplicate finance record
-    existing = session.exec(select(Finance).where(
-        Finance.cheque_number == finance.cheque_number,
-        Finance.date == finance.date,
-        Finance.amount == finance.amount,
-        Finance.company_id == company.company_id
-    )).first()
+    existing = session.exec(
+        select(Finance).where(
+            Finance.cheque_number == finance.cheque_number,
+            Finance.date == finance.date,
+            Finance.amount == finance.amount
+        )
+    ).first()
     if existing:
         raise HTTPException(status_code=409, detail="Finance Record already exists")
-    
+
     # Validate mandatory fields
-    if finance.description == 'string':
+    if finance.description in ("", "string"):
         raise HTTPException(status_code=400, detail="Enter Description")
     if finance.amount == 0:
         raise HTTPException(status_code=400, detail="Enter Amount")
-    if finance.cheque_number == 'string':
+    if finance.cheque_number in ("", "string"):
         raise HTTPException(status_code=400, detail="Enter Cheque Number")
     if finance.category_id == 0:
         raise HTTPException(status_code=400, detail="Enter Category ID")
 
-    # Create finance record and assign company/admin
+    # Create finance record
     new_finance = Finance.model_validate(finance)
-    new_finance.company_id = company.company_id
-    new_finance.added_by = current_admin.id
+    new_finance.added_by = admin_id  # assign the single admin
     session.add(new_finance)
     session.commit()
     session.refresh(new_finance)
@@ -41,27 +46,28 @@ def create_finance_in_db(finance, session, current_admin):
 
 
 # --- Edit an existing finance record ---
-def edit_finance_record_in_db(finance_id, finance, session, current_admin):
-    company = session.exec(select(Company).where(Company.company_name == current_admin.company_name)).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company Doesn't Found for Admin")
+def edit_finance_record_in_db(finance_id: int, finance, session: Session):
+    admin_id = get_single_admin_id(session)
+
     # Retrieve existing finance record
-    existing = session.exec(select(Finance).where(Finance.id == finance_id,
-                                                    Finance.company_id == company.company_id)).first()
+    existing = session.exec(select(Finance).where(Finance.id == finance_id)).first()
     if not existing:
-        raise HTTPException(status_code=404, detail="Finance Record does not exists")
+        raise HTTPException(status_code=404, detail="Finance Record does not exist")
 
     # Update fields if valid
     if finance.tax_deductions != 0:
         existing.tax_deductions = finance.tax_deductions
-    if finance.description != 'string':
+    if finance.description not in ("", "string"):
         existing.description = finance.description
     if finance.amount != 0:
         existing.amount = finance.amount
-    if finance.cheque_number != 'string':
+    if finance.cheque_number not in ("", "string"):
         existing.cheque_number = finance.cheque_number
     if finance.category_id != 0:
         existing.category_id = finance.category_id
+
+    # Ensure added_by still tracks admin
+    existing.added_by = admin_id
 
     session.commit()
     session.refresh(existing)
@@ -69,31 +75,21 @@ def edit_finance_record_in_db(finance_id, finance, session, current_admin):
 
 
 # --- Delete a finance record ---
-def delete_finance_record_in_db(finance_id, session, current_admin):
-    company = session.exec(select(Company).where(Company.company_name == current_admin.company_name)).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company Doesn't Found for Admin")
+def delete_finance_record_in_db(finance_id: int, session: Session):
     # Retrieve existing finance record
-    existing = session.exec(select(Finance).where(Finance.id == finance_id,
-                                                    Finance.company_id == company.company_id)).first()
+    existing = session.exec(select(Finance).where(Finance.id == finance_id)).first()
     if not existing:
-        raise HTTPException(status_code=404, detail="Finance Record does not exists")
+        raise HTTPException(status_code=404, detail="Finance Record does not exist")
 
-    # Delete record
     session.delete(existing)
     session.commit()
     return {"Message": "Deleted Successfully"}
 
 
 # --- Get finance records with filters and pagination ---
-def get_finance_records_in_db(page, page_size, start_date, end_date, category_id, session, current_admin):
-    # Get company of current admin
-    company = session.exec(select(Company).where(Company.company_name == current_admin.company_name)).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company Doesn't Found for Admin")
-
+def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_date=None, category_id=None, session: Session = None):
     # Base query for finance records
-    query = select(Finance).where(Finance.company_id == company.company_id)
+    query = select(Finance)
 
     # Apply date range filters
     if start_date:
@@ -108,17 +104,16 @@ def get_finance_records_in_db(page, page_size, start_date, end_date, category_id
     all_records = session.exec(query).all()
     total_count = len(all_records)
 
-    # Pagination calculation
+    # Pagination
     offset = (page - 1) * page_size
     paginated_records = all_records[offset:offset + page_size]
 
     # --- Summary calculations ---
     total_earnings = sum(f.amount for f in all_records)
     total_salaries = sum(f.amount for f in all_records if f.category_id == 1)  # Salary category
-    total_expenses = sum(f.amount for f in all_records if f.category_id in [3,4,7,8])  # Non-salary expenses
+    total_expenses = sum(f.amount for f in all_records if f.category_id in [3, 4, 7, 8])  # Non-salary expenses
     total_profit = total_earnings - total_salaries - total_expenses
 
-    # Return structured response
     return {
         "page": page,
         "page_size": page_size,
