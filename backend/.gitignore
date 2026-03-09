@@ -7,3 +7,7 @@ __pycache__/
 
 # Environment variables inside new_backend
 .env
+
+# Ignore virtual environment
+venv/
+backend/venv/
