@@ -4,21 +4,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-HRMS (Human Resource Management System) — a single-admin system for managing employees, teams, inventory/stores, and finance. Monorepo with a FastAPI backend and React + TypeScript frontend.
+HRMS (Human Resource Management System) — a single-admin system for managing employees, inventory, and finance. Monorepo with a FastAPI backend and React + TypeScript frontend, orchestrated with Docker Compose.
 
 ## Development Commands
 
-### Backend (from `backend/`)
+### Docker (recommended — from project root)
+```bash
+docker compose -f docker-compose.yml up -d        # Start all services (DB + backend + frontend)
+docker compose -f docker-compose.yml down          # Stop all services
+docker compose -f docker-compose.yml down -v       # Stop + remove database volume (fresh start)
+docker compose -f docker-compose.yml logs -f backend   # Backend logs
+docker compose -f docker-compose.yml logs -f frontend  # Frontend logs
+```
+On first run, the backend auto-generates migrations, runs them, and seeds finance categories.
+
+| Service  | URL |
+|----------|-----|
+| Frontend | http://localhost:3000 |
+| Backend  | http://localhost:8000 |
+| Swagger  | http://localhost:8000/docs |
+
+### Manual (without Docker)
+
+**Backend** (from `backend/`):
 ```bash
 pip install -r requirement.txt                    # Install dependencies (note: "requirement.txt" not "requirements.txt")
-uvicorn main:app --reload --host 0.0.0.0 --port 8000  # Run dev server
 alembic revision --autogenerate -m "description"  # Create migration
 alembic upgrade head                              # Apply migrations
-alembic downgrade -1                              # Revert last migration
+python seeders.py                                 # Seed finance categories
+uvicorn main:app --reload --host 0.0.0.0 --port 8000  # Run dev server
 ```
-Backend serves Swagger docs at http://localhost:8000/docs
+Requires PostgreSQL and a `.env` file (see `.env.example`).
 
-### Frontend (from `frontend/`)
+**Frontend** (from `frontend/`):
 ```bash
 npm install     # Install dependencies
 npm start       # Dev server at http://localhost:3000
