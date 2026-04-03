@@ -24,7 +24,6 @@ export interface EmployeeTableData {
   team?: string;
   hobbies?: string;
   vehicleRegistrationNumber?: string;
-  companyId?: string;
   dateOfBirth?: string;
   actualDateOfBirth?: string;
   bankName?: string;

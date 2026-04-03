@@ -108,9 +108,6 @@ const CategoryTable = () => {
                                     Color Code
                                 </th>
                                 <th className={`${tableHeadingClassName}`}>
-                                    Company Id
-                                </th>
-                                <th className={`${tableHeadingClassName}`}>
                                     Action
                                 </th>
                             </tr>
@@ -127,9 +124,6 @@ const CategoryTable = () => {
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         {data.colorCode}
-                                    </td>
-                                    <td className={`${tableDataClassName}`}>
-                                        {data.companyId}
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         <div className="flex items-center h-full w-full justify-end gap-4">
@@ -208,9 +202,6 @@ const CategoryTable = () => {
                         </p>
                         <p className="text-xl font-poppins text-white">
                             Category Name: <span className="font-bold">{isDeleteCategoryModal.name}</span>
-                        </p>
-                        <p className="text-xl font-poppins text-white">
-                            Company Id: <span className="font-bold">{isDeleteCategoryModal.companyId}</span>
                         </p>
 
                     </div>

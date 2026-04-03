@@ -3,8 +3,9 @@ from datetime import date
 from sqlmodel import Session, select
 from fastapi import HTTPException
 from typing import List, Optional
+import bcrypt
 
-from models import Employee, AdditionalRole, EmployeeAdditionalRoleLink, EmployeeIncrement
+from models import Employee, EmployeeResponse, AdditionalRole, EmployeeAdditionalRoleLink, EmployeeIncrement
 
 # -------------------- Employee DB Utils --------------------
 def get_session():
@@ -41,11 +42,20 @@ def register_new_employee_in_db(employee, role_list: List[AdditionalRole], sessi
     # 3️⃣ Set defaults
     if employee.current_base_salary == 0:
         employee.current_base_salary = employee.initial_base_salary
+    if not employee.fulltime_joining_date:
+        employee.fulltime_joining_date = employee.date_of_joining
+    if not employee.last_increment_date:
+        employee.last_increment_date = employee.fulltime_joining_date
     if not employee.actual_date_of_birth:
         employee.actual_date_of_birth = employee.date_of_birth
 
-    # 4️⃣ Add employee
-    db_employee = Employee.model_validate(employee)
+    # 4️⃣ Hash password and add employee
+    employee_data = employee.model_dump()
+    employee_data["password"] = bcrypt.hashpw(
+        employee_data["password"].encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
+    db_employee = Employee.model_validate(employee_data)
     session.add(db_employee)
     session.commit()
     session.refresh(db_employee)
@@ -90,6 +100,8 @@ def update_employee_details_in_db(employee_id: str, employee, session: Session):
     employee_data = employee.dict(exclude_unset=True, exclude_defaults=True)
     for key, value in employee_data.items():
         if value not in ("string", 0, str(date.today()), date.today()):
+            if key == "password":
+                value = bcrypt.hashpw(value.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
             setattr(db_employee, key, value)
 
     session.commit()
@@ -123,6 +135,11 @@ def display_all_employee_in_db(
     department: Optional[str] = None, team: Optional[str] = None,
     session: Session = None
 ):
+    if page < 1:
+        page = 1
+    if page_size < 1:
+        page_size = 10
+
     query = select(Employee).where(Employee.status == True)
 
     if department:
@@ -141,7 +158,7 @@ def display_all_employee_in_db(
         "total_count": total_count,
         "total_pages": (total_count + page_size - 1) // page_size,
         "filters": {"department": department or "All", "team": team or "All"},
-        "employees": paginated_employees
+        "employees": [EmployeeResponse.model_validate(emp) for emp in paginated_employees]
     }
 
 

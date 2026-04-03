@@ -59,8 +59,7 @@ const Form = () => {
                 AddedBy: values.addedBy,
                 TaxDeductions: calculatedFinal,
                 Description: values.description,
-                CategoryID: values.categoryId || undefined,
-                CompanyID: values.companyId
+                CategoryID: values.categoryId || undefined
             }
             const added = addFinance(newFinance);
             console.log(added)
@@ -219,11 +218,6 @@ const Form = () => {
                                 {formik.errors.categoryId}
                             </p>
                         )}
-                    </div>
-
-                    <div className="relative">
-                        <FormInput label="Company Id" name="companyId" type="number" readOnly value={editingFinance?.CompanyID || 101} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
-
                     </div>
 
                     <div className="relative">

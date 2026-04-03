@@ -4,9 +4,7 @@ export interface TeamsTableData {
     teamDescription: string,
     teamLeadId: number,
     teamLeadName: string,
-    teamMemebers: [],
-    companyId: number,
-    companyName: string
+    teamMemebers: []
 }
 
 export interface TeamsListData {

@@ -1,27 +1,10 @@
 import { createContext, useState, useEffect, ReactNode } from "react";
 import { login, verify } from "../features/auth/api/auth";
 
-interface BaseUser {
+export type AppUser = {
   name: string;
   email: string;
-}
-
-interface Employee {
-  uniqueId: string;
-  image: string;
-  name: string;
-  employeeId: string | number;
-  mySelectField?: string;
-  password?: string | number;
-  date?: string | number | Date;
-  employeeInformation?: string;
-}
-
-export type AppUser = BaseUser &
-  Partial<Employee> & {
-    companyId?: string | number;
-    department?: string;
-  };
+};
 
 export const VerifyContext = createContext<{
   user: AppUser | null;
@@ -30,8 +13,7 @@ export const VerifyContext = createContext<{
   setUser: (user: AppUser | null) => void;
   loginUser: (
     email: string,
-    password: string,
-    employee?: Employee[]
+    password: string
   ) => Promise<{ success: boolean; message?: string }>;
 }>({
   user: null,
@@ -49,18 +31,21 @@ export const VerifyContextProvider = ({
   const [user, setUser] = useState<AppUser | null>(null);
   const [authCheckLoading, setAuthCheckLoading] = useState(true);
 
-  const superAdmin = user?.name === "Celestial";
+  // Single-admin system: any logged-in user is the admin
+  const superAdmin = user !== null;
 
-  const loginUser = async (
-    email: string,
-    password: string,
-    employee?: Employee[]
-  ) => {
+  const loginUser = async (email: string, password: string) => {
     const { ok, data } = await login(email, password);
     if (ok && data.success) {
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
+
+      // Fetch user profile using the token
+      const profileResult = await verify(data.token);
+      if (profileResult.ok && profileResult.data.success) {
+        setUser(profileResult.data.user);
+        return { success: true };
+      }
+
       return { success: true };
     } else {
       return { success: false, message: data.message };
@@ -77,12 +62,10 @@ export const VerifyContextProvider = ({
           setUser(data.user);
         } else {
           localStorage.removeItem("token");
-          localStorage.removeItem("user");
           setUser(null);
         }
       } else {
         localStorage.removeItem("token");
-        localStorage.removeItem("user");
         setUser(null);
       }
 

@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hrms_user
+      POSTGRES_PASSWORD: hrms_password
+      POSTGRES_DB: hrms_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hrms_user -d hrms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - data_base_url=postgresql://hrms_user:hrms_password@db:5432/hrms_db
+      - secret_key=local-dev-secret-key-change-in-production
+      - algorithm=HS256
+      - access_token_expire_minutes=30
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

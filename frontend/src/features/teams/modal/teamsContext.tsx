@@ -9,8 +9,6 @@ export interface TeamsTableData {
     teamLeadId?: number,
     teamLeadName?: string,
     teamMembers?: EmployeeTableData[],
-    companyId?: number,
-    companyName?: string
 }
 export interface EmployeeTableData {
   id?: string;

@@ -14,7 +14,7 @@ export default function Setting({}: SettingProps) {
       <h1 className="mt-5 md:mt-[46px] text-2xl md:text-3xl lg:text-[58px] font-semibold font-poppins lg:leading-[140%] text-white mb-7">
         Settings
       </h1>
-      <SettingBody superAdmin={superAdmin} name={user?.name} email={user?.email} password={user?.password as number} />
+      <SettingBody superAdmin={superAdmin} name={user?.name} email={user?.email} />
       </div>
     </>
   );

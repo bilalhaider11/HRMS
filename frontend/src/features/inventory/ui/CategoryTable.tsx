@@ -102,12 +102,6 @@ const CategoryTable = () => {
                                     Description
                                 </th>
                                 <th className={`${tableHeadingClassName}`}>
-                                    Company ID
-                                </th>
-                                 <th className={`${tableHeadingClassName}`}>
-                                    Store Id
-                                </th>
-                                <th className={`${tableHeadingClassName}`}>
                                     Action
                                 </th>
                             </tr>
@@ -126,14 +120,6 @@ const CategoryTable = () => {
                                             {data.categoryDescription}
                                         </div>
                                     </td>
-                                    <td className={`${tableDataClassName}`}>
-                                        {data.companyId}
-                                    </td>
-                                    <td className={`${tableDataClassName}`}>
-                                        {data.storeId}
-                                    </td>
-
-
                                     <td className={`${tableDataClassName}`}>
                                         <div className="flex items-center h-full w-full justify-end gap-4">
                                             <Button type="button" onClick={() => handleUpdate(data)} buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
@@ -212,9 +198,6 @@ const CategoryTable = () => {
                         </p>
                         <p className="text-xl font-poppins text-white">
                             Category Name: <span className="font-bold">{isDeleteCategoryModal.categoryName}</span>
-                        </p>
-                        <p className="text-xl font-poppins text-white">
-                            Company Id: <span className="font-bold">{isDeleteCategoryModal.companyId}</span>
                         </p>
                     </div>
 
