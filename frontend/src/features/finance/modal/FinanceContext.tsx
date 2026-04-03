@@ -9,15 +9,13 @@ export interface FinanceTableData {
   TaxDeductions?: number,
   ChequeNumber?: string,
   CategoryID?: number,
-  AddedBy?: string,
-  CompanyID?: number
+  AddedBy?: string
 }
 
 export interface FinanceCategoriesData {
   id?: string,
   name?: string,
-  colorCode?: string,
-  companyId?: number
+  colorCode?: string
 }
 
 interface FinanceContextType {

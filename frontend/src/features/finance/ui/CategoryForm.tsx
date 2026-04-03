@@ -36,8 +36,7 @@ const CategoryForm = () => {
             const newCategory: FinanceCategoriesData = {
                 id: values.id,
                 name: values.categoryName,
-                colorCode: values.colorCode,
-                companyId: values.companyId
+                colorCode: values.colorCode
             }
             const added = addCategory(newCategory);
             console.log(added)
@@ -59,7 +58,6 @@ const CategoryForm = () => {
             id: editingCategory?.id || generatedCategoryId,
             categoryName: editingCategory?.name || "",
             colorCode: editingCategory?.colorCode || "",
-            companyId: editingCategory?.companyId || 101,
         },
         validationSchema: formSchema,
         onSubmit: handleSubmit,
@@ -98,19 +96,6 @@ const CategoryForm = () => {
                                 {formik.errors.colorCode}
                             </p>
                         )}
-                    </div>
-                    <div className="relative">
-                        <FormInput label="Company Id"
-                            type="number"
-                            id="companyId"
-                            name="companyId"
-                            value={formik.values.companyId}
-                            onChange={(e) => {
-                                formik.handleChange(e);
-                                clearError();
-                            }}
-                            readOnly
-                            placeholder="Company ID" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
                     </div>
                 </div>
 

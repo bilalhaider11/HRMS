@@ -6,8 +6,7 @@ export interface FinanceTableData {
     TaxDeductions?: number,
     ChequeNumber?: string,
     CategoryID?: number,
-    AddedBy?: string,
-    CompanyID?: number
+    AddedBy?: string
 }
 
 export interface FinanaceListData {
@@ -17,8 +16,7 @@ export interface FinanaceListData {
 export interface FinanceCategoriesData {
   id?: string;
   name: string;
-  colorCode?: string,
-  companyId?: number
+  colorCode?: string
 }
 
 export interface FinanceCategoriesList {

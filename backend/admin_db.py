@@ -2,6 +2,7 @@ from sqlmodel import create_engine, Session, select
 from fastapi import HTTPException
 from models import Admin, jwt_tokens
 from jose import jwt, JWTError, ExpiredSignatureError
+import bcrypt
 
 import load_env
 
@@ -47,8 +48,13 @@ def create_admin_in_db(admin, session):
     if existing:
         raise HTTPException(status_code=409, detail="Admin already exists")
     
-    # Save to DB
-    db_admin = Admin.model_validate(admin)
+    # Hash password and save to DB
+    admin_data = admin.model_dump()
+    admin_data["password"] = bcrypt.hashpw(
+        admin_data["password"].encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
+    db_admin = Admin.model_validate(admin_data)
     session.add(db_admin)
     session.commit()
     session.refresh(db_admin)
@@ -58,14 +64,37 @@ def create_admin_in_db(admin, session):
     }
 
 
-def update_password_in_db(old, new, current_admin, session):
-    if old == current_admin.password:
-        current_admin.password = new
-        session.commit()
-        session.refresh(current_admin)
-        return "Password Updated"
-    else:
-        raise HTTPException(status_code=401, detail="Provided password is wrong")
+def update_company_profile_in_db(profile_data, current_admin, session):
+    if profile_data.company_name and profile_data.company_name != "string":
+        current_admin.company_name = profile_data.company_name
+    if profile_data.website and profile_data.website != "string":
+        current_admin.website = profile_data.website
+    if profile_data.address and profile_data.address != "string":
+        current_admin.address = profile_data.address
+    if profile_data.phone and profile_data.phone != "string":
+        current_admin.phone = profile_data.phone
+    if profile_data.email and profile_data.email != "string":
+        current_admin.email = profile_data.email
+    session.commit()
+    session.refresh(current_admin)
+    return {
+        "message": "Company profile updated successfully",
+        "company_name": current_admin.company_name,
+        "website": current_admin.website,
+        "address": current_admin.address,
+        "phone": current_admin.phone,
+        "email": current_admin.email
+    }
+
+
+def update_password_in_db(new, current_admin, session):
+    current_admin.password = bcrypt.hashpw(
+        new.encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
+    session.commit()
+    session.refresh(current_admin)
+    return "Password Updated"
 
 
 # ---------- JWT OPERATIONS ----------
@@ -89,8 +118,6 @@ def get_client_token_in_db(client_ip: str, session: Session):
         try:
             jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             return token
-        except ExpiredSignatureError:
-            return "Token Expired. Login Again."
-        except JWTError:
-            return "Invalid Token"
-    return "Register yourself First"
+        except (ExpiredSignatureError, JWTError):
+            return None
+    return None

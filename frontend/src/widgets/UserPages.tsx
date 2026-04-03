@@ -12,10 +12,7 @@ import CategoryListsPage from "../pages/CategoryListsPage";
 import NewCategoryPage from "../pages/NewCategoryPage";
 import UpdateCategoryPage from "../pages/UpdateCategoryPage";
 import InventoryBodyPage from "../pages/InventoryBodyPage";
-import StorePage from "../pages/StorePage";
-import NewStorePage from "../pages/NewStorePage";
 import InventoryCategoriesPage from "../pages/InventoryCategoriesPage";
-import UpdateStorePage from "../pages/UpdateStorePage";
 import NewInventoryCategoryPage from "../pages/NewInventoryCategoryPage";
 import UpdateInventoryCategoryPage from "../pages/UpdateInventoryCategoryPage";
 import InventoryItemsPage from "../pages/InventoryItemsPage";
@@ -52,9 +49,6 @@ export default function UserPage({ superAdmin }: UserPageProps) {
         <Route path="/finance/category-lists/new-category" element={<NewCategoryPage />} />
         <Route path="/finance/category-lists/update-category/:categoryId" element={<UpdateCategoryPage />} />
         <Route path="/inventory" element={<InventoryBodyPage />} />
-        <Route path="/inventory/stores" element={<StorePage />} />
-        <Route path="/inventory/new-store" element={<NewStorePage />} />
-        <Route path="/inventory/update-store/:storeId" element={<UpdateStorePage />} />
         <Route path="/inventory/categories" element={<InventoryCategoriesPage />} />
         <Route path="/inventory/new-category" element={<NewInventoryCategoryPage />} />
         <Route path="/inventory/update-category/:categoryId" element={<UpdateInventoryCategoryPage />} />

@@ -26,7 +26,6 @@ const formSchema = Yup.object().shape({
     team: Yup.string().required("Team is required"),
     hobbies: Yup.string().required("Hobbies are required"),
     vehicleRegistrationNumber: Yup.string().required("Vehicle number is required"),
-    companyId: Yup.string().required("Company ID is required"),
     dateOfBirth: Yup.string().required("Date of birth is required"),
     actualDateOfBirth: Yup.string().required("Actual DOB is required"),
     bankName: Yup.string().required("Bank name is required"),
@@ -155,7 +154,6 @@ const Form = () => {
                 team: values.team || '',
                 hobbies: values.hobbies || '',
                 vehicleRegistrationNumber: values.vehicleRegistrationNumber || '',
-                companyId: values.companyId || '',
                 dateOfBirth: values.dateOfBirth || '',
                 actualDateOfBirth: values.actualDateOfBirth || '',
                 bankName: values.bankName || '',
@@ -229,7 +227,6 @@ const Form = () => {
             team: editingEmployee?.team || "",
             hobbies: editingEmployee?.hobbies || "",
             vehicleRegistrationNumber: editingEmployee?.vehicleRegistrationNumber || "",
-            companyId: editingEmployee?.companyId || "",
             dateOfBirth: editingEmployee?.dateOfBirth || "",
             actualDateOfBirth: editingEmployee?.actualDateOfBirth || "",
             bankName: editingEmployee?.bankName || "",
@@ -453,14 +450,6 @@ const Form = () => {
                         {formik.errors.vehicleRegistrationNumber && formik.touched.vehicleRegistrationNumber && (
                             <p className={`${errorClasses}`}>
                                 {formik.errors.vehicleRegistrationNumber}
-                            </p>
-                        )}
-                    </div>
-                    <div className="relative">
-                        <FormInput label="Company ID" name="companyId" value={formik.values.companyId} onChange={formik.handleChange} placeholder="321" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
-                        {formik.errors.companyId && formik.touched.companyId && (
-                            <p className={`${errorClasses}`}>
-                                {formik.errors.companyId}
                             </p>
                         )}
                     </div>

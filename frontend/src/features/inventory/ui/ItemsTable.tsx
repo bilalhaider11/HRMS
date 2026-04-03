@@ -93,7 +93,6 @@ const ItemsTable = () => {
                                 <th className={`${tableHeadingClassName}`}>Name</th>
                                 <th className={`${tableHeadingClassName} !w-[20%]`}>Description</th>
                                 <th className={`${tableHeadingClassName}`}>Category Id</th>
-                                <th className={`${tableHeadingClassName}`}>Store Id</th>
                                 <th className={`${tableHeadingClassName}`}>Action</th>
                             </tr>
                         </thead>
@@ -106,7 +105,6 @@ const ItemsTable = () => {
                                         <div className="w-full truncate max-w-[340px]">{data.itemDescription}</div>
                                     </td>
                                     <td className={`${tableDataClassName}`}>{data.categoryId}</td>
-                                    <td className={`${tableDataClassName}`}>{data.storeId}</td>
                                     <td className={`${tableDataClassName}`}>
                                         <div className="flex items-center h-full w-full justify-end gap-4">
                                             <Button
@@ -184,9 +182,6 @@ const ItemsTable = () => {
                         </p>
                         <p className="text-xl font-poppins text-white">
                             Items Name: <span className="font-bold">{isDeleteItemsModal.itemName}</span>
-                        </p>
-                        <p className="text-xl font-poppins text-white">
-                            Store Id: <span className="font-bold">{isDeleteItemsModal.storeId}</span>
                         </p>
                     </div>
 

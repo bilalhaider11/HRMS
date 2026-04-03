@@ -109,9 +109,6 @@ const TeamsTable = () => {
                                     Team Lead
                                 </th>
                                 <th className={`${tableHeadingClassName}`}>
-                                    Company Name
-                                </th>
-                                <th className={`${tableHeadingClassName}`}>
                                     Action
                                 </th>
                             </tr>
@@ -133,9 +130,6 @@ const TeamsTable = () => {
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         {data.teamLeadName}
-                                    </td>
-                                    <td className={`${tableDataClassName}`}>
-                                        {data.companyName}
                                     </td>
 
                                     <td className={`${tableDataClassName}`}>
@@ -212,13 +206,10 @@ const TeamsTable = () => {
                     <h1 className="text-2xl text-center font-urbanist leading-[150%] text-white border-b border-solid border-[#CDD6D7] p-6 mb-8">Delete Finance</h1>
                     <div className="flex flex-col gap-4 px-5 mb-5">
                         <p className="text-xl font-poppins text-white">
-                            Store Id: <span className="font-bold">{isDeleteTeamModal.teamId}</span>
+                            Team Id: <span className="font-bold">{isDeleteTeamModal.teamId}</span>
                         </p>
                         <p className="text-xl font-poppins text-white">
-                            Store Name: <span className="font-bold">{isDeleteTeamModal.teamName}</span>
-                        </p>
-                        <p className="text-xl font-poppins text-white">
-                            Company Id: <span className="font-bold">{isDeleteTeamModal.companyName}</span>
+                            Team Name: <span className="font-bold">{isDeleteTeamModal.teamName}</span>
                         </p>
                     </div>
 

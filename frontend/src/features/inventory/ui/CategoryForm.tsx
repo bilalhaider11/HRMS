@@ -1,10 +1,8 @@
 import Button from "shared/Button";
 import FormInput from "../../../shared/FormInputs"
-import { v4 as uuidv4 } from "uuid";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { CategoryTableData, useInventory } from "../modal/InventoryContext";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SuccessfullModal from "shared/SuccessfullModal";
 
@@ -23,7 +21,6 @@ const CategoryForm = () => {
     const inputStyles = "inputBox text-sm md:text-base leading-normal px-4 py-2.5 lg:py-[21px] lg:px-[29px] rounded-[15px] text-white placeholder-[#747681]"
     const errorClasses = "text-red-500 text-xs mt-1 absolute -bottom-6"
 
-    const [generatedStoreId] = useState<string>(uuidv4());
     const handleSubmit = (values: any) => {
         console.log(editingCategory)
         if (editingCategory !== null && updateCategory) {
@@ -35,7 +32,6 @@ const CategoryForm = () => {
             formik.resetForm();
         } else {
             const newStore: CategoryTableData = {
-                categoryId: values.storeId,
                 categoryName: values.name,
                 categoryDescription: values.description
             }
@@ -49,7 +45,6 @@ const CategoryForm = () => {
 
     const formik = useFormik({
         initialValues: {
-            storeId: editingCategory?.categoryId || generatedStoreId,
             name: editingCategory?.categoryName,
             description: editingCategory?.categoryDescription
         },
@@ -60,7 +55,7 @@ const CategoryForm = () => {
     const successfullyAdded = () => {
         setEditingCategory(null)
         setSuccessfullModal(false)
-        navigate('/inventory/stores')
+        navigate('/inventory/categories')
         window.scrollTo(0, 0);
         document.body.style.overflow = "auto"
     }
@@ -71,37 +66,12 @@ const CategoryForm = () => {
             <form onSubmit={formik.handleSubmit} noValidate>
                 <div className="grid md:grid-cols-2 gap-3 md:gap-5 lg:gap-[38px]">
                     <div className="relative">
-                        <FormInput label="Id"
-                            type="text"
-                            id="storeId"
-                            name="storeId"
-                            value={formik.values.storeId}
-                            onChange={(e) => {
-                                formik.handleChange(e);
-                                clearError();
-                            }}
-                            readOnly
-                            placeholder="Store ID" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
-                        {formik.errors.storeId && formik.touched.storeId && (
-                            <p className={`${errorClasses}`}>
-                                {formik.errors.storeId}
-                            </p>
-                        )}
-
-                    </div>
-                    <div className="relative">
                         <FormInput label="Name" name="name" type="text" placeholder="Name" value={formik.values.name} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
                         {formik.errors.name && formik.touched.name && (
                             <p className={`${errorClasses}`}>
                                 {formik.errors.name}
                             </p>
                         )}
-                    </div>
-                    <div className="relative">
-                        <FormInput label="Company Id" name="companyId" type="number" readOnly value={editingCategory?.companyId || 101} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
-                    </div>
-                    <div className="relative">
-                        <FormInput label="Store Id" name="storeId" type="number" readOnly value={editingCategory?.storeId || 1} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
                     </div>
                     <div className="relative">
                         <label className={`${labelStyles}`}>Description</label>

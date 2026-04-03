@@ -1,3 +1,4 @@
+import datetime
 from datetime import date
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
@@ -11,6 +12,19 @@ class AdminBase(SQLModel):
     phone: str = Field(..., min_length=1)
     email: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
+
+
+class AdminProfileUpdate(SQLModel):
+    company_name: Optional[str] = None
+    website: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+
+
+class AdminPasswordUpdate(SQLModel):
+    old_password: str
+    new_password: str = Field(..., min_length=1)
 
 
 class Admin(AdminBase, table=True):
@@ -86,6 +100,34 @@ class EmployeeBase(SQLModel):
     vehicle_registration_number: Optional[str] = None
 
 
+class EmployeeResponse(SQLModel):
+    id: Optional[int] = None
+    employee_id: str
+    name: str
+    bank_name: str
+    bank_account_title: str
+    bank_branch_code: str
+    bank_account_number: str
+    bank_iban_number: str
+    initial_base_salary: float
+    current_base_salary: float
+    date_of_joining: date
+    fulltime_joining_date: Optional[date] = None
+    last_increment_date: Optional[date] = None
+    increment_amount: float = 0.0
+    department: str
+    team: str
+    home_address: str
+    email: str
+    designation: str
+    cnic: str
+    date_of_birth: date
+    actual_date_of_birth: Optional[date] = None
+    hobbies: Optional[str] = None
+    vehicle_registration_number: Optional[str] = None
+    status: bool = True
+
+
 class Employee(EmployeeBase, table=True):
     __tablename__ = "employee"
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
@@ -116,6 +158,15 @@ class FinanceBase(SQLModel):
     category_id: int = Field(foreign_key='financecategory.category_id')
 
 
+class FinanceUpdate(SQLModel):
+    date: Optional[datetime.date] = None
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    tax_deductions: Optional[float] = None
+    cheque_number: Optional[str] = None
+    category_id: Optional[int] = None
+
+
 class Finance(FinanceBase, table=True):
     __tablename__ = "finance"
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
@@ -124,22 +175,10 @@ class Finance(FinanceBase, table=True):
     added_by: Optional[int] = Field(default=None, foreign_key='admin.id')
 
 
-# --- Inventory / Store Models ---
-class StoreBase(SQLModel):
-    name: str = Field(..., min_length=1)
-    unique_identifier: str = Field(..., min_length=1)
-    description: Optional[str] = None
-
-
-class Store(StoreBase, table=True):
-    __tablename__ = "store"
-    id: Optional[int] = Field(default=None, primary_key=True, index=True)
-
-
+# --- Inventory Models ---
 class ItemCategoryBase(SQLModel):
     name: str = Field(..., min_length=1)
-    description: Optional[str]
-    store_id: int = Field(foreign_key="store.id")
+    description: Optional[str] = None
 
 
 class ItemCategory(ItemCategoryBase, table=True):
@@ -147,39 +186,28 @@ class ItemCategory(ItemCategoryBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
 
 
-class StoreItemsBase(SQLModel):
+class ItemCategoryUpdate(SQLModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+class InventoryItemBase(SQLModel):
     name: str = Field(..., min_length=1)
     description: Optional[str] = None
     quantity: int
     category_id: int = Field(foreign_key="item_category.id")
-    store_id: int = Field(foreign_key="store.id")
 
 
-class StoreItems(StoreItemsBase, table=True):
+class InventoryItem(InventoryItemBase, table=True):
     __tablename__ = "store_items"
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
 
 
-# --- Team Models ---
-class TeamBase(SQLModel):
-    name: str = Field(..., min_length=1)
-    description: str = Field(..., min_length=1)
-
-    # IMPORTANT FIX → use employee.id
-    team_lead_id: int = Field(foreign_key='employee.id')
-
-
-class Team(TeamBase, table=True):
-    __tablename__ = 'team'
-    id: Optional[int] = Field(default=None, primary_key=True, index=True)
-
-
-class Teams_to_employee(SQLModel, table=True):
-    __tablename__ = 'teams_to_employee'
-
-    # Recommended composite PK
-    team_id: int = Field(foreign_key='team.id', primary_key=True)
-    employee_id: int = Field(foreign_key='employee.id', primary_key=True)
+class InventoryItemUpdate(SQLModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    quantity: Optional[int] = None
+    category_id: Optional[int] = None
 
 
 # --- JWT Tokens ---

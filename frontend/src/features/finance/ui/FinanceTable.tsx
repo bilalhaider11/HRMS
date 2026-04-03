@@ -76,9 +76,6 @@ const FinanceTable = () => {
                                     Added By
                                 </th>
                                 <th className={`${tableHeadingClassName}`}>
-                                    Company ID
-                                </th>
-                                <th className={`${tableHeadingClassName}`}>
                                     Action
                                 </th>
                             </tr>
@@ -108,9 +105,6 @@ const FinanceTable = () => {
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         {data.AddedBy}
-                                    </td>
-                                    <td className={`${tableDataClassName}`}>
-                                        {data.CompanyID}
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         <div className="flex items-center h-full w-full justify-end gap-4">

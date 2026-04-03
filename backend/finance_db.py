@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlmodel import select, Session
-from models import Finance, FinanceCategory, Admin
+from models import Finance, FinanceUpdate, FinanceCategory, Admin
 
 
 # --- Utility: get the single admin ID ---
@@ -36,6 +36,11 @@ def create_finance_in_db(finance, session: Session):
     if finance.category_id == 0:
         raise HTTPException(status_code=400, detail="Enter Category ID")
 
+    # Validate category exists
+    category = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == finance.category_id)).first()
+    if not category:
+        raise HTTPException(status_code=404, detail=f"Finance category with id {finance.category_id} does not exist")
+
     # Create finance record
     new_finance = Finance.model_validate(finance)
     new_finance.added_by = admin_id  # assign the single admin
@@ -46,7 +51,7 @@ def create_finance_in_db(finance, session: Session):
 
 
 # --- Edit an existing finance record ---
-def edit_finance_record_in_db(finance_id: int, finance, session: Session):
+def edit_finance_record_in_db(finance_id: int, finance: FinanceUpdate, session: Session):
     admin_id = get_single_admin_id(session)
 
     # Retrieve existing finance record
@@ -54,17 +59,19 @@ def edit_finance_record_in_db(finance_id: int, finance, session: Session):
     if not existing:
         raise HTTPException(status_code=404, detail="Finance Record does not exist")
 
-    # Update fields if valid
-    if finance.tax_deductions != 0:
-        existing.tax_deductions = finance.tax_deductions
-    if finance.description not in ("", "string"):
-        existing.description = finance.description
-    if finance.amount != 0:
-        existing.amount = finance.amount
-    if finance.cheque_number not in ("", "string"):
-        existing.cheque_number = finance.cheque_number
-    if finance.category_id != 0:
-        existing.category_id = finance.category_id
+    # Validate category if being changed
+    update_data = finance.model_dump(exclude_unset=True)
+    if "category_id" in update_data and update_data["category_id"] is not None:
+        category = session.exec(select(FinanceCategory).where(
+            FinanceCategory.category_id == update_data["category_id"]
+        )).first()
+        if not category:
+            raise HTTPException(status_code=404, detail=f"Finance category with id {update_data['category_id']} does not exist")
+
+    # Update only provided fields
+    for key, value in update_data.items():
+        if value is not None:
+            setattr(existing, key, value)
 
     # Ensure added_by still tracks admin
     existing.added_by = admin_id
@@ -88,6 +95,11 @@ def delete_finance_record_in_db(finance_id: int, session: Session):
 
 # --- Get finance records with filters and pagination ---
 def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_date=None, category_id=None, session: Session = None):
+    if page < 1:
+        page = 1
+    if page_size < 1:
+        page_size = 10
+
     # Base query for finance records
     query = select(Finance)
 
