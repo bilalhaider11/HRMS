@@ -124,51 +124,23 @@ Defined in `increment_db.py` but not exposed in `main.py`. Returns all increment
 
 ---
 
-## Store/Inventory Endpoints (prefix: `/store`)
-
-### Store CRUD
-| Method | Path | Params | Notes |
-|--------|------|--------|-------|
-| `POST` | `/store/new_store` | Body: `StoreBase` | `unique_identifier` must be unique (409) |
-| `PATCH` | `/store/update_store` | Query: `store_id` (int), Body: `StoreBase` | Sentinel-filtered updates |
-| `GET` | `/store/get_all_stores` | Query: `page`, `page_size` | 404 if page empty |
-| `GET` | `/store/get_store_by_id` | Query: `store_id` (int) | |
+## Inventory Endpoints (prefix: `/inventory`)
 
 ### Item Category CRUD
 | Method | Path | Params | Notes |
 |--------|------|--------|-------|
-| `POST` | `/store/create_category_for_store_items` | Body: `ItemCategoryBase` | Duplicate = `name + store_id` (409). Validates store exists. |
-| `PATCH` | `/store/update_category_for_store_items` | Query: `item_category_id` (int), Body: `ItemCategoryBase` | |
-| `GET` | `/store/get_all_categories` | Query: `page`, `page_size`, `store_id` | Filtered by store_id |
-| `GET` | `/store/get_category_by_id` | Query: `item_category_id`, `store_id` | Scoped to store |
+| `POST` | `/inventory/create_category` | Body: `ItemCategoryBase` — `name`, `description` | Duplicate = `name` (409) |
+| `PATCH` | `/inventory/update_category/{category_id}` | Path: `category_id` (int), Body: `ItemCategoryUpdate` — optional `name`, `description` | |
+| `GET` | `/inventory/get_category/{category_id}` | Path: `category_id` (int) | |
+| `GET` | `/inventory/get_all_categories` | Query: `page`, `page_size` | |
 
-### Store Items CRUD
+### Inventory Item CRUD
 | Method | Path | Params | Notes |
 |--------|------|--------|-------|
-| `POST` | `/store/create_store_items` | Body: `StoreItemsBase` | Duplicate = `name + store_id + category_id` (409). Validates store and category exist and are linked. |
-| `PATCH` | `/store/update_store_items_details` | Query: `item_id` (int), Body: `StoreItemsBase` | |
-| `GET` | `/store/get_store_items` | Query: `page`, `page_size`, `category_id`, `store_id` | |
-| `GET` | `/store/get_store_item_by_id` | Query: `item_id` (int) | |
-
----
-
-## Team Endpoints (prefix: `/admin`)
-
-### `POST /admin/create_team`
-- **Body**: `TeamBase` — `name`, `description`, `team_lead_id` (int, Employee.id PK)
-- **Validation**: Team lead must be active employee. A team lead cannot lead multiple teams (409).
-- **Side effects**: Creates `Teams_to_employee` link for the lead. Sets lead's `designation = "Team Lead"`.
-
-### `GET /admin/get_team_by_id`
-- **Query param**: `team_id` (int)
-
-### `PATCH /admin/edit_team`
-- **Query param**: `team_id` (int), **Body**: `TeamBase`
-- **On lead change**: Validates new lead isn't leading another team. Swaps `Teams_to_employee` link. Old lead's designation reverts to `"Employee"`, new lead set to `"Team Lead"`.
-
-### `DELETE /admin/delete_team`
-- **Query param**: `team_id` (int)
-- **Cascade**: Deletes all `Teams_to_employee` links. Resets lead's designation to `"Employee"`. Deletes team.
+| `POST` | `/inventory/create_item` | Body: `InventoryItemBase` — `name`, `description`, `quantity`, `category_id` | Duplicate = `name + category_id` (409). Validates category exists. |
+| `PATCH` | `/inventory/update_item/{item_id}` | Path: `item_id` (int), Body: `InventoryItemUpdate` — optional `name`, `description`, `quantity`, `category_id` | |
+| `GET` | `/inventory/get_item/{item_id}` | Path: `item_id` (int) | |
+| `GET` | `/inventory/get_all_items` | Query: `page`, `page_size`, `category_id` (optional filter) | |
 
 ---
 
@@ -179,7 +151,7 @@ All paginated endpoints return:
 ```json
 { "page", "page_size", "total_count", "total_pages", "<items_key>": [...] }
 ```
-The items key varies: `"employees"`, `"records"`, `"stores"`, `"categories"`, `"items"`.
+The items key varies: `"employees"`, `"records"`, `"categories"`, `"items"`.
 
 ### Sentinel Validation
 All `*_db.py` modules check for Swagger UI default value `"string"` as a sentinel for "not provided". Numeric sentinels are `0`. Date sentinel is `date.today()`. This is intentional, not a bug.
@@ -189,7 +161,7 @@ Routes are split across routers by auth requirement:
 - **`admin_public_router`** (`/admin`): `register_admin`, `login` — no auth
 - **`admin_router`** (`/admin`): all other admin routes — protected via `Depends(auth.get_current_user)`
 - **`finance_router`** (`/finance`): all routes — protected via router-level dependency
-- **`store_router`** (`/store`): all routes — protected via router-level dependency
+- **`inventory_router`** (`/inventory`): all routes — protected via router-level dependency
 
 ### Auto-Auth Middleware
 Defined in `main.py`. For every request except `POST /admin/login` and `POST /admin/register_admin`, looks up `jwt_tokens` by client IP. If found and valid, injects `Authorization: Bearer <token>` header. Returns `None` for expired/invalid tokens (no injection).

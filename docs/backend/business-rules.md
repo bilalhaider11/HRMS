@@ -72,41 +72,20 @@ This pattern is intentional and used consistently across all CRUD operations.
 ### Auto-Assignment
 - `added_by` field auto-set to the single admin's ID on create and edit
 
-## Store / Inventory
+## Inventory
 
 ### Hierarchy
-Store -> ItemCategory -> StoreItems. Each level is scoped to its parent.
+ItemCategory -> InventoryItem. Categories are top-level; items belong to a category.
 
 ### Uniqueness
-- Store: `unique_identifier` must be unique
-- ItemCategory: `name + store_id` must be unique
-- StoreItems: `name + store_id + category_id` must be unique
+- ItemCategory: `name` must be unique
+- InventoryItem: `name + category_id` must be unique
 
 ### Validation
-- Store item creation validates both the store AND the category exist, and that the category belongs to that store
-- Empty paginated results return 404 (stores, categories, items)
-
-## Teams
-
-### Team Lead Constraints
-- Team lead must be an active employee (`status == True`)
-- A team lead **cannot lead multiple teams** (409 on conflict)
-
-### Side Effects on Create
-1. Creates `Teams_to_employee` link for the team lead
-2. Sets lead's `designation = "Team Lead"`
-
-### Side Effects on Lead Change (Edit)
-1. Validates new lead isn't leading another team
-2. Deletes old `Teams_to_employee` link for the previous lead
-3. Creates new `Teams_to_employee` link for the new lead
-4. Old lead's `designation` reverts to `"Employee"`
-5. New lead's `designation` set to `"Team Lead"`
-
-### Side Effects on Delete
-1. Deletes ALL `Teams_to_employee` links for the team
-2. Resets team lead's `designation` to `"Employee"`
-3. Deletes the team record
+- Item creation validates that the category exists
+- Empty paginated results return 404 (categories, items)
+- `quantity` must be >= 1 on create, >= 0 on update; negative values are blocked
+- `name` is validated against empty string and `"string"` sentinel on both create and update
 
 ## Database Seeding
 

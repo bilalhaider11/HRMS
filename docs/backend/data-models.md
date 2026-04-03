@@ -13,7 +13,7 @@ All models use SQLModel (SQLAlchemy + Pydantic). Each entity has a `*Base` class
 | `address` | str | min_length=1 |
 | `phone` | str | min_length=1 |
 | `email` | str | min_length=1 |
-| `password` | str | min_length=1, stored plaintext |
+| `password` | str | min_length=1, bcrypt-hashed |
 
 Single-row constraint enforced at application level (not DB level).
 
@@ -132,16 +132,6 @@ These IDs are hardcoded in `finance_db.py` summary calculations: `category_id=1`
 | `category_id` | int | FK -> `financecategory.category_id` |
 | `added_by` | int | FK -> `admin.id`, optional, auto-set |
 
-## Store
-**Table**: `store`
-
-| Field | Type | Constraints |
-|-------|------|-------------|
-| `id` | int | PK, auto-increment |
-| `name` | str | min_length=1 |
-| `unique_identifier` | str | min_length=1, unique (app-enforced) |
-| `description` | str | optional |
-
 ## ItemCategory
 **Table**: `item_category`
 
@@ -150,12 +140,11 @@ These IDs are hardcoded in `finance_db.py` summary calculations: `category_id=1`
 | `id` | int | PK, auto-increment |
 | `name` | str | min_length=1 |
 | `description` | str | optional |
-| `store_id` | int | FK -> `store.id` |
 
-Uniqueness: `name + store_id` (app-enforced).
+Uniqueness: `name` (app-enforced).
 
-## StoreItems
-**Table**: `store_items`
+## InventoryItem
+**Table**: `inventory_item`
 
 | Field | Type | Constraints |
 |-------|------|-------------|
@@ -164,27 +153,8 @@ Uniqueness: `name + store_id` (app-enforced).
 | `description` | str | optional |
 | `quantity` | int | required |
 | `category_id` | int | FK -> `item_category.id` |
-| `store_id` | int | FK -> `store.id` |
 
-Uniqueness: `name + store_id + category_id` (app-enforced).
-
-## Team
-**Table**: `team`
-
-| Field | Type | Constraints |
-|-------|------|-------------|
-| `id` | int | PK, auto-increment |
-| `name` | str | min_length=1 |
-| `description` | str | min_length=1 |
-| `team_lead_id` | int | FK -> `employee.id` |
-
-## Teams_to_employee
-**Table**: `teams_to_employee`
-
-| Field | Type | Constraints |
-|-------|------|-------------|
-| `team_id` | int | FK -> `team.id`, composite PK |
-| `employee_id` | int | FK -> `employee.id`, composite PK |
+Uniqueness: `name + category_id` (app-enforced).
 
 ## jwt_tokens
 **Table**: `jwt_tokens`
@@ -203,12 +173,8 @@ Admin 1──M Finance (added_by)
 
 Employee 1──M EmployeeIncrement (employee_id -> employee.id)
 Employee M──M AdditionalRole (via EmployeeAdditionalRoleLink)
-Employee M──M Team (via Teams_to_employee)
-Team M──1 Employee (team_lead_id -> employee.id)
 
-Store 1──M ItemCategory (store_id)
-ItemCategory 1──M StoreItems (category_id)
-Store 1──M StoreItems (store_id)
+ItemCategory 1──M InventoryItem (category_id)
 
 Finance M──1 FinanceCategory (category_id)
 ```

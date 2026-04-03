@@ -11,10 +11,9 @@ index.tsx -> App.tsx -> ThemeProvider -> VerifyContextProvider -> BrowserRouter 
 Two render paths based on auth state:
 
 **Unauthenticated** (`!user && !authCheckLoading`):
-- `/superadmin-login` -> LoginPage
-- `/login` -> LoginPage
-- `/signup` -> SignUp
-- `/` -> redirects to `/login`
+- `/admin/login` -> LoginPage
+- `/admin/register` -> SignUp
+- `/` -> `Navigate to="/admin/login"`
 
 **Authenticated** (`user` is set):
 - Wraps all features in nested context providers
@@ -35,7 +34,7 @@ Global auth state for the application.
 |-------|------|-------------|
 | `user` | `AppUser \| null` | Current logged-in user |
 | `authCheckLoading` | `boolean` | True during initial token verification |
-| `superAdmin` | `boolean` | Derived: `user?.name === "Celestial"` |
+| `superAdmin` | `boolean` | Derived: `user !== null` |
 
 ### Actions
 | Action | Behavior |
@@ -51,21 +50,12 @@ Global auth state for the application.
 
 ## Auth API (`features/auth/api/auth.tsx`)
 
-**Currently a dummy implementation** — no backend connection.
-
-### Hardcoded Users
-| Email | Password | Name | Token prefix | Role |
-|-------|----------|------|-------------|------|
-| `anas@test.com` | `12345` | Anas | `dummy-token-` | Regular user |
-| `celestial@test.com` | `54321` | Celestial | `admin-` | Super admin |
+Wired to the real backend (Phase 1).
 
 ### Functions
-- `login(email, password)` — matches against hardcoded users
-- `signup(name, email, password)` — adds to in-memory array (lost on refresh)
-- `verify(token)` — checks token prefix to determine which user to return
-
-### Commented-Out Real API
-The file contains commented-out axios-based implementations that show the intended backend integration pattern using `/api/login`, `/api/signup`, `/api/verify`.
+- `login(email, password)` — POST `/admin/login` with OAuth2 form data (`username` + `password`). Returns `{ token }`. Token is stored in localStorage.
+- `verify(token)` — GET `/admin/company_profile` with `Authorization: Bearer <token>`. Returns `{ user: { name, email } }`.
+- `signup(companyName, website, address, phone, email, password)` — POST `/admin/register_admin`. Registers a new admin account.
 
 ## ThemeContext (`app/ThemeContext.tsx`)
 

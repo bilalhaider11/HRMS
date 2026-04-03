@@ -1,5 +1,7 @@
 # Frontend: Teams Feature
 
+> **Note:** Team management backend has been dropped in Phase 1. The frontend UI still exists but is not connected to any backend endpoints.
+
 **Location**: `src/features/teams/`
 
 ## Files
@@ -21,8 +23,6 @@
   teamLeadId?: number;
   teamLeadName?: string;
   teamMembers?: EmployeeTableData[];  // Embedded array, not a flat FK
-  companyId?: number;                  // Frontend-only
-  companyName?: string;                // Frontend-only
 }
 ```
 
