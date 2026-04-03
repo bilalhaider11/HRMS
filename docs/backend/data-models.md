@@ -23,7 +23,7 @@ Single-row constraint enforced at application level (not DB level).
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | `id` | int | PK, auto-increment | Internal FK target |
-| `employee_id` | str | unique (app-enforced) | User-facing business ID |
+| `employee_code` | str | unique (app-enforced) | User-facing business code |
 | `name` | str | required | |
 | `bank_name` | str | required | |
 | `bank_account_title` | str | required | |
@@ -55,7 +55,7 @@ Single-row constraint enforced at application level (not DB level).
 
 ### Dual ID Pattern
 - `Employee.id` (int) — used for ALL foreign keys and internal DB operations
-- `Employee.employee_id` (str) — user-facing business identifier, used in API request params
+- `Employee.employee_code` (str) — user-facing business code, used in API request params
 - The increment module's `IncrementCreate`/`IncrementResponse` Pydantic schemas translate between these
 
 ## EmployeeIncrement

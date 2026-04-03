@@ -49,6 +49,7 @@ const IncrementHistoryTable = () => {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -58,15 +59,15 @@ const IncrementHistoryTable = () => {
             >
                 <div className="w-full overflowXAuto">
                     <table className="w-full min-w-[1024px]">
-                        <thead>
-                            <tr className="">
-                                <th className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[40%] text-left pl-5 md:pl-10 lg:pl-[109px]">
+                        <thead className="bg-slate-800/50">
+                            <tr className="border-b border-slate-700">
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[40%]">
                                     Increment Amount
                                 </th>
-                                <th className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[30%] pl-3 pr-10 text-right">
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[30%]">
                                     Increment Date
                                 </th>
-                                <th className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[30%] pl-3 pr-10 text-right">
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[30%]">
                                     Action
                                 </th>
                             </tr>
@@ -76,18 +77,18 @@ const IncrementHistoryTable = () => {
                                 employeeIncreamentList.map((data, index) => (
                                     <tr key={index}>
 
-                                        <td className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-white w-[40%] text-left pl-5 md:pl-10 lg:pl-[109px]">
+                                        <td className="py-4 px-4 text-sm text-slate-200 font-inter w-[40%]">
                                             {data.increamentAmount}
                                         </td>
-                                        <td className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-white w-[30%] pl-3 pr-10 text-right">
+                                        <td className="py-4 px-4 text-sm text-slate-200 font-inter w-[30%]">
                                             {data.increamentDate}
                                         </td>
-                                        <td className="py-0 w-[30%] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-white pl-3 pr-10 text-right">
+                                        <td className="py-4 px-4 text-sm text-slate-200 font-inter w-[30%]">
                                             <div className="flex items-center h-full w-full justify-end gap-4">
-                                                <Button onClick={() => updateModalOpen(data)} buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
+                                                <Button onClick={() => updateModalOpen(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
                                                     Update
                                                 </Button>
-                                                <Button onClick={() => deletingModal(data)} buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
+                                                <Button onClick={() => deletingModal(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
                                                     Delete
                                                 </Button>
                                             </div>
@@ -108,13 +109,13 @@ const IncrementHistoryTable = () => {
                 <DeleteModal ref={deleteModalRef} closeButtonCLick={deleteModalClose}>
                     <h1 className="text-2xl text-center font-urbanist leading-[150%] text-white border-b border-solid border-[#CDD6D7] p-6 mb-8">Delete Increament</h1>
                     <div className="flex flex-col gap-4 px-5 mb-5">
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Increament Id: <span className="font-bold">{isDeleteModal.increamentId}</span>
                         </p>
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Increament Amount: <span className="font-bold">{isDeleteModal.increamentAmount}</span>
                         </p>
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Increament Date: <span className="font-bold">{isDeleteModal.increamentDate}</span>
                         </p>
 

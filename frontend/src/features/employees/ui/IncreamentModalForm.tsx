@@ -4,7 +4,6 @@ import { useFormik } from "formik";
 import ModalsInput from "../../../shared/ModalsInput";
 import Button from "../../../shared/Button";
 import Modal from "../../../shared/Modal";
-import DeleteModal from "../../../shared/DeleteModal";
 import { v4 as uuidv4 } from "uuid";
 
 interface IncrementModalFormProps {

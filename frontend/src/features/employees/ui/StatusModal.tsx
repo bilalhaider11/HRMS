@@ -6,7 +6,7 @@ import Button from "shared/Button";
 interface StatusModalProps {
   closeModal?: () => void,
   statusFromTable?: string,
-  employeeId?: string,
+  employeeCode?: string,
   employeeStatus?: EmployeeTableData
   onStatusUpdate?: (id: string, newStatus: string) => void
 }

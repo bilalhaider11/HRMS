@@ -11,19 +11,18 @@ import { useNavigate } from "react-router-dom";
 import SuccessfullModal from "../../../shared/SuccessfullModal";
 import Select from "../../../shared/Select";
 import selectArrow from "../../../assets/images/selectBoxArrow.svg"
-import { v4 as uuidv4 } from "uuid";
+import { createEmployee, uploadProfilePic } from "../api/employeesApi";
 
 
 
 const formSchema = Yup.object().shape({
     name: Yup.string().required("Name is required"),
-    employeeId: Yup.string().required("ID is required"),
+    employeeCode: Yup.string().required("Employee Code is required"),
     department: Yup.string().required("Department is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
     password: Yup.string().required("Password is required"),
     cnic: Yup.string().required("CNIC is required"),
     designation: Yup.string().required("Designation is required"),
-    team: Yup.string().required("Team is required"),
     hobbies: Yup.string().required("Hobbies are required"),
     vehicleRegistrationNumber: Yup.string().required("Vehicle number is required"),
     dateOfBirth: Yup.string().required("Date of birth is required"),
@@ -45,24 +44,18 @@ const formSchema = Yup.object().shape({
 
 const Form = () => {
     const [file, setFile] = useState<string | null>(null);
+    const [fileObj, setFileObj] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { addEmployee, clearError, idExistError, successfullModal, setSuccessfullModal, setEditingEmployee, editingEmployee, updateEmployee, employeesList } = useEmployees();
+    const { addEmployee, clearError, idExistError, successfullModal, setSuccessfullModal, setEditingEmployee, editingEmployee, updateEmployee } = useEmployees();
+    const [apiError, setApiError] = useState("");
     const navigate = useNavigate();
     const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
     const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false)
-    const [teamDropdownOpen, setTeamDropdownOpen] = useState(false)
     const [bankName, setBankName] = useState(editingEmployee?.bankName || "Select the bank")
     const [departmentName, setDepartmentName] = useState(editingEmployee?.department || "Select the Department")
-    const [teamName, setTeamName] = useState(editingEmployee?.team || "Select the team")
-
-
-    const [generatedEmployeeId] = useState<string>(uuidv4());
-    const [generatedIncreamentId] = useState<string>(uuidv4())
-    console.log(generatedEmployeeId)
 
     const banksOptions = ["Meezan", "UBL", "Allied", "HBL"];
     const departmentsOptions = ["Engineering", "HR", "Marketing", "Office Maintenance"]
-    const teamOptions = ["Frontend team", "Mern Stack team", "PHP / Coldfusion team"]
     const additionalRoles = ["HR", "Team-Lead", "Salary Management", "Operations Management"]
 
     const modalRef = useRef<HTMLDivElement>(null);
@@ -72,9 +65,6 @@ const Form = () => {
     };
     const openDepartmentDropdown = () => {
         setDepartmentsDropdownOpen(!departmentsDropdownOpen);
-    };
-    const openteamsDropdown = () => {
-        setTeamDropdownOpen(!teamDropdownOpen);
     };
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -104,16 +94,10 @@ const Form = () => {
         formik.setFieldValue('department', item)
     }
 
-    const addTeamName = (item: string) => {
-        setTeamName(item)
-        setTeamDropdownOpen(false)
-        formik.setFieldValue('team', item)
-    }
-
-    const labelStyles = "font-urbanist font-semibold text-base md:text-lg lg:text-[21px] lg:leading-[180%] text-white"
-    const inputBorder = "inputMainBorder mt-3.5 w-full rounded-[8px]"
-    const inputStyles = "inputBox text-sm md:text-base leading-normal px-4 py-2.5 lg:py-[21px] lg:px-[29px] rounded-[15px] text-white placeholder-[#747681]"
-    const errorClasses = "text-red-500 text-xs mt-1 absolute -bottom-6"
+    const labelStyles = "block text-sm font-medium text-slate-300 mb-1 font-inter"
+    const inputBorder = "mt-1.5 w-full"
+    const inputStyles = "text-sm leading-normal px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white font-inter placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+    const errorClasses = "text-red-400 text-xs mt-1 absolute -bottom-5 font-inter"
 
     const handleClick = () => {
         if (fileInputRef.current) {
@@ -123,13 +107,14 @@ const Form = () => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
-            const fileUrl = URL.createObjectURL(selectedFile);
-            setFile(fileUrl);
-            formik.setFieldValue('image', fileUrl);
+            setFile(URL.createObjectURL(selectedFile));
+            setFileObj(selectedFile);
         }
     };
 
-    const handleSubmit = (values: any) => {
+    const handleSubmit = async (values: any) => {
+        setApiError("");
+
         if (editingEmployee !== null && updateEmployee) {
             const updatedEmployee = {
                 ...editingEmployee,
@@ -138,42 +123,36 @@ const Form = () => {
             updateEmployee(updatedEmployee);
             formik.resetForm();
         } else {
-            const newEmployee: EmployeeTableData = {
-                id: values.employeeId,
-                name: values.name || '',
-                department: values.department || '',
-                employeeInformation: values.employeeInformation || '',
-                date: values.date as string,
-                fullTimeJoinDate: values.fullTimeJoinDate as string,
-                lastIncreamentDate: values.lastIncreamentDate as string,
-                status: 'Active',
-                email: values.email || '',
-                password: values.password || '',
-                cnic: values.cnic || '',
-                designation: values.designation || '',
-                team: values.team || '',
-                hobbies: values.hobbies || '',
-                vehicleRegistrationNumber: values.vehicleRegistrationNumber || '',
-                dateOfBirth: values.dateOfBirth || '',
-                actualDateOfBirth: values.actualDateOfBirth || '',
-                bankName: values.bankName || '',
-                bankTitle: values.bankTitle || '',
-                bankAccountNumber: values.bankAccountNumber || '',
-                bankIBAN: values.bankIBAN || '',
-                bankBranchCode: values.bankBranchCode || '',
-                initialBaseSalary: values.initialBaseSalary || '',
-                currentBaseSalary: values.currentBaseSalary || '',
-                lastIncreament: values.increamentAmount || '',
-                lastIncreamentId: values.lastIncreamentId,
-                homeAddress: values.homeAddress || '',
-                image: values.image || '',
-                additionalRoles: values.additionalRoles.join(', ') || ''
-            }
-            const added = addEmployee(newEmployee);
-            console.log(added)
-            if (added) {
+            try {
+                // Upload profile pic first if selected
+                let profilePicUrl = null;
+                if (fileObj) {
+                    profilePicUrl = await uploadProfilePic(fileObj);
+                }
+
+                // Call backend API
+                await createEmployee(
+                    { ...values, profilePicUrl },
+                    values.additionalRoles || []
+                );
+
+                // Also add to local state for immediate UI update
+                const newEmployee: EmployeeTableData = {
+                    id: values.employeeCode,
+                    name: values.name || '',
+                    department: values.department || '',
+                    date: values.date as string,
+                    status: 'Active',
+                    email: values.email || '',
+                    designation: values.designation || '',
+                }
+                addEmployee(newEmployee);
                 formik.resetForm();
                 setFile(null);
+                setFileObj(null);
+            } catch (err: any) {
+                const detail = err.response?.data?.detail || "Failed to create employee. Please try again.";
+                setApiError(detail);
             }
         }
     }
@@ -188,26 +167,6 @@ const Form = () => {
         document.body.style.overflow = "auto"
     }
 
-    const [isEditClick, setIsEditClick] = useState(false);
-    const [isEditfullTimeJoin, setIsEditFullTimeJoin] = useState(false)
-    const [isEditDateOfBirth, setIsEditDateOfBirth] = useState(false)
-    const [isEditLastIncreamentDate, setIsEditLastIncreamentDate] = useState(false)
-    const editCurrentBaseSalary = () => {
-        setIsEditClick(!isEditClick)
-    }
-
-    const editfullTimeJoinDate = () => {
-        setIsEditFullTimeJoin(!isEditfullTimeJoin)
-    }
-
-    const editDateOfBirth = () => {
-        setIsEditDateOfBirth(!isEditDateOfBirth)
-    }
-    const editIncreamentDate = () => {
-        setIsEditLastIncreamentDate(!isEditLastIncreamentDate)
-    }
-
-
     const latestIncreament = editingEmployee?.lastIncreament?.reduce((latest, current) => {
         const latestDate = new Date(latest.increamentDate)
         const currentDate = new Date(current.increamentDate)
@@ -218,13 +177,12 @@ const Form = () => {
     const formik = useFormik({
         initialValues: {
             name: editingEmployee?.name || "",
-            employeeId: editingEmployee?.id || generatedEmployeeId,
+            employeeCode: editingEmployee?.id || "",
             department: editingEmployee?.department || "",
             email: editingEmployee?.email || "",
             password: editingEmployee?.password || "",
             cnic: editingEmployee?.cnic || "",
             designation: editingEmployee?.designation || "",
-            team: editingEmployee?.team || "",
             hobbies: editingEmployee?.hobbies || "",
             vehicleRegistrationNumber: editingEmployee?.vehicleRegistrationNumber || "",
             dateOfBirth: editingEmployee?.dateOfBirth || "",
@@ -242,7 +200,7 @@ const Form = () => {
             date: editingEmployee?.date || "",
             fullTimeJoinDate: editingEmployee?.fullTimeJoinDate || "",
             lastIncreamentDate: editingEmployee ? (latestIncreament?.increamentDate) : "",
-            lastIncreamentId: editingEmployee ? (latestIncreament?.increamentId) : generatedIncreamentId,
+            lastIncreamentId: editingEmployee ? (latestIncreament?.increamentId) : "",
             additionalRoles: editingEmployee?.additionalRoles ? editingEmployee.additionalRoles.split(',').map(role => role.trim()) : [],
         },
         validationSchema: formSchema,
@@ -253,7 +211,6 @@ const Form = () => {
         if (editingEmployee) {
             setBankName(editingEmployee.bankName || "Select the bank")
             setDepartmentName(editingEmployee.department || "Select the Department")
-            setTeamName(editingEmployee.team || "Select the Team")
         }
     }, [editingEmployee])
 
@@ -264,40 +221,28 @@ const Form = () => {
 
     return (
         <>
-            <form onSubmit={formik.handleSubmit} noValidate className="mt-6 flex flex-col gap-[38px]">
-                <div>
-                    <p className="font-urbanist font-medium text-base md:text-lg lg:text-[21px] lg:leading-[180%] text-[#FFFFFF99] mb-[38px]">
-                        Image, Video, Audio, or 3D Model. File types supported: JPG, PNG, GIF, SVG, MP4, WEBM, MP3, WAV, OGG, GLB, GLTF. Max size: 100 MB
-                    </p>
+            <form onSubmit={formik.handleSubmit} noValidate className="mt-6 space-y-8">
+
+                {/* Photo Upload — compact inline */}
+                <div className="flex items-center gap-4">
+                    <ImageButton type="button" onClick={handleClick} buttonClasses="flex-shrink-0 w-16 h-16 border border-dashed border-slate-700 hover:border-slate-500 bg-slate-800/50 rounded-full flex items-center justify-center transition-colors overflow-hidden">
+                        {file ? (
+                            <img src={file} alt="Uploaded preview" className="w-full h-full object-cover" />
+                        ) : (
+                            <img src={uploadImg} alt="profile" className="w-8 h-8 opacity-50" />
+                        )}
+                        <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
+                    </ImageButton>
                     <div>
-                        <label className={`${labelStyles}`}>Upload File</label>
-                        <ImageButton type="button" onClick={handleClick} buttonClasses="mt-3.5 border border-dashed border-[#747681] w-full max-w-[484px] min-h-[300px] lg:min-h-[484px] flex items-center justify-center">
-                            {file ? (
-                                <img
-                                    src={file}
-                                    alt="Uploaded preview"
-                                    className="w-[100px] h-[100px] lg:w-[145px] lg:h-[145px] object-cover rounded-full"
-                                />
-                            ) : (
-                                <img
-                                    src={uploadImg}
-                                    alt="profile"
-                                    className="w-[100px] h-[100px] lg:w-[145px] lg:h-[145px] object-cover rounded-full"
-                                />
-                            )}
-
-                            <input
-                                type="file"
-                                accept="image/*"
-                                ref={fileInputRef}
-                                style={{ display: "none" }}
-                                onChange={handleFileChange}
-                            />
-                        </ImageButton>
+                        <p className="text-sm text-white font-inter">Profile Photo</p>
+                        <p className="text-xs text-slate-500 font-inter">JPG, PNG or GIF. Max 10MB</p>
                     </div>
-
                 </div>
-                <div className="grid md:grid-cols-2 gap-3 md:gap-5 lg:gap-[38px]">
+
+                {/* Personal Info */}
+                <div>
+                    <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 font-inter">Personal Information</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="relative">
                         <FormInput id="name"
                             name="name"
@@ -312,20 +257,19 @@ const Form = () => {
                         )}
                     </div>
                     <div className="relative">
-                        <FormInput label="Id"
+                        <FormInput label="Employee Code"
                             type="text"
-                            id="employeeId"
-                            name="employeeId"
-                            value={formik.values.employeeId}
+                            id="employeeCode"
+                            name="employeeCode"
+                            value={formik.values.employeeCode}
                             onChange={(e) => {
                                 formik.handleChange(e);
                                 clearError();
                             }}
-                            readOnly
-                            placeholder="Employee ID" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
-                        {formik.errors.employeeId && formik.touched.employeeId && (
+                            placeholder="e.g. EMP-001" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
+                        {formik.errors.employeeCode && formik.touched.employeeCode && (
                             <p className={`${errorClasses}`}>
-                                {formik.errors.employeeId}
+                                {formik.errors.employeeCode}
                             </p>
                         )}
                         {idExistError && (
@@ -366,12 +310,19 @@ const Form = () => {
                             </p>
                         )}
                     </div>
+                </div>
+                </div>
+
+                {/* Work Details */}
+                <div>
+                    <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 font-inter">Work Details</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="relative" ref={modalRef}>
                         <label className={`${labelStyles}`}>Department</label>
                         <div className={`${inputBorder}`}>
                             <Select
                                 onClick={openDepartmentDropdown}
-                                selectClassName={`${inputStyles} ${departmentName === "Select the Department" ? "!text-[#747681]" : "!text-white"} cursor-pointer w-full justify-between`}
+                                selectClassName={`${inputStyles} ${departmentName === "Select the Department" ? "!text-slate-500" : "!text-slate-100"} cursor-pointer w-full justify-between`}
                                 children={departmentName}
                                 selectArrowClassName={`${departmentsDropdownOpen ? "-rotate-[180deg]" : "rotate-0"
                                     } transition-all`}
@@ -386,7 +337,7 @@ const Form = () => {
                                             <Button
                                                 type="button"
                                                 onClick={() => addDepartmentName(item)}
-                                                buttonClasses="border-b border-solid border-[#FFFFFF21] px-5 py-2.5 text-white text-sm w-full text-left hover:opacity-[0.4] transition-all"
+                                                buttonClasses="border-b border-solid border-slate-700 px-5 py-2.5 text-white text-sm w-full text-left hover:opacity-[0.4] transition-all"
                                             >
                                                 {item}
                                             </Button>
@@ -401,42 +352,6 @@ const Form = () => {
                             </p>
                         )}
                     </div>
-                    <div className="relative" ref={modalRef}>
-                        <label className={`${labelStyles}`}>Team Name</label>
-                        <div className={`${inputBorder}`}>
-                            <Select
-                                onClick={openteamsDropdown}
-                                selectClassName={`${inputStyles} ${teamName === "Select the team" ? "!text-[#747681]" : "!text-white"} cursor-pointer w-full justify-between`}
-                                children={teamName}
-                                selectArrowClassName={`${teamDropdownOpen ? "-rotate-[180deg]" : "rotate-0"
-                                    } transition-all`}
-                                selectArrowPath={selectArrow}
-                            />
-                        </div>
-                        {teamDropdownOpen && (
-                            <div className="bodyBackground absolute top-[110px] md:top-[133px] rounded-[15px] overflow-hidden shadow-xl right-0 w-full z-[9999]">
-                                <ul>
-                                    {teamOptions.map((item, index) => (
-                                        <li key={index} className="w-full">
-                                            <Button
-                                                type="button"
-                                                onClick={() => addTeamName(item)}
-                                                buttonClasses="border-b border-solid border-[#FFFFFF21] px-5 py-2.5 text-white text-sm w-full text-left hover:opacity-[0.4] transition-all"
-                                            >
-                                                {item}
-                                            </Button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                        {formik.errors.team && formik.touched.team && (
-                            <p className={`${errorClasses}`}>
-                                {formik.errors.team}
-                            </p>
-                        )}
-                    </div>
-
                     <div className="relative">
                         <FormInput label="Hobbies" name="hobbies" value={formik.values.hobbies} onChange={formik.handleChange} placeholder="Football" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
                         {formik.errors.hobbies && formik.touched.hobbies && (
@@ -453,8 +368,15 @@ const Form = () => {
                             </p>
                         )}
                     </div>
+                </div>
+                </div>
+
+                {/* Dates */}
+                <div>
+                    <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 font-inter">Dates</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="relative">
-                        <FormInput label="Date of Birth" name="dateOfBirth" type="date" placeholder="mm/dd/yyyy" value={formik.values.dateOfBirth} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.dateOfBirth === "" ? "!text-[#747681]" : "!text-white"}`} />
+                        <FormInput label="Date of Birth" name="dateOfBirth" type="date" placeholder="mm/dd/yyyy" value={formik.values.dateOfBirth} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.dateOfBirth === "" ? "!text-slate-500" : "!text-slate-100"}`} />
                         {formik.errors.dateOfBirth && formik.touched.dateOfBirth && (
                             <p className={`${errorClasses}`}>
                                 {formik.errors.dateOfBirth}
@@ -462,15 +384,7 @@ const Form = () => {
                         )}
                     </div>
                     <div className="relative">
-                        {!isEditDateOfBirth ?
-                            <Button type="button" buttonClasses="absolute right-0 top-2.5 text-white text-sm" onClick={editDateOfBirth}>Edit</Button>
-                            :
-                            <Button type="button" buttonClasses="absolute right-0 top-2.5 text-white text-sm" onClick={editDateOfBirth}>Cancel</Button>
-                        }
-                        {isEditDateOfBirth ?
-                            <FormInput label="Actual Date of Birth" name="actualDateOfBirth" type="date" placeholder="mm/dd/yyyy" value={formik.values.actualDateOfBirth} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.actualDateOfBirth === "" ? "!text-[#747681]" : "!text-white"}`} /> :
-                            <FormInput label="Actual Date of Birth" name="actualDateOfBirth" type="date" placeholder="mm/dd/yyyy" value={formik.values.dateOfBirth} readOnly onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.dateOfBirth === "" ? "!text-[#747681]" : "!text-white"}`} />
-                        }
+                        <FormInput label="Actual Date of Birth" name="actualDateOfBirth" type="date" placeholder="mm/dd/yyyy" value={formik.values.actualDateOfBirth} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.actualDateOfBirth === "" ? "!text-slate-500" : "!text-slate-100"}`} />
                         {formik.errors.actualDateOfBirth && formik.touched.actualDateOfBirth && (
                             <p className={`${errorClasses}`}>
                                 {formik.errors.actualDateOfBirth}
@@ -487,7 +401,7 @@ const Form = () => {
                             onChange={formik.handleChange}
                             labelClassName={labelStyles}
                             inputMainBorder={inputBorder}
-                            inputClassName={`${inputStyles} ${formik.values.date === "" ? "!text-[#747681]" : "!text-white"}`}
+                            inputClassName={`${inputStyles} ${formik.values.date === "" ? "!text-slate-500" : "!text-slate-100"}`}
                         />
 
                         {formik.errors.date && formik.touched.date && (
@@ -497,66 +411,18 @@ const Form = () => {
                         )}
                     </div>
                     <div className="relative">
-                        {!isEditfullTimeJoin ?
-                            <Button type="button" buttonClasses="absolute right-0 top-2.5 text-white text-sm" onClick={editfullTimeJoinDate}>Edit</Button> :
-                            <Button type="button" buttonClasses="absolute right-0 top-2.5 text-white text-sm" onClick={editfullTimeJoinDate}>Cancel</Button>
-                        }
-                        {isEditfullTimeJoin ?
-                            <>
-                                <FormInput label="Full Joining Date" name="fullTimeJoinDate" type="date" placeholder="mm/dd/yyyy" value={formik.values.fullTimeJoinDate} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.fullTimeJoinDate === "" ? "!text-[#747681]" : "!text-white"}`} />
-                                {formik.errors.fullTimeJoinDate && formik.touched.fullTimeJoinDate && (
-                                    <p className={`${errorClasses}`}>
-                                        {formik.errors.fullTimeJoinDate}
-                                    </p>
-                                )}
-                            </> : <>
-                                <FormInput label="Full Joining Date" name="date" type="date" placeholder="mm/dd/yyyy" value={formik.values.date} readOnly onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.date === "" ? "!text-[#747681]" : "!text-white"}`} />
-                                {formik.errors.date && formik.touched.date && (
-                                    <p className={`${errorClasses}`}>
-                                        {formik.errors.fullTimeJoinDate}
-                                    </p>
-                                )}
-                            </>
-                        }
+                        <FormInput label="Full Joining Date" name="fullTimeJoinDate" type="date" placeholder="mm/dd/yyyy" value={formik.values.fullTimeJoinDate} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.fullTimeJoinDate === "" ? "!text-slate-500" : "!text-slate-100"}`} />
                     </div>
                     <div className="relative">
-                        {!isEditLastIncreamentDate ?
-                            <Button type="button" buttonClasses="absolute right-0 top-2.5 text-white text-sm" onClick={editIncreamentDate}>Edit</Button> :
-                            <Button type="button" buttonClasses="absolute right-0 top-2.5 text-white text-sm" onClick={editIncreamentDate}>Cancel</Button>
-                        }
-                        {isEditLastIncreamentDate ?
-                            <>
-                                <FormInput label="Increament Date" name="lastIncreamentDate" type="date" placeholder="mm/dd/yyyy" value={formik.values.lastIncreamentDate} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.lastIncreamentDate === "" ? "!text-[#747681]" : "!text-white"}`} />
-                                {formik.errors.lastIncreamentDate && formik.touched.lastIncreamentDate && (
-                                    <p className={`${errorClasses}`}>
-                                        {formik.errors.lastIncreamentDate}
-                                    </p>
-                                )}
-                            </> : <>
-                                <FormInput label="Increament Date" name="date" type="date" placeholder="mm/dd/yyyy" value={editingEmployee ? latestIncreament?.increamentDate : formik.values.date} readOnly onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.date === "" ? "!text-[#747681]" : "!text-white"}`} />
-                                {formik.errors.date && formik.touched.date && (
-                                    <p className={`${errorClasses}`}>
-                                        {formik.errors.date}
-                                    </p>
-                                )}
-                            </>
-                        }
+                        <FormInput label="Last Increment Date" name="lastIncreamentDate" type="date" placeholder="mm/dd/yyyy" value={formik.values.lastIncreamentDate} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles} ${formik.values.lastIncreamentDate === "" ? "!text-slate-500" : "!text-slate-100"}`} />
                     </div>
-                    <div className="relative">
-                        <FormInput label="Increament Id"
-                            type="text"
-                            id="lastIncreamentId"
-                            name="lastIncreamentId"
-                            value={formik.values.lastIncreamentId}
-                            onChange={(e) => {
-                                formik.handleChange(e);
-                                clearError();
-                            }}
-                            readOnly
-                            placeholder="Increament Id" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
+                </div>
+                </div>
 
-                    </div>
-
+                {/* Salary & Banking */}
+                <div>
+                    <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 font-inter">Salary & Banking</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="relative">
                         <FormInput type="number" label="Initial Base Salary" name="initialBaseSalary" value={formik.values.initialBaseSalary} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} placeholder="50000" inputClassName={`${inputStyles}`} />
                         {formik.errors.initialBaseSalary && formik.touched.initialBaseSalary && (
@@ -566,29 +432,12 @@ const Form = () => {
                         )}
                     </div>
                     <div className="relative">
-                        {!isEditClick ?
-                            <Button type="button" buttonClasses="absolute right-0 top-2.5 text-white text-sm" onClick={editCurrentBaseSalary}>Edit</Button>
-                            :
-                            <Button type="button" buttonClasses="absolute right-0 top-2.5 text-white text-sm" onClick={editCurrentBaseSalary}>Cancel</Button>
-                        }
-                        {isEditClick ?
-                            <>
-                                <FormInput type="number" label="Current Base Salary" name="currentBaseSalary" value={formik.values.currentBaseSalary} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} placeholder="50000" inputClassName={`${inputStyles}`} />
-
-
-                                {formik.errors.currentBaseSalary && formik.touched.currentBaseSalary && (
-                                    <p className={`${errorClasses}`}>
-                                        {formik.errors.currentBaseSalary}
-                                    </p>
-                                )}
-                            </> : <>
-                                <FormInput type="number" label="Current Base Salary" name="currentBaseSalary" value={formik.values.initialBaseSalary} readOnly onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} placeholder="50000" inputClassName={`${inputStyles}`} />
-                                {formik.errors.currentBaseSalary && formik.touched.currentBaseSalary && (
-                                    <p className={`${errorClasses}`}>
-                                        {formik.errors.currentBaseSalary}
-                                    </p>
-                                )}
-                            </>}
+                        <FormInput type="number" label="Current Base Salary" name="currentBaseSalary" value={formik.values.currentBaseSalary} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} placeholder="50000" inputClassName={`${inputStyles}`} />
+                        {formik.errors.currentBaseSalary && formik.touched.currentBaseSalary && (
+                            <p className={`${errorClasses}`}>
+                                {formik.errors.currentBaseSalary}
+                            </p>
+                        )}
                     </div>
                     <div className="relative">
                         <FormInput label="Increment Amount" name="increamentAmount" type="number" value={formik.values.increamentAmount} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
@@ -603,7 +452,7 @@ const Form = () => {
                         <div className={`${inputBorder}`}>
                             <Select
                                 onClick={openBanksDropdown}
-                                selectClassName={`${inputStyles} ${bankName === "Select the bank" ? "!text-[#747681]" : "!text-white"} cursor-pointer w-full justify-between`}
+                                selectClassName={`${inputStyles} ${bankName === "Select the bank" ? "!text-slate-500" : "!text-slate-100"} cursor-pointer w-full justify-between`}
                                 children={bankName}
                                 selectArrowClassName={`${bankDropdownOpen ? "-rotate-[180deg]" : "rotate-0"
                                     } transition-all`}
@@ -618,7 +467,7 @@ const Form = () => {
                                             <Button
                                                 type="button"
                                                 onClick={() => addBankName(item)}
-                                                buttonClasses="border-b border-solid border-[#FFFFFF21] px-5 py-2.5 text-white text-sm w-full text-left hover:opacity-[0.4] transition-all"
+                                                buttonClasses="border-b border-solid border-slate-700 px-5 py-2.5 text-white text-sm w-full text-left hover:opacity-[0.4] transition-all"
                                             >
                                                 {item}
                                             </Button>
@@ -673,28 +522,47 @@ const Form = () => {
                             </p>
                         )}
                     </div>
-                    <div>
-                        <label className={`${labelStyles}`}>
-                            Additional Roles
-                        </label>
-                        <div className="flex gap-4 flex-wrap mt-3.5">
-                            {additionalRoles.map((item, index) => (
-                                <label key={index} className={`containerCheckMarkMarket`}>
-                                    {item}
-                                    <input
-                                        type="checkbox"
-                                        checked={formik.values.additionalRoles.includes(item)}
-                                    />
-                                    <span className="checkmarkMarket"></span>
-                                </label>
-                            ))}
-                        </div>
+                </div>
+                </div>
 
+                {/* Additional Roles */}
+                <div>
+                    <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 font-inter">Additional Roles</h3>
+                    <div className="flex gap-3 flex-wrap">
+                        {additionalRoles.map((item, index) => (
+                            <label key={index} className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg cursor-pointer hover:border-slate-600 transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={formik.values.additionalRoles.includes(item)}
+                                    onChange={() => {
+                                        const current = formik.values.additionalRoles;
+                                        if (current.includes(item)) {
+                                            formik.setFieldValue('additionalRoles', current.filter((r: string) => r !== item));
+                                        } else {
+                                            formik.setFieldValue('additionalRoles', [...current, item]);
+                                        }
+                                    }}
+                                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <span className="text-sm text-slate-300 font-inter">{item}</span>
+                            </label>
+                        ))}
                     </div>
                 </div>
-                <Button type="submit" disabled={editingEmployee ? !formik.dirty : false} buttonClasses={`min-h-10 lg:min-h-[64px] border border-[#CDD6D7] border-solid bg-[#283573] py-3 px-2 lg:py-5 lg:px-[75px] rounded-[15px] flex mx-auto lg:mx-0 mt-4 md:mt-[58px] text-base md:text-lg lg:text-2xl font-semibold lg:leading-[160%] font-urbanist text-white min-w-[200px] lg:min-w-auto w-fit ${editingEmployee && !formik.dirty ? 'opacity-50 !cursor-not-allowed' : 'opacity-1 !cursor-pointer'}`}>
-                    {editingEmployee ? 'Update' : 'Register'}
-                </Button>
+
+                {apiError && (
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                        <p className="text-red-400 text-sm font-inter">{apiError}</p>
+                    </div>
+                )}
+
+                <button
+                    type="submit"
+                    disabled={editingEmployee ? !formik.dirty : formik.isSubmitting}
+                    className={`mt-6 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium font-inter rounded-xl transition-colors`}
+                >
+                    {formik.isSubmitting ? 'Saving...' : editingEmployee ? 'Update Employee' : 'Register Employee'}
+                </button>
             </form>
             {successfullModal &&
                 <SuccessfullModal modalClassName="" modalMain="" successfullOk={successfullyAdded}>

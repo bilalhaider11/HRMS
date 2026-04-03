@@ -11,7 +11,6 @@ export interface EmployeeTableData {
   password?: string;
   cnic?: string;
   designation?: string;
-  team?: string;
   hobbies?: string;
   vehicleRegistrationNumber?: string;
   dateOfBirth?: string;

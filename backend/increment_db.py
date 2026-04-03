@@ -9,7 +9,7 @@ from typing import List, Optional
 # Pydantic Schemas for API
 # ----------------------------
 class IncrementCreate(BaseModel):
-    employee_id: str  # business ID input
+    employee_code: str  # business code input
     increment_amount: float
     effective_date: date
     notes: Optional[str] = ""
@@ -21,7 +21,7 @@ class IncrementUpdate(BaseModel):
 
 class IncrementResponse(BaseModel):
     id: int
-    employee_id: str  # business ID output
+    employee_code: str  # business code output
     increment_amount: float
     effective_date: date
     notes: str
@@ -41,10 +41,10 @@ def get_single_admin_id(session: Session) -> int:
 def create_increment_in_db(new_increment: IncrementCreate, session: Session) -> IncrementResponse:
     # Get employee by business ID
     employee = session.exec(
-        select(Employee).where(Employee.employee_id == new_increment.employee_id, Employee.status == True)
+        select(Employee).where(Employee.employee_code == new_increment.employee_code, Employee.status == True)
     ).first()
     if not employee:
-        raise HTTPException(status_code=404, detail=f"Employee {new_increment.employee_id} not found")
+        raise HTTPException(status_code=404, detail=f"Employee {new_increment.employee_code} not found")
 
     # Check last increment within 30 days
     last_increment = session.exec(
@@ -80,7 +80,7 @@ def create_increment_in_db(new_increment: IncrementCreate, session: Session) -> 
 
     return IncrementResponse(
         id=increment.id,
-        employee_id=employee.employee_id,
+        employee_code=employee.employee_code,
         increment_amount=increment.increment_amount,
         effective_date=increment.effective_date,
         notes=increment.notes
@@ -102,7 +102,7 @@ def get_increment_by_id_in_db(increment_id: int, session: Session) -> IncrementR
 
     return IncrementResponse(
         id=increment.id,
-        employee_id=employee.employee_id,
+        employee_code=employee.employee_code,
         increment_amount=increment.increment_amount,
         effective_date=increment.effective_date,
         notes=increment.notes
@@ -112,7 +112,7 @@ def get_increment_by_id_in_db(increment_id: int, session: Session) -> IncrementR
 # GET All Increments by Employee Business ID
 # ----------------------------
 def get_increments_by_business_id(business_id: str, session: Session) -> List[IncrementResponse]:
-    employee = session.exec(select(Employee).where(Employee.employee_id == business_id)).first()
+    employee = session.exec(select(Employee).where(Employee.employee_code == business_id)).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
@@ -123,7 +123,7 @@ def get_increments_by_business_id(business_id: str, session: Session) -> List[In
     return [
         IncrementResponse(
             id=inc.id,
-            employee_id=employee.employee_id,
+            employee_code=employee.employee_code,
             increment_amount=inc.increment_amount,
             effective_date=inc.effective_date,
             notes=inc.notes
@@ -165,7 +165,7 @@ def update_increment_in_db(increment_id: int, new_increment: IncrementUpdate, se
 
     return IncrementResponse(
         id=increment.id,
-        employee_id=employee.employee_id,
+        employee_code=employee.employee_code,
         increment_amount=increment.increment_amount,
         effective_date=increment.effective_date,
         notes=increment.notes

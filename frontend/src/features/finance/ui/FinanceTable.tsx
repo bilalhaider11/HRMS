@@ -9,8 +9,8 @@ import { useEffect, useRef } from "react"
 
 const FinanceTable = () => {
     const { financeList, isDeleteModal, setIsDeleteModal, handleFinanceDelete } = useFinance()
-    const tableDataClassName = "py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-white w-[10%] pl-3 pr-10 text-right truncate"
-    const tableHeadingClassName = "py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[10%] pl-3 pr-10 text-right"
+    const tableDataClassName = "py-4 px-4 text-sm text-slate-200 font-inter w-[10%] truncate"
+    const tableHeadingClassName = "py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[10%]"
     const navigate = useNavigate()
 
     const handleUpdate = (finance: FinanceTableData) => {
@@ -43,6 +43,7 @@ const FinanceTable = () => {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -52,12 +53,12 @@ const FinanceTable = () => {
             >
                 <div className="w-full overflowXAuto">
                     <table className="w-full min-w-[1992px]">
-                        <thead>
-                            <tr className="">
-                                <th className={`${tableHeadingClassName} !text-left !px-3`}>
+                        <thead className="bg-slate-800/50">
+                            <tr className="border-b border-slate-700">
+                                <th className={`${tableHeadingClassName}`}>
                                     Date
                                 </th>
-                                <th className={`${tableHeadingClassName} !w-[20%]`}>
+                                <th className={`${tableHeadingClassName} w-[20%]`}>
                                     Description
                                 </th>
                                 <th className={`${tableHeadingClassName}`}>
@@ -83,10 +84,10 @@ const FinanceTable = () => {
                         <tbody>
                             {financeList.map((data: FinanceTableData, index: number) => (
                                 <tr key={index}>
-                                    <td className={`${tableDataClassName} !text-left !px-3`}>
+                                    <td className={`${tableDataClassName}`}>
                                         {data.Date}
                                     </td>
-                                    <td className={`${tableDataClassName} !w-[20%]`}>
+                                    <td className={`${tableDataClassName} w-[20%]`}>
                                         <div className="w-full truncate max-w-[340px]">
                                             {data.Description}
                                         </div>
@@ -108,10 +109,10 @@ const FinanceTable = () => {
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         <div className="flex items-center h-full w-full justify-end gap-4">
-                                            <Button type="button" onClick={() => handleUpdate(data)} buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
+                                            <Button type="button" onClick={() => handleUpdate(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
                                                 Update
                                             </Button>
-                                            <Button type="button" onClick={() => handleDeleteFinance(data)} buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
+                                            <Button type="button" onClick={() => handleDeleteFinance(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
                                                 Delete
                                             </Button>
                                         </div>
@@ -126,13 +127,13 @@ const FinanceTable = () => {
                 <DeleteModal ref={deleteModalRef} closeButtonCLick={deleteModalClose}>
                     <h1 className="text-2xl text-center font-urbanist leading-[150%] text-white border-b border-solid border-[#CDD6D7] p-6 mb-8">Delete Finance</h1>
                     <div className="flex flex-col gap-4 px-5 mb-5">
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Employee Id: <span className="font-bold">{isDeleteModal.FinanceId}</span>
                         </p>
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Employee Name: <span className="font-bold">{isDeleteModal.Amount}</span>
                         </p>
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Employee Status: <span className="font-bold">{isDeleteModal.CategoryID}</span>
                         </p>
 

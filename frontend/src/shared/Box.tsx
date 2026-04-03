@@ -9,18 +9,16 @@ interface BoxProps {
 const Box = forwardRef<HTMLDivElement, BoxProps>(
   ({ children, boxMainDivClasses, boxClass }, ref) => {
     return (
-      <>
+      <div
+        ref={ref}
+        className={`w-full h-auto rounded-2xl overflow-hidden ${boxMainDivClasses}`}
+      >
         <div
-          ref={ref}
-          className={`w-full h-auto rounded-[15px] overflow-hidden ${boxMainDivClasses}`}
+          className={`w-full h-full bg-slate-900 border border-slate-800 rounded-2xl ${boxClass}`}
         >
-          <div
-            className={`w-full h-full border-transparent rounded-[15px] blurBackground cardsBorder backdrop-blur-[41px] ${boxClass}`}
-          >
-            {children}
-          </div>
+          {children}
         </div>
-      </>
+      </div>
     );
   }
 );

@@ -12,7 +12,7 @@ export default function FormButton({
   return (
     <button
       {...props}
-      className={` w-full bg-primary-900 h-10 py-2 px-4 rounded-[10px] font-inter font-medium text-sm text-white text-center ${buttonClasses}`}
+      className={`w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 disabled:cursor-not-allowed h-11 py-2 px-4 rounded-xl font-inter font-medium text-sm text-white text-center transition-colors ${buttonClasses}`}
     >
       {children}
     </button>

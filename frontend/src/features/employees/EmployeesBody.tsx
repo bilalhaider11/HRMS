@@ -1,8 +1,7 @@
 import EmployeeTable from "./ui/EmployeeTable"
-import Button from "../../shared/Button"
 import { useNavigate } from "react-router-dom";
-import registerIcon from "../../assets/images/register.svg"
 import { useEmployees } from "./modal/EmployeesContext";
+import { UserPlus } from "lucide-react";
 
 const EmployeesBody = () => {
     const {setEditingEmployee} = useEmployees()
@@ -12,14 +11,15 @@ const EmployeesBody = () => {
         navigate("register-employees")
     }
     return (
-
         <>
-            <Button type="button" onClick={registerEmployee} buttonClasses="bodyBackground w-fit fade-bottom rounded-[15px] p-2.5 md:py-[26px] md:px-2 lg:px-8 flex justify-center items-center font-poppins font-semibold md:text-lg leading-normal gap-[18px] h-11 sm:h-14 md:h-[73px] text-white" >
-                <div className="sm:w-[21px] sm:h-[21px] w-4 h-4">
-                    <img src={registerIcon} alt="date" className="w-full h-full" />
-                </div>
+            <button
+                type="button"
+                onClick={registerEmployee}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium font-inter rounded-xl transition-colors"
+            >
+                <UserPlus className="w-4 h-4" />
                 Register Employee
-            </Button>
+            </button>
             <EmployeeTable />
         </>
     )

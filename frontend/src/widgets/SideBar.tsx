@@ -3,8 +3,6 @@ import employeesIcon from "../assets/images/employeesIcon.svg";
 import dashBoardIcon from "../assets/images/dashboardIcon.svg";
 import departmentsIcon from "../assets/images/departments.svg";
 import swapIcon from "../assets/images/swapIcon.svg";
-import liquidityIcon from "../assets/images/liquidity.svg";
-import companyPolicy from "../assets/images/companyPolicyIcon.svg";
 import financeIcon from "../assets/images/finanaceIcon.svg"
 import registerIcon from "../assets/images/register.svg"
 import settingsIcon from "../assets/images/settingsLogo.svg";
@@ -32,7 +30,7 @@ export default function SideBar(props: SideBarProps) {
   const [activeInventory, setActiveInventory] = useState(false)
   const [activeSettings, setActiveSettings] = useState(false);
   const [activeDepartments, setActiveDepartments] = useState(false);
-  const [activePolicy, setActivePolicy] = useState(false);
+  const [, setActivePolicy] = useState(false);
 
 
   const location = useLocation();

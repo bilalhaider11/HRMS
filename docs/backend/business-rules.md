@@ -20,8 +20,8 @@ This pattern is intentional and used consistently across all CRUD operations.
 ## Employee
 
 ### Registration
-- 16 required fields validated against sentinels (400 on failure): `employee_id`, `name`, `bank_name`, `bank_account_title`, `bank_branch_code`, `bank_account_number`, `bank_iban_number`, `initial_base_salary`, `department`, `team`, `home_address`, `email`, `password`, `designation`, `cnic`, `date_of_birth`
-- `employee_id` (business ID) must be unique (409 on duplicate)
+- 16 required fields validated against sentinels (400 on failure): `employee_code`, `name`, `bank_name`, `bank_account_title`, `bank_branch_code`, `bank_account_number`, `bank_iban_number`, `initial_base_salary`, `department`, `team`, `home_address`, `email`, `password`, `designation`, `cnic`, `date_of_birth`
+- `employee_code` (business code) must be unique (409 on duplicate)
 - **Auto-defaults**: `current_base_salary` set to `initial_base_salary` if 0. `actual_date_of_birth` set to `date_of_birth` if null.
 - **Role creation**: If a `role_name` doesn't exist globally in `additional_roles`, it gets created. Roles with sentinel names are skipped.
 
@@ -52,9 +52,9 @@ This pattern is intentional and used consistently across all CRUD operations.
 - **Delete**: Does NOT reverse the salary change. The employee's `current_base_salary` retains the increment amount even after deletion.
 
 ### ID Translation
-- API accepts `employee_id` as string (business ID) in `IncrementCreate`
+- API accepts `employee_code` as string (business code) in `IncrementCreate`
 - Internally resolves to `Employee.id` (int) for the FK in `EmployeeIncrement`
-- Response returns business ID string in `IncrementResponse.employee_id`
+- Response returns business ID string in `IncrementResponse.employee_code`
 
 ## Finance
 
