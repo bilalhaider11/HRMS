@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import bcrypt
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -19,11 +20,24 @@ ACCESS_TOKEN_EXPIRE_MINUTES = load_env.get_token_expire_minutes()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/admin/login")
 
 
+# --- Password Hashing ---
+def hash_password(plain_password: str) -> str:
+    return bcrypt.hashpw(
+        plain_password.encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
+
+
 # --- Password Verification ---
-def verify_password(plain_password: str, stored_password: str) -> bool:
-    # Simple comparison of provided password with stored password
-    # (In production, use hashing like bcrypt for security)
-    return plain_password == stored_password
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8")
+        )
+    except (ValueError, TypeError):
+        # Stored password is not a valid bcrypt hash (e.g. legacy plaintext)
+        return False
 
 
 # --- JWT Token Creation ---

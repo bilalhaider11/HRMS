@@ -14,7 +14,6 @@ const formSchema = Yup.object().shape({
     description: Yup.string().required("Description is Required"),
     quantity: Yup.number().required("Quantity is required"),
     categoryId: Yup.number().required("Category Id is Required"),
-    storeId: Yup.number().required("Store Id is required")
 });
 
 const ItemForm = () => {
@@ -38,12 +37,10 @@ const ItemForm = () => {
             formik.resetForm();
         } else {
             const newStore: ItemsTableData = {
-                itemId: values.storeId,
                 itemName: values.name,
                 itemDescription: values.description,
-                storeId: values.storeId,
                 categoryId: values.categoryId,
-                itemQuantity: values.quantity       
+                itemQuantity: values.quantity
             }
             const added = addItem(newStore);
             console.log(added)
@@ -58,7 +55,6 @@ const ItemForm = () => {
             itemId: editingItems?.itemId || generatedItemId,
             name: editingItems?.itemName,
             description: editingItems?.itemDescription,
-            storeId: editingItems?.storeId,
             categoryId: editingItems?.categoryId,
             quantity: editingItems?.itemQuantity
         },
@@ -69,7 +65,7 @@ const ItemForm = () => {
     const successfullyAdded = () => {
         setEditingItems(null)
         setSuccessfullModal(false)
-        navigate('/inventory/stores')
+        navigate('/inventory/items')
         window.scrollTo(0, 0);
         document.body.style.overflow = "auto"
     }
@@ -90,7 +86,7 @@ const ItemForm = () => {
                                 clearError();
                             }}
                             readOnly
-                            placeholder="Store ID" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
+                            placeholder="Item ID" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
                       
 
                     </div>
@@ -107,14 +103,6 @@ const ItemForm = () => {
                           {formik.errors.categoryId && formik.touched.categoryId && (
                             <p className={`${errorClasses}`}>
                                 {formik.errors.categoryId}
-                            </p>
-                        )}
-                    </div>
-                      <div className="relative">
-                        <FormInput label="Store Id" name="storeId" type="number" value={formik.values.storeId} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
-                            {formik.errors.storeId && formik.touched.storeId && (
-                            <p className={`${errorClasses}`}>
-                                {formik.errors.storeId}
                             </p>
                         )}
                     </div>
@@ -150,7 +138,7 @@ const ItemForm = () => {
             </form>
             {successfullModal &&
                 <SuccessfullModal modalClassName="" modalMain="" successfullOk={successfullyAdded}>
-                    {editingItems ? 'Successfully Updated your Category.' : 'Successfully Registered your Category.'}
+                    {editingItems ? 'Successfully Updated your Item.' : 'Successfully Registered your Item.'}
                 </SuccessfullModal>
             }
         </>

@@ -42,7 +42,7 @@ export default function AppContent() {
   const handleLogOut = () => {
     localStorage.removeItem("token");
     setUser(null);
-    navigate("/login")
+    navigate("/admin/login")
   }
 
   useEffect(() => {
@@ -74,11 +74,9 @@ export default function AppContent() {
     <>
       {!user && !authCheckLoading && (
         <Routes>
-          <Route path="/superadmin-login" element={<LoginPage />} />
-          <Route path="/login" element={<LoginPage />} />
-
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/" element={<Navigate to={"/login"} />} />
+          <Route path="/admin/login" element={<LoginPage />} />
+          <Route path="/admin/register" element={<SignUp />} />
+          <Route path="*" element={<Navigate to={"/admin/login"} />} />
         </Routes>
       )}{user && (
         <TeamsProvider>

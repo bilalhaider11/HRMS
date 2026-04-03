@@ -71,7 +71,6 @@ const AddTeamForm = () => {
         teamName: values.teamName,
         teamDescription: values.teamDescription,
         teamLeadName: values.teamLeadName,
-        companyName: values.companyName,
         teamMembers: selectedMembers.map((member) => ({
           id: member.id,
           name: member.name,
@@ -116,7 +115,6 @@ const AddTeamForm = () => {
       teamName: editingTeam?.teamName || "",
       teamDescription: editingTeam?.teamDescription || "",
       teamLeadName: editingTeam?.teamLeadName || "",
-      companyName: editingTeam?.companyName || "Celestial Technologies",
       teamMembers:
         editingTeam?.teamMembers || [],
     },
@@ -172,19 +170,6 @@ const AddTeamForm = () => {
             )}
           </div>
 
-          <div className="relative">
-            <FormInput
-              label="Company Name"
-              name="companyName"
-              type="text"
-              readOnly
-              value={editingTeam?.companyName || "Celestials Technology"}
-              onChange={formik.handleChange}
-              labelClassName={`${labelStyles}`}
-              inputMainBorder={`${inputBorder}`}
-              inputClassName={`${inputStyles}`}
-            />
-          </div>
           <div className="relative" ref={modalRef}>
             <label className={`${labelStyles}`}>Select Team Lead</label>
             <div className={`${inputBorder}`}>
