@@ -1,33 +1,30 @@
-import Button from "../../shared/Button"
-import registerIcon from "../../assets/images/register.svg"
 import FinanceTable from "./ui/FinanceTable"
 import { useNavigate } from "react-router-dom"
+import { Plus, List } from "lucide-react"
 
 const FinanceBody = () => {
     const navigate = useNavigate()
 
-    const newFinance = () => {
-        navigate("new-finance")
-    }
-    const allCategoryLists = () => {
-        navigate("category-lists")
-    }
     return (
-        <>
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-                <Button onClick={newFinance} type="button" buttonClasses="bodyBackground w-fit fade-bottom rounded-[15px] p-2.5 md:py-[26px] md:px-2 lg:px-8 flex justify-center items-center font-poppins font-semibold md:text-lg leading-normal gap-[18px] h-11 sm:h-14 md:h-[73px] text-white" >
-                    <div className="sm:w-[21px] sm:h-[21px] w-4 h-4">
-                        <img src={registerIcon} alt="date" className="w-full h-full" />
-                    </div>
-                    Add New Finance
-                </Button>
-                <Button onClick={allCategoryLists} type="button" buttonClasses="bodyBackground w-fit fade-bottom rounded-[15px] p-2.5 md:py-[26px] md:px-2 lg:px-8 flex justify-center items-center font-poppins font-semibold md:text-lg leading-normal gap-[18px] h-11 sm:h-14 md:h-[73px] text-white" >
-                    Category Lists
-
-                </Button>
+        <div>
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-white font-inter">Finance</h1>
+                <p className="text-sm text-slate-400 font-inter mt-1">Track financial transactions, salaries, and expenses</p>
             </div>
+
+            <div className="flex items-center gap-3 mb-6">
+                <button onClick={() => navigate("new-finance")} type="button" className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium font-inter rounded-xl transition-colors">
+                    <Plus className="w-4 h-4" />
+                    New Record
+                </button>
+                <button onClick={() => navigate("category-lists")} type="button" className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium font-inter rounded-xl transition-colors">
+                    <List className="w-4 h-4" />
+                    Categories
+                </button>
+            </div>
+
             <FinanceTable />
-        </>
+        </div>
     )
 }
 

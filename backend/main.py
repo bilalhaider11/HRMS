@@ -143,8 +143,8 @@ def deactivate_employee(employee_code: str, session: Session = Depends(admin_db.
 
 @admin_router.get("/display_all_employees")
 def display_employees(page: int = 1, page_size: int = 10, department: Optional[str] = None,
-                      session: Session = Depends(admin_db.get_session)):
-    return employee_db.display_all_employee_in_db(page, page_size, department, session=session)
+                      search: Optional[str] = None, session: Session = Depends(admin_db.get_session)):
+    return employee_db.display_all_employee_in_db(page, page_size, department, search, session=session)
 
 
 # ------------------ Employee Increment Endpoints ------------------

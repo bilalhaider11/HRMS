@@ -58,6 +58,7 @@ const Form = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { addEmployee, clearError, idExistError, successfullModal, setSuccessfullModal, setEditingEmployee, editingEmployee, updateEmployee } = useEmployees();
     const [apiError, setApiError] = useState("");
+    const [isEditMode] = useState(editingEmployee !== null);
     const navigate = useNavigate();
     const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
     const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false)
@@ -557,7 +558,7 @@ const Form = () => {
             </form>
             {successfullModal &&
                 <SuccessfullModal modalClassName="" modalMain="" successfullOk={successfullyAdded}>
-                    {editingEmployee ? 'Successfully Updated your Employee.' : 'Successfully Registered your Employee.'}
+                    {isEditMode ? 'Successfully Updated your Employee.' : 'Successfully Registered your Employee.'}
                 </SuccessfullModal>
             }
         </>

@@ -1,19 +1,16 @@
-
 import SettingBody from "./SettingBody";
 import { useContext } from "react";
 import { VerifyContext } from "../../app/VerifyContext";
 
 export default function Setting() {
   const { user, superAdmin } = useContext(VerifyContext);
-  console.log(user, "user");
   return (
-    <>
-     <div className="">
-      <h1 className="mt-5 md:mt-[46px] text-2xl md:text-3xl lg:text-[58px] font-semibold font-poppins lg:leading-[140%] text-white mb-7">
-        Settings
-      </h1>
-      <SettingBody superAdmin={superAdmin} name={user?.name} email={user?.email} />
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-white font-inter">Settings</h1>
+        <p className="text-sm text-slate-400 font-inter mt-1">Manage your account and preferences</p>
       </div>
-    </>
+      <SettingBody superAdmin={superAdmin} name={user?.name} email={user?.email} />
+    </div>
   );
 }

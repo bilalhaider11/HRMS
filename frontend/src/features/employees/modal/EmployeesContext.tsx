@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchEmployees } from '../api/employeesApi';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { deactivateEmployee } from '../api/employeesApi';
 
 export interface IncrementHistory {
   increamentId?: string;
@@ -48,6 +48,7 @@ export interface StatusListData {
 
 interface EmployeesContextType {
   employeesList: EmployeeTableData[];
+  setEmployeesList: (list: EmployeeTableData[]) => void;
   addEmployee: (employee: EmployeeTableData) => boolean;
   clearError: () => void;
   idExistError: string;
@@ -100,18 +101,6 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   const [isEmployeeDelete, setIsEmployeeDelete] = useState<EmployeeTableData | null>(null)
   const [isDeleteModal, setIsDeleteModal] = useState<IncrementHistory | null>(null);
 
-  useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        const data = await fetchEmployees(1, 100);
-        setEmployeesList(data.employees);
-      } catch (error) {
-        console.error("Failed to load employees:", error);
-      }
-    };
-
-    loadEmployees();
-  }, []);
 
   const isDuplicateId = (id?: string) => {
     return id ? employeesList.some((employee) => employee.id === id) : false;
@@ -194,10 +183,16 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
     setIsDeleteModal(null)
   }
 
-  const handleEmployeeDelete = (employee: EmployeeTableData) => {
-    const updateEmployeeList = employeesList.filter(e => e.id !== employee.id)
-    setEmployeesList(updateEmployeeList)
-    setIsEmployeeDelete(null)
+  const handleEmployeeDelete = async (employee: EmployeeTableData) => {
+    try {
+      await deactivateEmployee(employee.id || "");
+      // Remove from local list after successful backend call
+      const updateEmployeeList = employeesList.filter(e => e.id !== employee.id);
+      setEmployeesList(updateEmployeeList);
+    } catch (error) {
+      console.error("Failed to deactivate employee:", error);
+    }
+    setIsEmployeeDelete(null);
   }
 
 
@@ -211,7 +206,7 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   const clearError = () => setIdExistError("");
 
   return (
-    <EmployeesContext.Provider value={{ employeesList, addEmployee, idExistError, clearError, successfullModal, setSuccessfullModal, editEmployeeData, editingEmployee, updateEmployee, setEditingEmployee, statusList, updateStatus, addNewIncrement, editIncreamentList, editingIncreamentList, setEditingIncreamentList, employeeIncreamentList, setEmployeeIncreamentList, updateIncrement, handleIncrementDelete, setIsDeleteModal, isDeleteModal, setIsEmployeeDelete, isEmployeeDelete, handleEmployeeDelete }}>
+    <EmployeesContext.Provider value={{ employeesList, setEmployeesList, addEmployee, idExistError, clearError, successfullModal, setSuccessfullModal, editEmployeeData, editingEmployee, updateEmployee, setEditingEmployee, statusList, updateStatus, addNewIncrement, editIncreamentList, editingIncreamentList, setEditingIncreamentList, employeeIncreamentList, setEmployeeIncreamentList, updateIncrement, handleIncrementDelete, setIsDeleteModal, isDeleteModal, setIsEmployeeDelete, isEmployeeDelete, handleEmployeeDelete }}>
       {children}
     </EmployeesContext.Provider>
   );
