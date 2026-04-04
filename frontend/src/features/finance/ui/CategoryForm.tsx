@@ -14,7 +14,7 @@ const formSchema = Yup.object().shape({
 
 });
 const CategoryForm = () => {
-    const { addCategory, clearError, idExistError, successfullModal, setSuccessfullModal, setEditingCategory, editingCategory, updateFinanceCategory, financeCategoriesList } = useFinance();
+    const { addCategory, clearError, successfullModal, setSuccessfullModal, setEditingCategory, editingCategory, updateFinanceCategory } = useFinance();
     const labelStyles = "font-urbanist font-semibold text-base md:text-lg lg:text-[21px] lg:leading-[180%] text-white"
     const inputBorder = "inputMainBorder mt-3.5 w-full rounded-[8px]"
     const inputStyles = "inputBox text-sm md:text-base leading-normal px-4 py-2.5 lg:py-[21px] lg:px-[29px] rounded-[15px] text-white placeholder-[#747681]"

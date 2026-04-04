@@ -2,10 +2,8 @@
 import SettingBody from "./SettingBody";
 import { useContext } from "react";
 import { VerifyContext } from "../../app/VerifyContext";
-interface SettingProps {
-}
 
-export default function Setting({}: SettingProps) {
+export default function Setting() {
   const { user, superAdmin } = useContext(VerifyContext);
   console.log(user, "user");
   return (

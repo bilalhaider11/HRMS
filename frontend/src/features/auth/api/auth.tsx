@@ -33,38 +33,6 @@ export async function login(
   }
 }
 
-export async function signup(
-  companyName: string,
-  website: string,
-  address: string,
-  phone: string,
-  email: string,
-  password: string
-): Promise<ApiResponse> {
-  try {
-    const res = await axios.post("/admin/register_admin", {
-      company_name: companyName,
-      website,
-      address,
-      phone,
-      email,
-      password,
-    });
-
-    return {
-      ok: true,
-      data: { success: true, message: res.data.message },
-    };
-  } catch (error: any) {
-    const message =
-      error.response?.data?.detail || "Network error. Please try again.";
-    return {
-      ok: false,
-      data: { success: false, message },
-    };
-  }
-}
-
 export async function verify(token: string): Promise<ApiResponse> {
   try {
     const res = await axios.get("/admin/company_profile", {

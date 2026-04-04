@@ -87,6 +87,7 @@ const EmployeeTable = () => {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     return (
         <>
@@ -96,49 +97,49 @@ const EmployeeTable = () => {
             >
                 <div className="w-full overflowXAuto">
                     <table className="w-full min-w-[1024px]">
-                        <thead>
-                            <tr className="">
-                                <th className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[40%] text-left pl-5 md:pl-10 lg:pl-[109px]">
+                        <thead className="bg-slate-800/50">
+                            <tr className="border-b border-slate-700">
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[40%] pl-6">
                                     Name
                                 </th>
-                                <th className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[20%] pl-3 pr-10 text-right">
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[20%]">
                                     Status
                                 </th>
-                                <th className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[20%] pl-3 pr-10 text-right">
-                                    Increament
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[20%]">
+                                    Increment
                                 </th>
-                                <th className="py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[20%] pl-3 pr-10 text-right">
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[20%]">
                                     Action
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             {employeesList.map((data: EmployeeTableData, index: number) => (
-                                <tr key={index} className="border-t border-solid border-[#FFFFFF21]"
+                                <tr key={index} className="border-t border-solid border-slate-800"
                                 >
-                                    <td className="py-3 md:py-[19px] pl-10 w-[40%] flex items-center gap-4 md:gap-[29px]">
+                                    <td className="py-4 px-4 w-[40%] flex items-center gap-4 md:gap-[29px]">
                                         <img src={ProfileImage} alt="Profile" className="sm:w-10 sm:h-10 w-[30px] h-[30px]" />
-                                        <button onClick={() => handleNameClick(data)} className="font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap">
+                                        <button onClick={() => handleNameClick(data)} className="text-sm font-inter text-slate-200 whitespace-nowrap">
                                             {data.name}
                                         </button>
                                     </td>
-                                    <td className="w-[20%] py-3 md:py-[19px]  pr-10 text-right">
+                                    <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
                                         <button type="button" onClick={() => statusModalOpen(data)}
-                                            className={`rounded-[15px] ml-auto px-[15px] h-6 md:h-[30px] text-xs md:text-[15px] md:leading-6 font-medium font-inter pt-px flex items-center w-fit ${data.status === "Active"
-                                                ? "text-[#ADDC7B] bg-[#ADDC7B14]"
-                                                : "text-[#FF8663] bg-[#FF866314]"
+                                            className={`rounded-lg px-[15px] h-6 md:h-[30px] text-xs md:text-[15px] md:leading-6 font-medium font-inter pt-px flex items-center w-fit ${data.status === "Active"
+                                                ? "text-emerald-400 bg-emerald-400/10"
+                                                : "text-amber-400 bg-amber-400/10"
                                                 }`}
                                         >
                                             {data.status}
                                         </button>
                                     </td>
-                                    <td className="w-[20%] py-2.5 md:py-3.5  pr-10 text-right">
-                                        <Button onClick={() => handleHistoryClick(data)} buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
+                                    <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
+                                        <Button onClick={() => handleHistoryClick(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
                                             History
                                         </Button>
                                     </td>
-                                    <td className="w-[20%] py-2.5 md:py-3.5  pr-10 text-right">
-                                        <Button onClick={() => deleteEmployee(data)} buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
+                                    <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
+                                        <Button onClick={() => deleteEmployee(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
                                             Delete
                                         </Button>
                                     </td>
@@ -155,13 +156,13 @@ const EmployeeTable = () => {
                 <DeleteModal ref={deleteModalRef} closeButtonCLick={deleteModalClose}>
                     <h1 className="text-2xl text-center font-urbanist leading-[150%] text-white border-b border-solid border-[#CDD6D7] p-6 mb-8">Delete Increament</h1>
                     <div className="flex flex-col gap-4 px-5 mb-5">
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Employee Id: <span className="font-bold">{isEmployeeDelete.id}</span>
                         </p>
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Employee Name: <span className="font-bold">{isEmployeeDelete.name}</span>
                         </p>
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Employee Status: <span className="font-bold">{isEmployeeDelete.status}</span>
                         </p>
 

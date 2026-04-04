@@ -1,4 +1,3 @@
-import { JSX } from "react/jsx-runtime";
 
 export interface Card {
   image: string;

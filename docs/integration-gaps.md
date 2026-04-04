@@ -16,7 +16,7 @@ The frontend and backend are **partially connected** after Phase 1. This doc cat
 
 | Frontend (camelCase) | Backend (snake_case) | Notes |
 |---------------------|---------------------|-------|
-| `id` (string) | `employee_id` (string) | Business ID — same concept, different field name |
+| `id` (string) | `employee_code` (string) | Business code — same concept, different field name |
 | — | `id` (int) | Internal PK, not exposed to frontend |
 | `status` (string: "Active") | `status` (bool: true) | Type mismatch |
 | `bankTitle` | `bank_account_title` | |

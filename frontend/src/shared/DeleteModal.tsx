@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import closeIcon from "../assets/images/closeIcon.svg"
+import { X } from 'lucide-react';
 
 interface DeleteModalProps {
   modalClassName?: string;
@@ -23,26 +23,21 @@ const DeleteModal = React.forwardRef<HTMLDivElement, DeleteModalProps>(({
     return null;
   }
   return ReactDOM.createPortal (
-    <>
     <div
       onClick={onClick}
-      className={`h-screen flex justify-center items-center bg-[#5558948f] px-4 bg-cover z-[999999] absolute top-0 w-full backdrop-blur-[7px] ${modalMain}`}
+      className={`fixed inset-0 flex justify-center items-center bg-black/60 backdrop-blur-sm px-4 z-[999999] ${modalMain}`}
       {...props}
     >
-
-    <div
+      <div
         ref={ref}
-        className={`relative bodyBackground min-w-[300px] w-full max-w-[500px] rounded-[15px] overflow-hidden transition-opacity duration-500 min-h-[200px] ${modalClassName}`}
+        className={`relative bg-slate-900 border border-slate-800 min-w-[300px] w-full max-w-[500px] rounded-2xl overflow-hidden transition-opacity duration-300 min-h-[200px] ${modalClassName}`}
       >
-        <button onClick={closeButtonCLick} type='button' className='absolute top-6 right-6'>
-          <img src={closeIcon} alt='close' />
+        <button onClick={closeButtonCLick} type='button' className='absolute top-4 right-4 p-1 text-slate-400 hover:text-white transition-colors'>
+          <X className="w-5 h-5" />
         </button>
         {children}
       </div>
-
-    </div>
-
-    </>,
+    </div>,
     modalRoot
   );
 });

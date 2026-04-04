@@ -18,7 +18,7 @@ const formSchema = Yup.object().shape({
 
 const ItemForm = () => {
     const navigate = useNavigate()
-    const { addItem, clearError, idExistError, successfullModal, setSuccessfullModal, setEditingItems, editingItems, updateItem, itemsList } = useInventory();
+    const { addItem, clearError, successfullModal, setSuccessfullModal, setEditingItems, editingItems, updateItem } = useInventory();
 
     const labelStyles = "font-urbanist font-semibold text-base md:text-lg lg:text-[21px] lg:leading-[180%] text-white"
     const inputBorder = "inputMainBorder mt-3.5 w-full rounded-[8px]"

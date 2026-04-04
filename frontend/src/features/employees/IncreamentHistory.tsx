@@ -15,11 +15,11 @@ const IncreamentHistory = () => {
     const backPgae = () => {
         navigate(-1)
     }
-    const { employeeId } = useParams()
+    const { employeeCode } = useParams()
     useEffect(() => {
         console.log(employeesList, "Employee")
         if (employeesList.length > 0) {
-            const foundEmployee = employeesList.find((emp) => emp?.id === employeeId);
+            const foundEmployee = employeesList.find((emp) => emp?.id === employeeCode);
             console.log(foundEmployee, "Found")
             setEmployeeIncreamentList(foundEmployee?.lastIncreament || [])
         }
@@ -27,7 +27,8 @@ const IncreamentHistory = () => {
             setEmployeeIncreamentList([]);
         };
 
-    }, [employeesList, employeeId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [employeesList, employeeCode])
 
     const handleAddIncreamentModal = () => {
         setAddIncreamentModalOpen(true)
@@ -43,14 +44,14 @@ const IncreamentHistory = () => {
     return (
         <>
             <ImageButton type="button" onClick={backPgae} buttonClasses="mt-5 w-5 h-5 md:w-7 md:h-7">
-                <img src={backImg} alt="back Image" />
+                <img src={backImg} alt="back" />
             </ImageButton>
             <h2 className="mt-5 md:mt-[46px] text-2xl md:text-3xl lg:text-[58px] font-semibold font-poppins lg:leading-[140%] text-white">
                 Increament History
             </h2>
             <div className="flex justify-between items-center mt-6">
                 <p className="text-base md:text-lg lg:text-[21px] font-medium font-urbanist lg:leading-[180%] text-[#FFFFFF99]">
-                    Employee Id is <span className="font-semibold">{employeeId}</span>
+                    Employee Code is <span className="font-semibold">{employeeCode}</span>
                 </p>
                 <Button onClick={handleAddIncreamentModal} buttonClasses="bodyBackground h-12 px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
                     Add Increament

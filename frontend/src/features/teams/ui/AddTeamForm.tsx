@@ -27,7 +27,6 @@ const AddTeamForm = () => {
   const {
     addTeam,
     clearError,
-    idExistError,
     successfullModal,
     setSuccessfullModal,
     setEditingTeam,

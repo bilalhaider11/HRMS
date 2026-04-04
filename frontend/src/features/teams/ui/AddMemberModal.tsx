@@ -4,8 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const AddMemberModal = () => {
     const modalRef = useRef<HTMLDivElement>(null)
-    const dropdownRef = useRef<HTMLDivElement>(null)
-    const { isOpenMembersModal, setIsOpenMembersModal, handleCloseMemberModal, employeeList, selectedMembers, setSelectedMembers } = useTeams()
+    const { isOpenMembersModal, handleCloseMemberModal, employeeList, selectedMembers, setSelectedMembers } = useTeams()
 
 
     useEffect(() => {

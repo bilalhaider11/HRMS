@@ -21,9 +21,9 @@ def get_session():
 def register_new_employee_in_db(employee, role_list: List[AdditionalRole], session: Session):
     # 1️⃣ Validate required fields
     required_fields = [
-        "employee_id", "name", "bank_name", "bank_account_title",
+        "employee_code", "name", "bank_name", "bank_account_title",
         "bank_branch_code", "bank_account_number", "bank_iban_number",
-        "initial_base_salary", "department", "team", "home_address",
+        "initial_base_salary", "department", "home_address",
         "email", "password", "designation", "cnic", "date_of_birth"
     ]
     employee_data = employee.dict()
@@ -34,7 +34,7 @@ def register_new_employee_in_db(employee, role_list: List[AdditionalRole], sessi
 
     # 2️⃣ Check if employee already exists (business ID)
     existing = session.exec(
-        select(Employee).where(Employee.employee_id == employee.employee_id)
+        select(Employee).where(Employee.employee_code == employee.employee_code)
     ).first()
     if existing:
         raise HTTPException(status_code=409, detail="Employee already exists")
@@ -82,13 +82,13 @@ def register_new_employee_in_db(employee, role_list: List[AdditionalRole], sessi
     session.commit()
     session.refresh(db_employee)
 
-    return {"message": "Employee Added Successfully", "employee": db_employee.employee_id}
+    return {"message": "Employee Added Successfully", "employee": db_employee.employee_code}
 
 
 # --- Update employee details ---
-def update_employee_details_in_db(employee_id: str, employee, session: Session):
+def update_employee_details_in_db(employee_code: str, employee, session: Session):
     db_employee = session.exec(
-        select(Employee).where(Employee.employee_id == employee_id)
+        select(Employee).where(Employee.employee_code == employee_code)
     ).first()
 
     if not db_employee:
@@ -106,16 +106,16 @@ def update_employee_details_in_db(employee_id: str, employee, session: Session):
 
     session.commit()
     session.refresh(db_employee)
-    return {"message": "Employee updated successfully", "employee": db_employee.employee_id}
+    return {"message": "Employee updated successfully", "employee": db_employee.employee_code}
 
 
 # --- Deactivate employee ---
-def deactivate_employee_in_db(employee_id: str, session: Session):
-    if not employee_id or employee_id == "string":
-        raise HTTPException(status_code=400, detail="Enter employee_id")
+def deactivate_employee_in_db(employee_code: str, session: Session):
+    if not employee_code or employee_code == "string":
+        raise HTTPException(status_code=400, detail="Enter employee_code")
 
     db_employee = session.exec(
-        select(Employee).where(Employee.employee_id == employee_id)
+        select(Employee).where(Employee.employee_code == employee_code)
     ).first()
 
     if not db_employee:
@@ -126,13 +126,13 @@ def deactivate_employee_in_db(employee_id: str, session: Session):
     db_employee.status = False
     session.commit()
     session.refresh(db_employee)
-    return {"message": "Employee Deactivated", "employee": db_employee.employee_id}
+    return {"message": "Employee Deactivated", "employee": db_employee.employee_code}
 
 
 # --- Display all employees with optional filters ---
 def display_all_employee_in_db(
     page: int = 1, page_size: int = 10,
-    department: Optional[str] = None, team: Optional[str] = None,
+    department: Optional[str] = None,
     session: Session = None
 ):
     if page < 1:
@@ -144,8 +144,6 @@ def display_all_employee_in_db(
 
     if department:
         query = query.where(Employee.department.ilike(f"%{department}%"))
-    if team:
-        query = query.where(Employee.team.ilike(f"%{team}%"))
 
     total_employees = session.exec(query).all()
     total_count = len(total_employees)
@@ -157,19 +155,19 @@ def display_all_employee_in_db(
         "page_size": page_size,
         "total_count": total_count,
         "total_pages": (total_count + page_size - 1) // page_size,
-        "filters": {"department": department or "All", "team": team or "All"},
+        "filters": {"department": department or "All"},
         "employees": [EmployeeResponse.model_validate(emp) for emp in paginated_employees]
     }
 
 
 # --- Update employee roles ---
-def update_roles_in_db(employee_id: str, role_list: List[AdditionalRole], session: Session):
-    if not employee_id or employee_id == "string":
-        raise HTTPException(status_code=400, detail="Enter employee_id")
+def update_roles_in_db(employee_code: str, role_list: List[AdditionalRole], session: Session):
+    if not employee_code or employee_code == "string":
+        raise HTTPException(status_code=400, detail="Enter employee_code")
 
     # Get employee
     db_employee = session.exec(
-        select(Employee).where(Employee.employee_id == employee_id)
+        select(Employee).where(Employee.employee_code == employee_code)
     ).first()
     if not db_employee:
         raise HTTPException(status_code=404, detail="Employee not found")
@@ -204,4 +202,4 @@ def update_roles_in_db(employee_id: str, role_list: List[AdditionalRole], sessio
     session.commit()
     session.refresh(db_employee)
 
-    return {"message": "Roles updated successfully", "employee": db_employee.employee_id}
+    return {"message": "Roles updated successfully", "employee": db_employee.employee_code}
