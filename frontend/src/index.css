@@ -35,17 +35,15 @@ body {
 }
 
 .linerGradientBackgroundModal {
-  /* background: linear-gradient(176deg, #414593 0%, #00022E 100.23%); */
-  /* background: linear-gradient(165deg, #414593 0%, #00022E 39.23%); */
-  background: linear-gradient(180deg, #414593 -15%, #00022e 21.23%);
+  background: #0f172a;
 }
 
 .buttonColor {
-  background: linear-gradient(179deg, #414593 0% 0%, #00022e 116.23%);
+  background: #4f46e5;
 }
 
 .modalBackground {
-  background: linear-gradient(176.81deg, #414593 0%, #00022e 100.23%);
+  background: #0f172a;
 }
 
 .modalBoxShadow {
@@ -224,9 +222,9 @@ body {
       height: 100%;
       width: 100%;
       background: linear-gradient(to right,
-          #00022e 20%,
-          #1e2c6d 50%,
-          #00022e 80%);
+          #0f172a 20%,
+          #1e293b 50%,
+          #0f172a 80%);
       background-size: 500px 100px;
       animation-name: moving-gradient;
       animation-duration: 1s;
@@ -239,9 +237,9 @@ body {
 
 .sideBarBackgroundLoader {
   background: linear-gradient(to right,
-      #00022e 20%,
-      #1e2c6d 50%,
-      #00022e 80%);
+      #0f172a 20%,
+      #1e293b 50%,
+      #0f172a 80%);
   background-size: 500px 100px;
   animation-name: moving-gradient;
   animation-duration: 1s;
@@ -253,9 +251,9 @@ body {
 .navLoader {
   height: 70px;
   background: linear-gradient(to right,
-      #00022e 20%,
-      #1e2c6d 50%,
-      #00022e 80%);
+      #0f172a 20%,
+      #1e293b 50%,
+      #0f172a 80%);
   background-size: 500px 100px;
   animation-name: moving-gradient;
   animation-duration: 1s;
@@ -267,7 +265,7 @@ body {
 .loader {
   height: 30px;
   width: 100%;
-  background: linear-gradient(to right, #00022e 20%, #1e2c6d 50%, #00022e 80%);
+  background: linear-gradient(to right, #0f172a 20%, #1e293b 50%, #0f172a 80%);
   background-size: 500px 100px;
   animation-name: moving-gradient;
   animation-duration: 1s;
@@ -278,12 +276,12 @@ body {
 }
 
 .departmentLoader {
-  background: #00022e;
+  background: #0f172a;
   border-radius: 30px;
 }
 
 .departmentLoaderChildren {
-  background: linear-gradient(to right, #1e2c6d 20%, #00022e 50%, #1e2c6d 80%);
+  background: linear-gradient(to right, #1e293b 20%, #0f172a 50%, #1e293b 80%);
   background-size: 500px 100px;
   animation-name: moving-gradient;
   animation-duration: 1s;
@@ -296,7 +294,7 @@ body {
 .departmentLoaderChildren2 {
   height: 30px;
   width: 100%;
-  background: linear-gradient(to right, #1e2c6d 20%, #00022e 50%, #1e2c6d 80%);
+  background: linear-gradient(to right, #1e293b 20%, #0f172a 50%, #1e293b 80%);
   background-size: 500px 100px;
   animation-name: moving-gradient;
   animation-duration: 1s;
@@ -311,27 +309,23 @@ body {
 }
 
 .dark .linerGradientBackgroundModal {
-  background: linear-gradient(180deg, #5c5c5c -15%, #000000 21.23%);
+  background: #0f172a;
 }
 
 .dark .buttonColor {
-  background: linear-gradient(180deg, #5c5c5c -28%, #1c1c1c 39.23%);
+  background: #4f46e5;
 }
 
 .sideBarBackground {
-  /* background: linear-gradient(#414593, #00022E); */
-  background: linear-gradient(176.81deg, #414593 0%, #00022e 100.23%);
+  background: #0f172a;
 }
 
 .selectedSideBarOption {
-  background: linear-gradient(90deg,
-      #ff073a -156.38%,
-      rgba(255, 7, 58, 0) 108.84%);
+  background: #4f46e5;
 }
 
 .bodyBackground {
-  /* background: linear-gradient(#414593, #00022E); */
-  background: linear-gradient(176.81deg, #414593 0%, #00022e 100.23%);
+  background: #020617;
 }
 
 .blurBackground {
@@ -652,7 +646,7 @@ select {
 }
 
 .sketch-rect {
-  stroke: #00022e;
+  stroke: #0f172a;
   stroke-width: 10px;
   fill: none;
   stroke-dasharray: 2000;

@@ -77,7 +77,7 @@ Other features: `dashboard` (has `api/` + `ui/` but no context), `auth` (wired t
 
 ### Key Design Decisions
 - **Single admin**: One admin account per organization, no RBAC. Employees are managed by admin only.
-- **Employee dual IDs**: `id` (int, internal PK) vs `employee_id` (string, user-facing business ID). API endpoints accept the business ID string; DB operations resolve to internal ID.
+- **Employee dual IDs**: `id` (int, internal PK) vs `employee_code` (string, user-facing business code like "EMP-001"). API endpoints accept the business code string; DB operations resolve to internal ID.
 - **Pagination**: Page-based (`page`, `page_size`) returning `total_count`, `total_pages`, `items`.
 - **Backend env vars**: `data_base_url`, `secret_key`, `algorithm`, `access_token_expire_minutes` — loaded via Pydantic Settings from `.env` in backend root.
 

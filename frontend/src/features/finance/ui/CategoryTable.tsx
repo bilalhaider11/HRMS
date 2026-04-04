@@ -10,8 +10,8 @@ import itemsSelectArrow from "../../../assets/images/itemsSelectArrow.svg"
 
 const CategoryTable = () => {
     const { financeCategoriesList, isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete } = useFinance()
-    const tableDataClassName = "py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-white w-[17.5%] pl-3 pr-10 text-right truncate"
-    const tableHeadingClassName = "whitespace-nowrap py-3 md:py-[19px] text-base md:text-lg font-inter font-medium leading-normal md:leading-[30px] text-[#FFFFFF7A] w-[17.5%] pl-3 pr-10 text-right"
+    const tableDataClassName = "py-4 px-4 text-sm text-slate-200 font-inter w-[17.5%] truncate"
+    const tableHeadingClassName = "py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[17.5%]"
 
     const navigate = useNavigate()
     const [allTableData, setAllTableData] = useState<FinanceCategoriesData[]>([]);
@@ -35,11 +35,11 @@ const CategoryTable = () => {
         window.scrollTo(0, 0);
         document.body.style.overflow = "hidden"
     }
-    const deleteModalClose = () => {
+    const deleteModalClose = useCallback(() => {
         setIsDeleteCategoryModal(null)
         window.scrollTo(0, 0);
         document.body.style.overflow = "auto"
-    }
+    }, [setIsDeleteCategoryModal])
     const selectItemButton = useCallback(() => {
         setSelectItemsNumber(!selectItemsNumber);
     }, [selectItemsNumber]);
@@ -96,9 +96,9 @@ const CategoryTable = () => {
             >
                 <div className="w-full overflowXAuto">
                     <table className="w-full min-w-[1024px]">
-                        <thead>
-                            <tr className="">
-                                <th className={`${tableHeadingClassName} !w-[30%] !text-left !pl-10 !pr-3`}>
+                        <thead className="bg-slate-800/50">
+                            <tr className="border-b border-slate-700">
+                                <th className={`${tableHeadingClassName} w-[30%]`}>
                                     Category Id
                                 </th>
                                 <th className={`${tableHeadingClassName}`}>
@@ -115,7 +115,7 @@ const CategoryTable = () => {
                         <tbody>
                             {currentTableData.map((data: FinanceCategoriesData, index: number) => (
                                 <tr key={index}>
-                                    <td className={`${tableDataClassName} !w-[30%] !text-left !pl-10 !pr-3`}>
+                                    <td className={`${tableDataClassName} w-[30%]`}>
                                         {data.id}
                                     </td>
 
@@ -127,10 +127,10 @@ const CategoryTable = () => {
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         <div className="flex items-center h-full w-full justify-end gap-4">
-                                            <Button onClick={() => handleCategoryUpdate(data)} type="button" buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
+                                            <Button onClick={() => handleCategoryUpdate(data)} type="button" buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
                                                 Update
                                             </Button>
-                                            <Button onClick={() => handleDeleteCategory(data)} type="button" buttonClasses="bodyBackground px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
+                                            <Button onClick={() => handleDeleteCategory(data)} type="button" buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
                                                 Delete
                                             </Button>
                                         </div>
@@ -141,8 +141,8 @@ const CategoryTable = () => {
                     </table>
                 </div>
                 {allTableData && (
-                    <div className="flex flex-wrap items-center p-4 md:p-6 justify-end border-t border-solid border-[#FFFFFF21] gap-3 md:gap-[79px]">
-                        <p className="text-xs md:text-lg font-medium font-inter text-[#FFFFFF7A] flex gap-3 md:gap-[39px] items-center">
+                    <div className="flex flex-wrap items-center p-4 md:p-6 justify-end border-t border-solid border-slate-800 gap-3 md:gap-[79px]">
+                        <p className="text-xs md:text-lg font-medium font-inter text-slate-400 flex gap-3 md:gap-[39px] items-center">
                             Items per Page
                             <div className="relative" ref={modalRef}>
                                 <Select
@@ -160,7 +160,7 @@ const CategoryTable = () => {
                                         {itemsPerPageOptions.map((item, index) => (
                                             <li
                                                 key={index}
-                                                className="border-b border-solid border-[#FFFFFF21] px-5 py-2.5"
+                                                className="border-b border-solid border-slate-800 px-5 py-2.5"
                                             >
                                                 <Button
                                                     type="button"
@@ -175,7 +175,7 @@ const CategoryTable = () => {
                             </div>
                         </p>
                         <div className="flex items-center gap-5">
-                            <p className="text-xs md:text-lg font-medium font-inter text-[#FFFFFF7A]">
+                            <p className="text-xs md:text-lg font-medium font-inter text-slate-400">
                                 {`${tableFirstPage + 1}-${Math.min(
                                     tableLastPage,
                                     allTableData.length
@@ -197,10 +197,10 @@ const CategoryTable = () => {
                 <DeleteModal ref={deleteModalRef} closeButtonCLick={deleteModalClose}>
                     <h1 className="text-2xl text-center font-urbanist leading-[150%] text-white border-b border-solid border-[#CDD6D7] p-6 mb-8">Delete Finance</h1>
                     <div className="flex flex-col gap-4 px-5 mb-5">
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Category Id: <span className="font-bold">{isDeleteCategoryModal.id}</span>
                         </p>
-                        <p className="text-xl font-poppins text-white">
+                        <p className="text-xl font-poppins text-slate-200">
                             Category Name: <span className="font-bold">{isDeleteCategoryModal.name}</span>
                         </p>
 

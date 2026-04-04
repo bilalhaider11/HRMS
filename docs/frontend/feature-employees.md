@@ -29,7 +29,7 @@
 Combined fields across both definitions:
 ```typescript
 {
-  id?: string;                        // Maps to backend employee_id (business ID)
+  id?: string;                        // Maps to backend employee_code (business code)
   name: string;
   status: string;                     // String ("Active"/"Inactive"), not boolean
   date?: string;                      // date_of_joining

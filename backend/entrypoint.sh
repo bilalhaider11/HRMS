@@ -2,17 +2,17 @@
 set -e
 
 echo "Waiting for database..."
-while ! python -c "
-import socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-try:
-    s.connect(('db', 5432))
-    s.close()
-    exit(0)
-except:
-    exit(1)
+until python -c "
+from sqlmodel import create_engine, text
+import os
+url = os.environ.get('data_base_url', '')
+engine = create_engine(url)
+with engine.connect() as conn:
+    conn.execute(text('SELECT 1'))
+print('connected')
 " 2>/dev/null; do
-    sleep 1
+    echo "  DB not ready, retrying in 2s..."
+    sleep 2
 done
 echo "Database is ready."
 

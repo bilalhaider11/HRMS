@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Dashboard from "../pages/Dashboard";
 import RegisterEmployeesPage from "../pages/RegisterEmployeesPage";
 import Setting from "../pages/Settings";
@@ -40,8 +40,8 @@ export default function UserPage({ superAdmin }: UserPageProps) {
         <Route path="/" element={<Dashboard />} />
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/employees/register-employees" element={<RegisterEmployeesPage />} />
-        <Route path="/employees/update-employees/:employeeId" element={<UpdateEmployeesPage />} />
-        <Route path="/employees/increament-history/:employeeId" element={<IncreamentHistoryPage />} />
+        <Route path="/employees/update-employees/:employeeCode" element={<UpdateEmployeesPage />} />
+        <Route path="/employees/increament-history/:employeeCode" element={<IncreamentHistoryPage />} />
         <Route path="/finance" element={<FinancePage />} />
         <Route path="/finance/new-finance" element={<NewFinancePage />} />
         <Route path="/finance/update-finance/:financeId" element={<UpdateFinancePage />} />

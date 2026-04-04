@@ -32,19 +32,19 @@ Returns the admin's company info. 404 if no admin registered.
 
 ### `POST /admin/create_employee`
 - **Body**: `EmployeeBase` + `List[AdditionalRoleBase]` (two separate params)
-- **Response**: `{ "message": "Employee Added Successfully", "employee": "<employee_id>" }`
+- **Response**: `{ "message": "Employee Added Successfully", "employee": "<employee_code>" }`
 - **Validation**: 16 required fields checked against sentinels (`"string"`, `""`, `None`, `0`, `date.today()`). 409 if `employee_id` (business ID) already exists.
 - **Side effects**: Creates `AdditionalRole` records globally if role_name doesn't exist. Creates `EmployeeAdditionalRoleLink` entries. Sets `current_base_salary = initial_base_salary` if 0. Sets `actual_date_of_birth = date_of_birth` if null.
 
 ### `PATCH /admin/update_employee_details`
-- **Query param**: `employee_id` (string business ID)
+- **Query param**: `employee_code` (string business code)
 - **Body**: `EmployeeBase`
 - **Behavior**: Uses `dict(exclude_unset=True, exclude_defaults=True)` + sentinel filtering. Only non-sentinel values get written. 403 if employee is deactivated.
 
 ### `PATCH /admin/deactivate_employee`
 Soft delete — sets `status = False`. Does NOT delete relationships.
-- **Query param**: `employee_id` (string business ID)
-- **Response**: `{ "message": "Employee Deactivated", "employee": "<employee_id>" }`
+- **Query param**: `employee_code` (string business code)
+- **Response**: `{ "message": "Employee Deactivated", "employee": "<employee_code>" }`
 - 409 if already deactivated.
 
 ### `GET /admin/display_all_employees`
@@ -54,7 +54,7 @@ Soft delete — sets `status = False`. Does NOT delete relationships.
 
 ### `PUT /admin/update_roles`
 Full replace of employee roles — deletes all existing links, then creates new ones.
-- **Query param**: `employee_id` (string business ID)
+- **Query param**: `employee_code` (string business code)
 - **Body**: `List[AdditionalRoleBase]`
 - 403 if employee is deactivated.
 
@@ -62,11 +62,11 @@ Full replace of employee roles — deletes all existing links, then creates new 
 
 ## Increment Endpoints (prefix: `/admin`)
 
-**Important**: API schemas use `employee_id` as a string (business ID). Internally resolved to `Employee.id` (int PK).
+**Important**: API schemas use `employee_code` as a string (business code). Internally resolved to `Employee.id` (int PK).
 
 ### `POST /admin/create_increment`
-- **Body**: `IncrementCreate` — `employee_id` (str), `increment_amount` (float), `effective_date` (date), `notes?` (str)
-- **Response**: `IncrementResponse` — `id` (int), `employee_id` (str), `increment_amount`, `effective_date`, `notes`
+- **Body**: `IncrementCreate` — `employee_code` (str), `increment_amount` (float), `effective_date` (date), `notes?` (str)
+- **Response**: `IncrementResponse` — `id` (int), `employee_code` (str), `increment_amount`, `effective_date`, `notes`
 - **Business rule**: 30-day minimum gap between increments per employee (409 if violated)
 - **Side effects**: Adds `increment_amount` to `Employee.current_base_salary`. Updates `Employee.last_increment_date` and `Employee.increment_amount`.
 

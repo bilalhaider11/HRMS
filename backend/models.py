@@ -74,7 +74,7 @@ class EmployeeIncrement(EmployeeIncrementBase, table=True):
 
 # --- Employee Models ---
 class EmployeeBase(SQLModel):
-    employee_id: str  # Business ID (NOT FK anymore)
+    employee_code: str  # Business code
     name: str
     bank_name: str
     bank_account_title: str
@@ -88,7 +88,6 @@ class EmployeeBase(SQLModel):
     last_increment_date: Optional[date] = None
     increment_amount: float = 0.0
     department: str
-    team: str
     home_address: str
     email: str
     password: str
@@ -98,11 +97,12 @@ class EmployeeBase(SQLModel):
     actual_date_of_birth: Optional[date] = None
     hobbies: Optional[str] = None
     vehicle_registration_number: Optional[str] = None
+    profile_pic_url: Optional[str] = None
 
 
 class EmployeeResponse(SQLModel):
     id: Optional[int] = None
-    employee_id: str
+    employee_code: str
     name: str
     bank_name: str
     bank_account_title: str
@@ -116,7 +116,6 @@ class EmployeeResponse(SQLModel):
     last_increment_date: Optional[date] = None
     increment_amount: float = 0.0
     department: str
-    team: str
     home_address: str
     email: str
     designation: str
@@ -125,6 +124,7 @@ class EmployeeResponse(SQLModel):
     actual_date_of_birth: Optional[date] = None
     hobbies: Optional[str] = None
     vehicle_registration_number: Optional[str] = None
+    profile_pic_url: Optional[str] = None
     status: bool = True
 
 

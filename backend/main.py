@@ -1,15 +1,22 @@
-from fastapi import FastAPI, Depends, HTTPException, APIRouter, Request
+from fastapi import FastAPI, Depends, HTTPException, APIRouter, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta, date
 from typing import Optional, List
 import admin_db, auth, employee_db, increment_db, finance_db, inventory_db
-from models import AdminBase, AdminProfileUpdate, AdminPasswordUpdate, EmployeeBase, AdditionalRoleBase, FinanceBase, FinanceUpdate, ItemCategoryBase, ItemCategoryUpdate, InventoryItemBase, InventoryItemUpdate
+from models import AdminProfileUpdate, AdminPasswordUpdate, EmployeeBase, AdditionalRoleBase, FinanceBase, FinanceUpdate, ItemCategoryBase, ItemCategoryUpdate, InventoryItemBase, InventoryItemUpdate
 from models import Admin
 from increment_db import IncrementUpdate, IncrementCreate, IncrementResponse
+import os, uuid
+
 # Initialize FastAPI app
 app = FastAPI(title="Celestials Management System")
+
+# Serve uploaded files publicly
+os.makedirs("uploads/profile_pics", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ------------------ CORS Middleware ------------------
 app.add_middleware(
@@ -23,17 +30,22 @@ app.add_middleware(
 # ------------------ Auto-Auth Middleware ------------------
 @app.middleware("http")
 async def auto_auth_middleware(request: Request, call_next):
-    client_ip = request.client.host
     # Skip public endpoints
-    if request.url.path in ("/admin/login", "/admin/register_admin") and request.method == "POST":
+    if request.url.path == "/admin/login" and request.method == "POST":
         return await call_next(request)
 
-    with Session(admin_db.engine) as session:
-        token_record = admin_db.get_client_token_in_db(client_ip, session)
-        if token_record:
-            request.headers.__dict__["_list"].append(
-                (b"authorization", f"Bearer {token_record}".encode())
-            )
+    try:
+        client_ip = request.client.host if request.client else None
+        if client_ip:
+            with Session(admin_db.engine) as session:
+                token_record = admin_db.get_client_token_in_db(client_ip, session)
+                if token_record:
+                    request.headers.__dict__["_list"].append(
+                        (b"authorization", f"Bearer {token_record}".encode())
+                    )
+    except Exception:
+        pass  # Don't let middleware errors block requests
+
     return await call_next(request)
 
 
@@ -51,16 +63,6 @@ inventory_router = APIRouter(prefix="/inventory", dependencies=[Depends(auth.get
 
 # ------------------ Public Admin Endpoints ------------------
 
-# Register admin
-@admin_public_router.post("/register_admin", status_code=201)
-def register_admin(admin: AdminBase, session: Session = Depends(admin_db.get_session)):
-    existing_admin = session.exec(select(admin_db.Admin)).first()
-    if existing_admin:
-        raise HTTPException(status_code=409, detail="Admin already exists")
-    db_admin = admin_db.create_admin_in_db(admin, session)
-    return {"message": "Admin created successfully", "admin_id": db_admin["admin"]}
-
-
 # Admin login
 @admin_public_router.post("/login", status_code=200)
 def admin_login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(admin_db.get_session),
@@ -72,7 +74,7 @@ def admin_login(form_data: OAuth2PasswordRequestForm = Depends(), session: Sessi
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     token = auth.create_access_token(data={"user_id": admin.id}, expires_delta=access_token_expires)
 
-    client_ip = request.client.host
+    client_ip = request.client.host if request and request.client else "unknown"
     admin_db.add_jwt_token_in_db(client_ip, token, session)
 
     return {"access_token": token, "token_type": "bearer"}
@@ -107,6 +109,23 @@ def update_password(passwords: AdminPasswordUpdate, current_user: Admin = Depend
     return admin_db.update_password_in_db(passwords.new_password, current_user, session)
 
 
+# ------------------ File Upload ------------------
+@admin_router.post("/upload_profile_pic")
+def upload_profile_pic(file: UploadFile = File(...)):
+    allowed = {"image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="File type not allowed. Use JPG, PNG, GIF, SVG, or WebP.")
+
+    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = f"uploads/profile_pics/{filename}"
+
+    with open(filepath, "wb") as f:
+        f.write(file.file.read())
+
+    return {"url": f"/uploads/profile_pics/{filename}"}
+
+
 # ------------------ Employee Endpoints ------------------
 @admin_router.post("/create_employee")
 def create_employee(employee: EmployeeBase, lst: List[AdditionalRoleBase],
@@ -114,21 +133,21 @@ def create_employee(employee: EmployeeBase, lst: List[AdditionalRoleBase],
     return employee_db.register_new_employee_in_db(employee, lst, session=session)
 
 @admin_router.patch("/update_employee_details")
-def update_employee(employee_id: str, employee: EmployeeBase, session: Session = Depends(admin_db.get_session)):
-    return employee_db.update_employee_details_in_db(employee_id, employee, session=session)
+def update_employee(employee_code: str, employee: EmployeeBase, session: Session = Depends(admin_db.get_session)):
+    return employee_db.update_employee_details_in_db(employee_code, employee, session=session)
 
 @admin_router.patch("/deactivate_employee")
-def deactivate_employee(employee_id: str, session: Session = Depends(admin_db.get_session)):
-    return employee_db.deactivate_employee_in_db(employee_id, session=session)
+def deactivate_employee(employee_code: str, session: Session = Depends(admin_db.get_session)):
+    return employee_db.deactivate_employee_in_db(employee_code, session=session)
 
 @admin_router.get("/display_all_employees")
-def display_employees(page: int = 1, page_size: int = 10, department: Optional[str] = None, team: Optional[str] = None,
+def display_employees(page: int = 1, page_size: int = 10, department: Optional[str] = None,
                       session: Session = Depends(admin_db.get_session)):
-    return employee_db.display_all_employee_in_db(page, page_size, department, team, session=session)
+    return employee_db.display_all_employee_in_db(page, page_size, department, session=session)
 
 @admin_router.put("/update_roles")
-def update_roles(employee_id: str, lst: List[AdditionalRoleBase], session: Session = Depends(admin_db.get_session)):
-    return employee_db.update_roles_in_db(employee_id, lst, session=session)
+def update_roles(employee_code: str, lst: List[AdditionalRoleBase], session: Session = Depends(admin_db.get_session)):
+    return employee_db.update_roles_in_db(employee_code, lst, session=session)
 
 
 # ------------------ Employee Increment Endpoints ------------------

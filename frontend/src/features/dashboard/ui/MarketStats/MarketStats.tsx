@@ -127,6 +127,7 @@ const MarketStats = () => {
 
         return () => controls.stop();
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cleanedValue, shouldAnimate, index, animatedStatsIndexes]);
 
     return <span>{displayValue.toLocaleString()}</span>;

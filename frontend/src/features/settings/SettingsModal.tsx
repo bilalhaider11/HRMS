@@ -14,12 +14,12 @@ const SettingsModal = ({
   const [checkPreviousPassword, setCheckPreviousPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showSuccessfullModal, setShowSuccessfullModal] = useState(false);
-  const [isPreviousPasswordVerified, setIsPreviousPasswordVerified] =
+  const [, setIsPreviousPasswordVerified] =
     useState(false);
   const [showPreviousPasswordError, setShowPreviousPasswordError] =
     useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showConfirmPasswordError, setShowConfirmPasswordError] =
+  const [showConfirmPasswordError] =
     useState(false);
   const handleVerifyPreviousPassword = () => {
     if (checkPreviousPassword === previousPassword) {

@@ -9,7 +9,7 @@ import downScale from "../../../../assets/images/downScale.svg";
 import sliderCardLeftArrow from "../../../../assets/images/left-card-slider-arrow.svg";
 import sliderCardRightArrow from "../../../../assets/images/right-card-slider-arrow.svg";
 import { fetchCardData } from "../../api/dashboard";
-import type { CardData, Card } from "../../api/dashboard";
+import type { CardData } from "../../api/dashboard";
 import useIntersectionObserver from "../../../../shared/UseIntersectionObserver";
 import ImageButton from "../../../../shared/ImageButton";
 
@@ -160,6 +160,7 @@ const Cards = ({ loader }: CardsProps) => {
 
         return () => controls.stop();
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cleanedValue, shouldAnimate, index, animatedStatsIndexes]);
 
     return <span>{displayValue.toLocaleString()}</span>;
