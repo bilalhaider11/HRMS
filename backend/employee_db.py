@@ -2,10 +2,10 @@
 from datetime import date
 from sqlmodel import Session, select
 from fastapi import HTTPException
-from typing import List, Optional
+from typing import Optional
 import bcrypt
 
-from models import Employee, EmployeeResponse, AdditionalRole, EmployeeAdditionalRoleLink, EmployeeIncrement
+from models import Employee, EmployeeResponse, EmployeeIncrement
 
 # -------------------- Employee DB Utils --------------------
 def get_session():
@@ -18,7 +18,7 @@ def get_session():
 
 
 # --- Register a new employee ---
-def register_new_employee_in_db(employee, role_list: List[AdditionalRole], session: Session):
+def register_new_employee_in_db(employee, session: Session):
     # 1️⃣ Validate required fields
     required_fields = [
         "employee_code", "name", "bank_name", "bank_account_title",
@@ -32,7 +32,7 @@ def register_new_employee_in_db(employee, role_list: List[AdditionalRole], sessi
         if value in ("string", "", None, 0, str(date.today()), date.today()):
             raise HTTPException(status_code=400, detail=f"Enter valid value for {field}")
 
-    # 2️⃣ Check if employee already exists (business ID)
+    # 2️⃣ Check if employee already exists (business code)
     existing = session.exec(
         select(Employee).where(Employee.employee_code == employee.employee_code)
     ).first()
@@ -57,28 +57,6 @@ def register_new_employee_in_db(employee, role_list: List[AdditionalRole], sessi
     ).decode("utf-8")
     db_employee = Employee.model_validate(employee_data)
     session.add(db_employee)
-    session.commit()
-    session.refresh(db_employee)
-
-    # 5️⃣ Add roles safely
-    for role_data in role_list:
-        if role_data.role_name in ("string", "", None):
-            continue
-
-        # Check if role exists globally
-        db_role = session.exec(
-            select(AdditionalRole).where(AdditionalRole.role_name == role_data.role_name)
-        ).first()
-        if not db_role:
-            db_role = AdditionalRole.model_validate(role_data)
-            session.add(db_role)
-            session.commit()
-            session.refresh(db_role)
-
-        # Link employee with role
-        link = EmployeeAdditionalRoleLink(employee_id=db_employee.id, role_id=db_role.id)
-        session.add(link)
-
     session.commit()
     session.refresh(db_employee)
 
@@ -157,47 +135,3 @@ def display_all_employee_in_db(
         "employees": [EmployeeResponse.model_validate(emp) for emp in paginated_employees]
     }
 
-
-# --- Update employee roles ---
-def update_roles_in_db(employee_code: str, role_list: List[AdditionalRole], session: Session):
-    if not employee_code or employee_code == "string":
-        raise HTTPException(status_code=400, detail="Enter employee_code")
-
-    # Get employee
-    db_employee = session.exec(
-        select(Employee).where(Employee.employee_code == employee_code)
-    ).first()
-    if not db_employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    if not db_employee.status:
-        raise HTTPException(status_code=403, detail="Employee is deactivated")
-
-    # Remove existing links only (do NOT delete roles globally)
-    existing_links = session.exec(
-        select(EmployeeAdditionalRoleLink).where(EmployeeAdditionalRoleLink.employee_id == db_employee.id)
-    ).all()
-    for link in existing_links:
-        session.delete(link)
-    session.commit()
-
-    # Add new roles
-    for role_data in role_list:
-        if role_data.role_name in ("string", "", None):
-            continue
-
-        db_role = session.exec(
-            select(AdditionalRole).where(AdditionalRole.role_name == role_data.role_name)
-        ).first()
-        if not db_role:
-            db_role = AdditionalRole.model_validate(role_data)
-            session.add(db_role)
-            session.commit()
-            session.refresh(db_role)
-
-        link = EmployeeAdditionalRoleLink(employee_id=db_employee.id, role_id=db_role.id)
-        session.add(link)
-
-    session.commit()
-    session.refresh(db_employee)
-
-    return {"message": "Roles updated successfully", "employee": db_employee.employee_code}

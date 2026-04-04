@@ -19,10 +19,11 @@ def seed_admin(session: Session):
         phone="0000000000",
         email="admin@hrms.com",
         password=hashed_password,
+        access_key="hrms-default-access-key",
     )
     session.add(admin)
     session.commit()
-    print("Default admin seeded (email: admin@hrms.com, password: admin123).")
+    print("Default admin seeded (email: admin@hrms.com, password: admin123, access_key: hrms-default-access-key).")
 
 
 # --- Seed default finance categories ---

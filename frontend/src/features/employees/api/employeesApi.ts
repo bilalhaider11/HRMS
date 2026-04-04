@@ -1,4 +1,56 @@
 import api from "api/axios";
+import { EmployeeTableData } from "../modal/EmployeesContext";
+
+// Map backend snake_case response to frontend camelCase
+function mapEmployeeResponse(emp: any): EmployeeTableData {
+  return {
+    id: emp.employee_code,
+    name: emp.name,
+    status: emp.status ? "Active" : "Inactive",
+    date: emp.date_of_joining,
+    fullTimeJoinDate: emp.fulltime_joining_date,
+    lastIncreamentDate: emp.last_increment_date,
+    department: emp.department,
+    email: emp.email,
+    cnic: emp.cnic,
+    designation: emp.designation,
+    hobbies: emp.hobbies,
+    vehicleRegistrationNumber: emp.vehicle_registration_number,
+    dateOfBirth: emp.date_of_birth,
+    actualDateOfBirth: emp.actual_date_of_birth,
+    bankName: emp.bank_name,
+    bankTitle: emp.bank_account_title,
+    bankAccountNumber: emp.bank_account_number,
+    bankIBAN: emp.bank_iban_number,
+    bankBranchCode: emp.bank_branch_code,
+    initialBaseSalary: String(emp.initial_base_salary),
+    currentBaseSalary: String(emp.current_base_salary),
+    homeAddress: emp.home_address,
+    badgeNumber: emp.badge_number,
+    image: emp.profile_pic_url,
+  };
+}
+
+export async function fetchEmployees(page = 1, pageSize = 10, department?: string) {
+  const params: Record<string, any> = { page, page_size: pageSize };
+  if (department) params.department = department;
+
+  const res = await api.get("/admin/display_all_employees", { params });
+  return {
+    employees: (res.data.employees || []).map(mapEmployeeResponse),
+    totalCount: res.data.total_count,
+    totalPages: res.data.total_pages,
+    page: res.data.page,
+    pageSize: res.data.page_size,
+  };
+}
+
+export async function deactivateEmployee(employeeCode: string) {
+  const res = await api.patch(`/admin/deactivate_employee?employee_code=${encodeURIComponent(employeeCode)}`);
+  return res.data;
+}
+
+// --- Create/Update helpers ---
 
 function buildEmployeePayload(employeeData: Record<string, any>) {
   return {
@@ -25,18 +77,13 @@ function buildEmployeePayload(employeeData: Record<string, any>) {
     actual_date_of_birth: employeeData.actualDateOfBirth || null,
     hobbies: employeeData.hobbies || null,
     vehicle_registration_number: employeeData.vehicleRegistrationNumber || null,
+    badge_number: employeeData.badgeNumber || null,
     profile_pic_url: employeeData.profilePicUrl || null,
   };
 }
 
-export async function createEmployee(employeeData: Record<string, any>, roles: string[]) {
-  const payload = {
-    employee: buildEmployeePayload(employeeData),
-    lst: roles
-      .filter((r) => r.trim() !== "")
-      .map((r) => ({ role_name: r, role_description: "" })),
-  };
-
+export async function createEmployee(employeeData: Record<string, any>) {
+  const payload = buildEmployeePayload(employeeData);
   const res = await api.post("/admin/create_employee", payload);
   return res.data;
 }
