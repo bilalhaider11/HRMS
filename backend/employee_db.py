@@ -109,6 +109,7 @@ def deactivate_employee_in_db(employee_code: str, session: Session):
 def display_all_employee_in_db(
     page: int = 1, page_size: int = 10,
     department: Optional[str] = None,
+    search: Optional[str] = None,
     session: Session = None
 ):
     if page < 1:
@@ -120,6 +121,13 @@ def display_all_employee_in_db(
 
     if department:
         query = query.where(Employee.department.ilike(f"%{department}%"))
+    if search:
+        query = query.where(
+            (Employee.name.ilike(f"%{search}%")) |
+            (Employee.employee_code.ilike(f"%{search}%")) |
+            (Employee.email.ilike(f"%{search}%")) |
+            (Employee.designation.ilike(f"%{search}%"))
+        )
 
     total_employees = session.exec(query).all()
     total_count = len(total_employees)
@@ -131,7 +139,6 @@ def display_all_employee_in_db(
         "page_size": page_size,
         "total_count": total_count,
         "total_pages": (total_count + page_size - 1) // page_size,
-        "filters": {"department": department or "All"},
         "employees": [EmployeeResponse.model_validate(emp) for emp in paginated_employees]
     }
 

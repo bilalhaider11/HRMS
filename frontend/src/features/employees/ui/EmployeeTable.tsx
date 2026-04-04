@@ -140,7 +140,7 @@ const EmployeeTable = () => {
                                     </td>
                                     <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
                                         <Button onClick={() => deleteEmployee(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
-                                            Delete
+                                            Deactivate
                                         </Button>
                                     </td>
                                 </tr>
@@ -154,25 +154,26 @@ const EmployeeTable = () => {
             }
             {isEmployeeDelete &&
                 <DeleteModal ref={deleteModalRef} closeButtonCLick={deleteModalClose}>
-                    <h1 className="text-2xl text-center font-urbanist leading-[150%] text-white border-b border-solid border-[#CDD6D7] p-6 mb-8">Delete Increament</h1>
-                    <div className="flex flex-col gap-4 px-5 mb-5">
-                        <p className="text-xl font-poppins text-slate-200">
-                            Employee Id: <span className="font-bold">{isEmployeeDelete.id}</span>
+                    <h1 className="text-lg text-center font-inter font-semibold text-white border-b border-slate-800 p-5 mb-6">Deactivate Employee</h1>
+                    <div className="flex flex-col gap-3 px-5 mb-5">
+                        <p className="text-sm font-inter text-slate-300">
+                            Code: <span className="font-semibold text-white">{isEmployeeDelete.id}</span>
                         </p>
-                        <p className="text-xl font-poppins text-slate-200">
-                            Employee Name: <span className="font-bold">{isEmployeeDelete.name}</span>
+                        <p className="text-sm font-inter text-slate-300">
+                            Name: <span className="font-semibold text-white">{isEmployeeDelete.name}</span>
                         </p>
-                        <p className="text-xl font-poppins text-slate-200">
-                            Employee Status: <span className="font-bold">{isEmployeeDelete.status}</span>
+                        <p className="text-sm font-inter text-slate-400 mt-2">
+                            This will deactivate the employee. They will no longer appear in the active employees list.
                         </p>
-
                     </div>
 
-                    <div className="border-t border-solid border-[#CDD6D7] py-6 px-5 flex justify-center">
-
-                        <Button onClick={() => handleEmployeeDelete(isEmployeeDelete)} buttonClasses="flex justify-center mx-auto min-h-[64px] px-11 pb-[15px] pt-4 border border-solid border-[#CDD6D7] bg-[#283573] font-urbanist font-semibold text-xl leading-[160%] rounded-[15px] text-white" type="button">
-                            Confirm Delete
-                        </Button>
+                    <div className="border-t border-slate-800 py-4 px-5 flex justify-end gap-3">
+                        <button onClick={deleteModalClose} className="px-4 py-2 text-sm text-slate-400 hover:text-white font-inter transition-colors" type="button">
+                            Cancel
+                        </button>
+                        <button onClick={() => handleEmployeeDelete(isEmployeeDelete)} className="px-4 py-2 text-sm bg-red-600 hover:bg-red-500 text-white rounded-lg font-inter transition-colors" type="button">
+                            Deactivate
+                        </button>
                     </div>
                 </DeleteModal>
             }
