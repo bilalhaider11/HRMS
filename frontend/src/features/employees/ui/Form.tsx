@@ -11,34 +11,44 @@ import { useNavigate } from "react-router-dom";
 import SuccessfullModal from "../../../shared/SuccessfullModal";
 import Select from "../../../shared/Select";
 import selectArrow from "../../../assets/images/selectBoxArrow.svg"
-import { createEmployee, uploadProfilePic } from "../api/employeesApi";
+import { createEmployee, updateEmployee as updateEmployeeApi, uploadProfilePic } from "../api/employeesApi";
 
 
 
-const formSchema = Yup.object().shape({
-    name: Yup.string().required("Name is required"),
+const createFormSchema = Yup.object().shape({
     employeeCode: Yup.string().required("Employee Code is required"),
-    department: Yup.string().required("Department is required"),
+    name: Yup.string().required("Name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
     password: Yup.string().required("Password is required"),
     cnic: Yup.string().required("CNIC is required"),
     designation: Yup.string().required("Designation is required"),
-    hobbies: Yup.string().required("Hobbies are required"),
-    vehicleRegistrationNumber: Yup.string().required("Vehicle number is required"),
+    department: Yup.string().required("Department is required"),
     dateOfBirth: Yup.string().required("Date of birth is required"),
-    actualDateOfBirth: Yup.string().required("Actual DOB is required"),
+    date: Yup.string().required("Joining date is required"),
+    homeAddress: Yup.string().required("Home address is required"),
     bankName: Yup.string().required("Bank name is required"),
     bankTitle: Yup.string().required("Bank title is required"),
-    bankAccountNumber: Yup.number().required("Account number is required"),
+    bankAccountNumber: Yup.string().required("Account number is required"),
     bankIBAN: Yup.string().required("IBAN is required"),
     bankBranchCode: Yup.string().required("Branch code is required"),
-    initialBaseSalary: Yup.string().required("Salary is required"),
-    currentBaseSalary: Yup.string().required("Current Salary is required"),
-    increamentAmount: Yup.number().required("Increment is required"),
-    lastIncreamentId: Yup.string().required("Increment ID is required"),
-    homeAddress: Yup.string().required("Home address is required"),
-    status: Yup.string().required("Status is required"),
+    initialBaseSalary: Yup.number().required("Initial salary is required").min(1, "Salary must be greater than 0"),
+});
+
+const editFormSchema = Yup.object().shape({
+    employeeCode: Yup.string().required("Employee Code is required"),
+    name: Yup.string().required("Name is required"),
+    cnic: Yup.string().required("CNIC is required"),
+    designation: Yup.string().required("Designation is required"),
+    department: Yup.string().required("Department is required"),
+    dateOfBirth: Yup.string().required("Date of birth is required"),
     date: Yup.string().required("Joining date is required"),
+    homeAddress: Yup.string().required("Home address is required"),
+    bankName: Yup.string().required("Bank name is required"),
+    bankTitle: Yup.string().required("Bank title is required"),
+    bankAccountNumber: Yup.string().required("Account number is required"),
+    bankIBAN: Yup.string().required("IBAN is required"),
+    bankBranchCode: Yup.string().required("Branch code is required"),
+    initialBaseSalary: Yup.number().required("Initial salary is required").min(1, "Salary must be greater than 0"),
 });
 
 
@@ -115,28 +125,37 @@ const Form = () => {
     const handleSubmit = async (values: any) => {
         setApiError("");
 
-        if (editingEmployee !== null && updateEmployee) {
-            const updatedEmployee = {
-                ...editingEmployee,
-                ...values,
-            };
-            updateEmployee(updatedEmployee);
-            formik.resetForm();
-        } else {
-            try {
-                // Upload profile pic first if selected
-                let profilePicUrl = null;
-                if (fileObj) {
-                    profilePicUrl = await uploadProfilePic(fileObj);
-                }
+        try {
+            // Upload profile pic first if selected
+            let profilePicUrl = null;
+            if (fileObj) {
+                profilePicUrl = await uploadProfilePic(fileObj);
+            }
 
-                // Call backend API
+            if (editingEmployee !== null) {
+                // Update existing employee via backend
+                await updateEmployeeApi(
+                    editingEmployee.id || "",
+                    { ...values, profilePicUrl: profilePicUrl || editingEmployee.image }
+                );
+
+                // Update local state for immediate UI update
+                updateEmployee({
+                    ...editingEmployee,
+                    ...values,
+                    id: values.employeeCode,
+                });
+                formik.resetForm();
+                setFile(null);
+                setFileObj(null);
+            } else {
+                // Create new employee via backend
                 await createEmployee(
                     { ...values, profilePicUrl },
                     values.additionalRoles || []
                 );
 
-                // Also add to local state for immediate UI update
+                // Add to local state for immediate UI update
                 const newEmployee: EmployeeTableData = {
                     id: values.employeeCode,
                     name: values.name || '',
@@ -150,13 +169,12 @@ const Form = () => {
                 formik.resetForm();
                 setFile(null);
                 setFileObj(null);
-            } catch (err: any) {
-                const detail = err.response?.data?.detail || "Failed to create employee. Please try again.";
-                setApiError(detail);
             }
+        } catch (err: any) {
+            const detail = err.response?.data?.detail || "Failed to save employee. Please try again.";
+            setApiError(detail);
         }
     }
-    console.log(successfullModal)
 
 
     const successfullyAdded = () => {
@@ -176,17 +194,21 @@ const Form = () => {
 
     const formik = useFormik({
         initialValues: {
-            name: editingEmployee?.name || "",
             employeeCode: editingEmployee?.id || "",
-            department: editingEmployee?.department || "",
+            name: editingEmployee?.name || "",
             email: editingEmployee?.email || "",
-            password: editingEmployee?.password || "",
+            password: "",  // Never pre-fill password on edit
             cnic: editingEmployee?.cnic || "",
             designation: editingEmployee?.designation || "",
+            department: editingEmployee?.department || "",
             hobbies: editingEmployee?.hobbies || "",
             vehicleRegistrationNumber: editingEmployee?.vehicleRegistrationNumber || "",
             dateOfBirth: editingEmployee?.dateOfBirth || "",
             actualDateOfBirth: editingEmployee?.actualDateOfBirth || "",
+            date: editingEmployee?.date || "",
+            fullTimeJoinDate: editingEmployee?.fullTimeJoinDate || "",
+            lastIncreamentDate: editingEmployee ? (latestIncreament?.increamentDate) : "",
+            homeAddress: editingEmployee?.homeAddress || "",
             bankName: editingEmployee?.bankName || "",
             bankTitle: editingEmployee?.bankTitle || "",
             bankAccountNumber: editingEmployee?.bankAccountNumber || "",
@@ -195,15 +217,9 @@ const Form = () => {
             initialBaseSalary: editingEmployee?.initialBaseSalary || "",
             currentBaseSalary: editingEmployee ? (editingEmployee.currentBaseSalary || editingEmployee.initialBaseSalary) : "",
             increamentAmount: editingEmployee ? (latestIncreament?.increamentAmount) : 0,
-            homeAddress: editingEmployee?.homeAddress || "",
-            status: editingEmployee?.status || "Active",
-            date: editingEmployee?.date || "",
-            fullTimeJoinDate: editingEmployee?.fullTimeJoinDate || "",
-            lastIncreamentDate: editingEmployee ? (latestIncreament?.increamentDate) : "",
-            lastIncreamentId: editingEmployee ? (latestIncreament?.increamentId) : "",
             additionalRoles: editingEmployee?.additionalRoles ? editingEmployee.additionalRoles.split(',').map(role => role.trim()) : [],
         },
-        validationSchema: formSchema,
+        validationSchema: editingEmployee ? editFormSchema : createFormSchema,
         onSubmit: handleSubmit,
         enableReinitialize: true,
     });
@@ -216,8 +232,6 @@ const Form = () => {
 
 
 
-    console.log(formik.values.name, "Values")
-    console.log(editingEmployee?.name)
 
     return (
         <>
@@ -278,6 +292,8 @@ const Form = () => {
                             </p>
                         )}
                     </div>
+                    {!editingEmployee && (
+                    <>
                     <div className="relative">
                         <FormInput label="Email" name="email" type="email" value={formik.values.email} onChange={formik.handleChange} placeholder="Email" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
                         {formik.errors.email && formik.touched.email && (
@@ -287,13 +303,15 @@ const Form = () => {
                         )}
                     </div>
                     <div className="relative">
-                        <FormInput label="Password" name="password" type="text" value={formik.values.password} onChange={formik.handleChange} placeholder="Password" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
+                        <FormInput label="Password" name="password" type="password" value={formik.values.password} onChange={formik.handleChange} placeholder="Password" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
                         {formik.errors.password && formik.touched.password && (
                             <p className={`${errorClasses}`}>
                                 {formik.errors.password}
                             </p>
                         )}
                     </div>
+                    </>
+                    )}
                     <div className="relative">
                         <FormInput label="CNIC" name="cnic" value={formik.values.cnic} onChange={formik.handleChange} placeholder="12345-6789012-3" labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} inputClassName={`${inputStyles}`} />
                         {formik.errors.cnic && formik.touched.cnic && (

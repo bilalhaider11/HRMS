@@ -96,12 +96,10 @@ def update_employee_details_in_db(employee_code: str, employee, session: Session
     if not db_employee.status:
         raise HTTPException(status_code=403, detail="Employee is deactivated")
 
-    # Update dynamically excluding unset/default values
-    employee_data = employee.dict(exclude_unset=True, exclude_defaults=True)
-    for key, value in employee_data.items():
-        if value not in ("string", 0, str(date.today()), date.today()):
-            if key == "password":
-                value = bcrypt.hashpw(value.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    # Update only provided fields (email/password not in EmployeeUpdate schema)
+    update_data = employee.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        if value is not None:
             setattr(db_employee, key, value)
 
     session.commit()
