@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchEmploeeTableData } from '../api/employees';
-import { fetchStatusList } from '../api/employees';
+import { fetchEmployees } from '../api/employeesApi';
 
 export interface IncrementHistory {
   increamentId?: string;
@@ -23,6 +22,7 @@ export interface EmployeeTableData {
   designation?: string;
   hobbies?: string;
   vehicleRegistrationNumber?: string;
+  badgeNumber?: string;
   dateOfBirth?: string;
   actualDateOfBirth?: string;
   bankName?: string;
@@ -91,7 +91,7 @@ interface EmployeesProviderProps {
 
 export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }) => {
   const [employeesList, setEmployeesList] = useState<EmployeeTableData[]>([]);
-  const [statusList, setStatusList] = useState<StatusListData[]>([])
+  const [statusList] = useState<StatusListData[]>([])
   const [idExistError, setIdExistError] = useState("")
   const [successfullModal, setSuccessfullModal] = useState<boolean>(false)
   const [editingEmployee, setEditingEmployee] = useState<EmployeeTableData | null>(null);
@@ -103,24 +103,14 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   useEffect(() => {
     const loadEmployees = async () => {
       try {
-        const data = await fetchEmploeeTableData();
-        setEmployeesList(data.employeesList);
+        const data = await fetchEmployees(1, 100);
+        setEmployeesList(data.employees);
       } catch (error) {
-        console.error(error);
+        console.error("Failed to load employees:", error);
       }
     };
 
-    const loadStatus = async () => {
-      try {
-        const data = await fetchStatusList();
-        setStatusList(data.statusList)
-      } catch (error) {
-        console.log(error)
-      }
-    }
     loadEmployees();
-    loadStatus()
-
   }, []);
 
   const isDuplicateId = (id?: string) => {
