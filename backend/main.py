@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta, date
 from typing import Optional, List
 import admin_db, auth, employee_db, increment_db, finance_db, inventory_db
-from models import AdminProfileUpdate, AdminPasswordUpdate, EmployeeBase, AdditionalRoleBase, FinanceBase, FinanceUpdate, ItemCategoryBase, ItemCategoryUpdate, InventoryItemBase, InventoryItemUpdate
+from models import AdminProfileUpdate, AdminPasswordUpdate, EmployeeBase, EmployeeUpdate, AdditionalRoleBase, FinanceBase, FinanceUpdate, ItemCategoryBase, ItemCategoryUpdate, InventoryItemBase, InventoryItemUpdate
 from models import Admin
 from increment_db import IncrementUpdate, IncrementCreate, IncrementResponse
 import os, uuid
@@ -133,7 +133,7 @@ def create_employee(employee: EmployeeBase, lst: List[AdditionalRoleBase],
     return employee_db.register_new_employee_in_db(employee, lst, session=session)
 
 @admin_router.patch("/update_employee_details")
-def update_employee(employee_code: str, employee: EmployeeBase, session: Session = Depends(admin_db.get_session)):
+def update_employee(employee_code: str, employee: EmployeeUpdate, session: Session = Depends(admin_db.get_session)):
     return employee_db.update_employee_details_in_db(employee_code, employee, session=session)
 
 @admin_router.patch("/deactivate_employee")
