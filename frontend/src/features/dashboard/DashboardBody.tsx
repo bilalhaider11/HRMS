@@ -13,14 +13,19 @@ import { useContext } from "react";
 const DashboardBody = () => {
   const { authCheckLoading } = useContext(VerifyContext);
   return (
-    <>
-    <Cards loader={authCheckLoading} />
-    <MarketStats />
-    <Portfolio />
-    <Holdings />
-    <Watchlist />
-    <Transaction />
-    </>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-white font-inter">Dashboard</h1>
+        <p className="text-sm text-slate-400 font-inter mt-1">Overview of your organization at a glance</p>
+      </div>
+
+      <Cards loader={authCheckLoading} />
+      <MarketStats />
+      <Portfolio />
+      <Holdings />
+      <Watchlist />
+      <Transaction />
+    </div>
   );
 };
 

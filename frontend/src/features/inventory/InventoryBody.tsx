@@ -1,24 +1,25 @@
-import Button from "../../shared/Button"
-import categoryIcon from "../../assets/images/departments.svg"
-import itemsIcon from "../../assets/images/itemsIcon.svg"
 import { useNavigate } from "react-router-dom"
+import { FolderOpen, Package } from "lucide-react"
 
 const InventoryBody = () => {
     const navigate = useNavigate()
     return (
-        <div className="flex gap-5">
-            <Button type="button" onClick={() => navigate("categories")} buttonClasses="bodyBackground w-fit fade-bottom rounded-[15px] p-2.5 md:py-[26px] md:px-2 lg:px-8 flex justify-center items-center font-poppins font-semibold md:text-lg leading-normal gap-[18px] h-11 sm:h-14 md:h-[73px] text-white" >
-                <div className="sm:w-[21px] sm:h-[21px] w-4 h-4">
-                    <img src={categoryIcon} alt="icon" className="w-full h-full" />
-                </div>
-                Categories
-             </Button>
-                  <Button type="button" onClick={() => navigate("items")} buttonClasses="bodyBackground w-fit fade-bottom rounded-[15px] p-2.5 md:py-[26px] md:px-2 lg:px-8 flex justify-center items-center font-poppins font-semibold md:text-lg leading-normal gap-[18px] h-11 sm:h-14 md:h-[73px] text-white" >
-                <div className="sm:w-[21px] sm:h-[21px] w-4 h-4">
-                    <img src={itemsIcon} alt="icon" className="w-full h-full" />
-                </div>
-                Items
-            </Button>
+        <div>
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-white font-inter">Inventory</h1>
+                <p className="text-sm text-slate-400 font-inter mt-1">Manage item categories and inventory stock</p>
+            </div>
+
+            <div className="flex items-center gap-3">
+                <button type="button" onClick={() => navigate("categories")} className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium font-inter rounded-xl transition-colors">
+                    <FolderOpen className="w-4 h-4" />
+                    Categories
+                </button>
+                <button type="button" onClick={() => navigate("items")} className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium font-inter rounded-xl transition-colors">
+                    <Package className="w-4 h-4" />
+                    Items
+                </button>
+            </div>
         </div>
     )
 }
