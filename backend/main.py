@@ -4,9 +4,9 @@ from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta, date
-from typing import Optional, List
-import admin_db, auth, employee_db, increment_db, finance_db, inventory_db
-from models import AdminProfileUpdate, AdminPasswordUpdate, EmployeeBase, EmployeeUpdate, AdditionalRoleBase, FinanceBase, FinanceUpdate, ItemCategoryBase, ItemCategoryUpdate, InventoryItemBase, InventoryItemUpdate
+from typing import Optional
+import admin_db, auth, employee_db, increment_db, finance_db, inventory_db, attendance_db
+from models import AdminProfileUpdate, AdminPasswordUpdate, EmployeeBase, EmployeeUpdate, FinanceBase, FinanceUpdate, ItemCategoryBase, ItemCategoryUpdate, InventoryItemBase, InventoryItemUpdate
 from models import Admin
 from increment_db import IncrementUpdate, IncrementCreate, IncrementResponse
 import os, uuid
@@ -32,6 +32,8 @@ app.add_middleware(
 async def auto_auth_middleware(request: Request, call_next):
     # Skip public endpoints
     if request.url.path == "/admin/login" and request.method == "POST":
+        return await call_next(request)
+    if request.url.path.startswith("/attendances/"):
         return await call_next(request)
 
     try:
@@ -128,9 +130,8 @@ def upload_profile_pic(file: UploadFile = File(...)):
 
 # ------------------ Employee Endpoints ------------------
 @admin_router.post("/create_employee")
-def create_employee(employee: EmployeeBase, lst: List[AdditionalRoleBase],
-                    session: Session = Depends(admin_db.get_session)):
-    return employee_db.register_new_employee_in_db(employee, lst, session=session)
+def create_employee(employee: EmployeeBase, session: Session = Depends(admin_db.get_session)):
+    return employee_db.register_new_employee_in_db(employee, session=session)
 
 @admin_router.patch("/update_employee_details")
 def update_employee(employee_code: str, employee: EmployeeUpdate, session: Session = Depends(admin_db.get_session)):
@@ -144,10 +145,6 @@ def deactivate_employee(employee_code: str, session: Session = Depends(admin_db.
 def display_employees(page: int = 1, page_size: int = 10, department: Optional[str] = None,
                       session: Session = Depends(admin_db.get_session)):
     return employee_db.display_all_employee_in_db(page, page_size, department, session=session)
-
-@admin_router.put("/update_roles")
-def update_roles(employee_code: str, lst: List[AdditionalRoleBase], session: Session = Depends(admin_db.get_session)):
-    return employee_db.update_roles_in_db(employee_code, lst, session=session)
 
 
 # ------------------ Employee Increment Endpoints ------------------
@@ -243,8 +240,46 @@ def get_all_items(page: int = 1, page_size: int = 10, category_id: Optional[int]
     return inventory_db.get_all_items_in_db(page, page_size, category_id, session=session)
 
 
+# ------------------ Attendance Endpoints (public, access-key auth) ------------------
+import logging
+attendance_logger = logging.getLogger("attendance")
+attendance_router = APIRouter(prefix="/attendances")
+
+@attendance_router.post("/bulk-raw-attendance")
+def create_bulk_raw_attendance(
+    payload: dict,
+    request: Request,
+    session: Session = Depends(admin_db.get_session),
+):
+    client_ip = request.client.host if request.client else "unknown"
+    attendance_logger.info(f"[ATTENDANCE] Incoming request from {client_ip}")
+
+    access_key = request.headers.get("access-key")
+    if not access_key:
+        attendance_logger.warning(f"[ATTENDANCE] Rejected: missing access-key from {client_ip}")
+        raise HTTPException(status_code=403, detail="access-key header is required")
+
+    if not attendance_db.validate_access_key(access_key, session):
+        attendance_logger.warning(f"[ATTENDANCE] Rejected: invalid access-key from {client_ip}")
+        raise HTTPException(status_code=403, detail="Invalid access-key")
+
+    records = payload.get("createBulkAttendanceRaw", [])
+    if not records:
+        attendance_logger.warning(f"[ATTENDANCE] Rejected: empty records from {client_ip}")
+        raise HTTPException(status_code=400, detail="No attendance records provided")
+
+    attendance_logger.info(f"[ATTENDANCE] Processing batch of {len(records)} records from {client_ip}")
+
+    result = attendance_db.insert_raw_attendances(records, session)
+    result["message"] = f"{result['inserted']} of {result['total']} records inserted successfully"
+
+    attendance_logger.info(f"[ATTENDANCE] Batch complete: {result['inserted']} inserted, {result['duplicates_skipped']} duplicates skipped, {result['failures']} failures (total: {result['total']})")
+    return result
+
+
 # ------------------ Include Routers ------------------
 app.include_router(admin_public_router)
 app.include_router(admin_router)
 app.include_router(finance_router)
 app.include_router(inventory_router)
+app.include_router(attendance_router)

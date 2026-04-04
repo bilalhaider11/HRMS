@@ -12,6 +12,7 @@ class AdminBase(SQLModel):
     phone: str = Field(..., min_length=1)
     email: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
+    access_key: Optional[str] = None
 
 
 class AdminProfileUpdate(SQLModel):
@@ -30,30 +31,6 @@ class AdminPasswordUpdate(SQLModel):
 class Admin(AdminBase, table=True):
     __tablename__ = "admin"
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
-
-
-# --- Additional Roles ---
-class AdditionalRoleBase(SQLModel):
-    role_name: str = Field(..., min_length=1)
-    role_description: Optional[str] = None
-
-
-class AdditionalRole(AdditionalRoleBase, table=True):
-    __tablename__ = "additional_roles"
-    id: Optional[int] = Field(default=None, primary_key=True, index=True)
-    employees: List["EmployeeAdditionalRoleLink"] = Relationship(back_populates="role")
-
-
-# --- Many-to-Many Link Table for Employee-Role ---
-class EmployeeAdditionalRoleLink(SQLModel, table=True):
-    __tablename__ = "employee_additional_roles"
-
-    # IMPORTANT FIX → use employee.id (int), not employee.employee_id (str)
-    employee_id: int = Field(foreign_key="employee.id", primary_key=True)
-    role_id: int = Field(foreign_key="additional_roles.id", primary_key=True)
-
-    employee: Optional["Employee"] = Relationship(back_populates="additional_roles")
-    role: Optional["AdditionalRole"] = Relationship(back_populates="employees")
 
 
 # --- Employee Increment Models ---
@@ -97,6 +74,7 @@ class EmployeeBase(SQLModel):
     actual_date_of_birth: Optional[date] = None
     hobbies: Optional[str] = None
     vehicle_registration_number: Optional[str] = None
+    badge_number: Optional[str] = None
     profile_pic_url: Optional[str] = None
 
 
@@ -122,6 +100,7 @@ class EmployeeUpdate(SQLModel):
     actual_date_of_birth: Optional[date] = None
     hobbies: Optional[str] = None
     vehicle_registration_number: Optional[str] = None
+    badge_number: Optional[str] = None
     profile_pic_url: Optional[str] = None
 
 
@@ -149,6 +128,7 @@ class EmployeeResponse(SQLModel):
     actual_date_of_birth: Optional[date] = None
     hobbies: Optional[str] = None
     vehicle_registration_number: Optional[str] = None
+    badge_number: Optional[str] = None
     profile_pic_url: Optional[str] = None
     status: bool = True
 
@@ -159,7 +139,6 @@ class Employee(EmployeeBase, table=True):
 
     status: bool = Field(default=True)
 
-    additional_roles: List["EmployeeAdditionalRoleLink"] = Relationship(back_populates="employee")
     increments: List["EmployeeIncrement"] = Relationship(back_populates="employee")
 
 
@@ -233,6 +212,17 @@ class InventoryItemUpdate(SQLModel):
     description: Optional[str] = None
     quantity: Optional[int] = None
     category_id: Optional[int] = None
+
+
+# --- Attendance Models ---
+class AttendanceRaw(SQLModel, table=True):
+    __tablename__ = "attendance_raw"
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    serial_number: str
+    employee_code: str
+    status: int  # 0 = check-in, 1 = check-out
+    timestamp: datetime.datetime
+    date: date
 
 
 # --- JWT Tokens ---

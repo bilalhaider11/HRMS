@@ -66,7 +66,6 @@ const Form = () => {
 
     const banksOptions = ["Meezan", "UBL", "Allied", "HBL"];
     const departmentsOptions = ["Engineering", "HR", "Marketing", "Office Maintenance"]
-    const additionalRoles = ["HR", "Team-Lead", "Salary Management", "Operations Management"]
 
     const modalRef = useRef<HTMLDivElement>(null);
 
@@ -151,8 +150,7 @@ const Form = () => {
             } else {
                 // Create new employee via backend
                 await createEmployee(
-                    { ...values, profilePicUrl },
-                    values.additionalRoles || []
+                    { ...values, profilePicUrl }
                 );
 
                 // Add to local state for immediate UI update
@@ -217,7 +215,6 @@ const Form = () => {
             initialBaseSalary: editingEmployee?.initialBaseSalary || "",
             currentBaseSalary: editingEmployee ? (editingEmployee.currentBaseSalary || editingEmployee.initialBaseSalary) : "",
             increamentAmount: editingEmployee ? (latestIncreament?.increamentAmount) : 0,
-            additionalRoles: editingEmployee?.additionalRoles ? editingEmployee.additionalRoles.split(',').map(role => role.trim()) : [],
         },
         validationSchema: editingEmployee ? editFormSchema : createFormSchema,
         onSubmit: handleSubmit,
@@ -543,30 +540,6 @@ const Form = () => {
                 </div>
                 </div>
 
-                {/* Additional Roles */}
-                <div>
-                    <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 font-inter">Additional Roles</h3>
-                    <div className="flex gap-3 flex-wrap">
-                        {additionalRoles.map((item, index) => (
-                            <label key={index} className="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg cursor-pointer hover:border-slate-600 transition-colors">
-                                <input
-                                    type="checkbox"
-                                    checked={formik.values.additionalRoles.includes(item)}
-                                    onChange={() => {
-                                        const current = formik.values.additionalRoles;
-                                        if (current.includes(item)) {
-                                            formik.setFieldValue('additionalRoles', current.filter((r: string) => r !== item));
-                                        } else {
-                                            formik.setFieldValue('additionalRoles', [...current, item]);
-                                        }
-                                    }}
-                                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <span className="text-sm text-slate-300 font-inter">{item}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
 
                 {apiError && (
                     <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
