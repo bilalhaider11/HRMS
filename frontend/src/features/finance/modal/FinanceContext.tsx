@@ -9,7 +9,8 @@ export interface FinanceTableData {
   TaxDeductions?: number,
   ChequeNumber?: string,
   CategoryID?: number,
-  AddedBy?: string
+  AddedBy?: string,
+  CreatedAt?: string
 }
 
 export interface FinanceCategoriesData {
@@ -82,6 +83,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
           ChequeNumber: r.cheque_number,
           CategoryID: r.category_id,
           AddedBy: String(r.added_by || ""),
+          CreatedAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
         }));
         setFinanceList(mapped);
       } catch (error) {

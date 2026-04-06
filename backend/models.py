@@ -177,6 +177,7 @@ class Finance(FinanceBase, table=True):
 
     # Single admin system → optional tracking
     added_by: Optional[int] = Field(default=None, foreign_key='admin.id')
+    created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
 class FinanceEditHistory(SQLModel, table=True):

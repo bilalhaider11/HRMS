@@ -44,6 +44,9 @@ const FinanceTable = () => {
                                     Added By
                                 </th>
                                 <th className={`${tableHeadingClassName}`}>
+                                    Created At
+                                </th>
+                                <th className={`${tableHeadingClassName}`}>
                                     Action
                                 </th>
                             </tr>
@@ -73,6 +76,9 @@ const FinanceTable = () => {
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         {data.AddedBy}
+                                    </td>
+                                    <td className={`${tableDataClassName}`}>
+                                        {data.CreatedAt}
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         <Button type="button" onClick={() => handleUpdate(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">

@@ -37,8 +37,7 @@ def seed_categories(session: Session):
         ("Benefits", "Parrot Green"),
         ("Utility Bills", "Pink"),
         ("Bank Charges", "Purple"),
-        ("Remittance", "Green"),
-        ("Cancelled?", "Light Gray")
+        ("Remittance", "Green")
     ]
 
     for name, color in default_categories:
