@@ -4,16 +4,68 @@ import Box from "../../../shared/Box"
 import { FinanceTableData } from "../modal/FinanceContext"
 import { useFinance } from "../modal/FinanceContext"
 import { useNavigate } from "react-router-dom"
+import { History, X } from "lucide-react"
+import { useState } from "react"
+import { fetchEditHistory } from "../api/financeApi"
 
-const FinanceTable = () => {
+interface EditHistoryEntry {
+    id: number;
+    field_name: string;
+    old_value: string;
+    new_value: string;
+    edited_by: string;
+    edited_at: string;
+}
+
+const hexToRowBg = (hex: string) => {
+    if (!hex || hex.length < 7 || hex[0] !== '#') return undefined;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return undefined;
+    // Perceived brightness (0-255). Dark colors get higher opacity so they still show.
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    const alpha = brightness < 80 ? 0.9 : 0.75;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+
+interface FinanceTableProps {
+    filterCategoryId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+}
+
+const FinanceTable = ({ filterCategoryId, dateFrom, dateTo }: FinanceTableProps) => {
     const { financeList } = useFinance()
     const tableDataClassName = "py-4 px-4 text-sm text-slate-200 font-inter w-[10%] truncate"
     const tableHeadingClassName = "py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[10%]"
     const navigate = useNavigate()
 
+    const filteredList = financeList.filter(f => {
+        if (filterCategoryId && f.CategoryID?.toString() !== filterCategoryId) return false;
+        if (dateFrom && f.RawDate && f.RawDate < dateFrom) return false;
+        if (dateTo && f.RawDate && f.RawDate > dateTo) return false;
+        return true;
+    });
+
+    const [historyModal, setHistoryModal] = useState<{ financeId: string; entries: EditHistoryEntry[] } | null>(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
+
     const handleUpdate = (finance: FinanceTableData) => {
         navigate(`/finance/update-finance/${finance.FinanceId}`);
     }
+
+    const handleShowHistory = async (finance: FinanceTableData) => {
+        setHistoryLoading(true);
+        try {
+            const data = await fetchEditHistory(parseInt(finance.FinanceId || "0"));
+            setHistoryModal({ financeId: finance.FinanceId || "", entries: data });
+        } catch (error) {
+            console.error("Failed to load edit history:", error);
+        }
+        setHistoryLoading(false);
+    };
 
     return (
         <>
@@ -52,45 +104,131 @@ const FinanceTable = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {financeList.map((data: FinanceTableData, index: number) => (
+                            {filteredList.map((data: FinanceTableData, index: number) => {
+                                const bgColor = data.CategoryColor ? hexToRowBg(data.CategoryColor) : undefined;
+                                const rowBg = bgColor ? { backgroundColor: bgColor } : undefined;
+                                return (
                                 <tr key={index} className="border-t border-solid border-slate-800">
-                                    <td className={`${tableDataClassName}`}>
+                                    <td className={`${tableDataClassName}`} style={rowBg}>
                                         {data.Date}
                                     </td>
-                                    <td className={`${tableDataClassName} w-[20%]`}>
+                                    <td className={`${tableDataClassName} w-[20%]`} style={rowBg}>
                                         <div className="w-full truncate max-w-[200px]">
                                             {data.Description}
                                         </div>
                                     </td>
-                                    <td className={`${tableDataClassName}`}>
+                                    <td className={`${tableDataClassName}`} style={rowBg}>
                                         {data.Amount}
                                     </td>
-                                    <td className={`${tableDataClassName}`}>
+                                    <td className={`${tableDataClassName}`} style={rowBg}>
                                         {data.TaxDeductions}
                                     </td>
-                                    <td className={`${tableDataClassName}`}>
+                                    <td className={`${tableDataClassName}`} style={rowBg}>
                                         {data.ChequeNumber}
                                     </td>
-                                    <td className={`${tableDataClassName}`}>
-                                        {data.CategoryID}
+                                    <td className={`${tableDataClassName}`} style={rowBg}>
+                                        {data.CategoryName}
                                     </td>
-                                    <td className={`${tableDataClassName}`}>
+                                    <td className={`${tableDataClassName}`} style={rowBg}>
                                         {data.AddedBy}
                                     </td>
-                                    <td className={`${tableDataClassName}`}>
+                                    <td className={`${tableDataClassName}`} style={rowBg}>
                                         {data.CreatedAt}
                                     </td>
-                                    <td className={`${tableDataClassName}`}>
-                                        <Button type="button" onClick={() => handleUpdate(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
-                                            Edit
-                                        </Button>
+                                    <td className={`${tableDataClassName}`} style={rowBg}>
+                                        <div className="flex items-center gap-2">
+                                            {data.HasEdits && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleShowHistory(data)}
+                                                    className="p-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg transition-colors"
+                                                    title="View edit history"
+                                                >
+                                                    <History className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            <Button type="button" onClick={() => handleUpdate(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
+                                                Edit
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
             </Box>
+
+            {/* Edit History Modal */}
+            {historyModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setHistoryModal(null)}>
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-5 border-b border-slate-700">
+                            <h3 className="text-lg font-semibold text-white font-inter">
+                                Edit History — Record #{historyModal.financeId}
+                            </h3>
+                            <button onClick={() => setHistoryModal(null)} className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="overflow-auto max-h-[60vh] p-5">
+                            {historyLoading ? (
+                                <p className="text-slate-400 text-sm font-inter text-center py-8">Loading...</p>
+                            ) : historyModal.entries.length === 0 ? (
+                                <p className="text-slate-400 text-sm font-inter text-center py-8">No edit history found.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {(() => {
+                                        // Group entries by date (day)
+                                        const groups: { date: string; entries: EditHistoryEntry[] }[] = [];
+                                        historyModal.entries.forEach((entry) => {
+                                            const dateKey = new Date(entry.edited_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+                                            const last = groups[groups.length - 1];
+                                            if (last && last.date === dateKey) {
+                                                last.entries.push(entry);
+                                            } else {
+                                                groups.push({ date: dateKey, entries: [entry] });
+                                            }
+                                        });
+                                        return groups.map((group, gi) => (
+                                            <div key={gi} className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+                                                <div className="px-4 py-2.5 bg-slate-800/80 border-b border-slate-700">
+                                                    <span className="text-xs font-medium text-slate-400 font-inter">
+                                                        {group.date}
+                                                    </span>
+                                                </div>
+                                                <table className="w-full">
+                                                    <thead>
+                                                        <tr className="border-b border-slate-700/50">
+                                                            <th className="py-2 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-inter">Time</th>
+                                                            <th className="py-2 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-inter">Field</th>
+                                                            <th className="py-2 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-inter">Old Value</th>
+                                                            <th className="py-2 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-inter">New Value</th>
+                                                            <th className="py-2 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-inter">Edited By</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {group.entries.map((entry) => (
+                                                            <tr key={entry.id} className="border-t border-slate-700/30">
+                                                                <td className="py-2.5 px-4 text-sm text-slate-400 font-inter whitespace-nowrap">{new Date(entry.edited_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }).toLowerCase()}</td>
+                                                                <td className="py-2.5 px-4 text-sm text-slate-300 font-inter capitalize">{entry.field_name.replace(/_/g, ' ')}</td>
+                                                                <td className="py-2.5 px-4 text-sm text-red-400 font-inter">{entry.old_value}</td>
+                                                                <td className="py-2.5 px-4 text-sm text-green-400 font-inter">{entry.new_value}</td>
+                                                                <td className="py-2.5 px-4 text-sm text-slate-400 font-inter">{entry.edited_by}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     )
 }

@@ -18,7 +18,11 @@ const formSchema = Yup.object().shape({
     categoryId: Yup.string().required("Category is required")
 });
 
-const Form = () => {
+interface FormProps {
+    onClose?: () => void;
+}
+
+const Form = ({ onClose }: FormProps = {}) => {
     const { addFinance, successfullModal, setSuccessfullModal, setEditingFinance, editingFinance, updateFinance, financeCategoriesList } = useFinance();
     const navigate = useNavigate();
 
@@ -30,19 +34,19 @@ const Form = () => {
     const [selectedCategory, setSelectedCategory] = useState("Select a category");
     const [categoryId, setCategoryId] = useState("");
     const [apiError, setApiError] = useState("");
-    const [isEditMode] = useState(editingFinance !== null);
+    const isEditMode = editingFinance !== null;
 
     const handleSubmit = async (values: any) => {
         setApiError("");
         try {
             if (editingFinance !== null && updateFinance) {
                 await updateFinanceRecord(parseInt(editingFinance.FinanceId || "0"), {
-                    date: values.date || undefined,
-                    description: values.description || undefined,
-                    amount: parseFloat(values.amount) || undefined,
-                    tax_deductions: parseFloat(formik.values.taxDeductions?.toString() || "0") || undefined,
-                    cheque_number: values.chequeNumber || undefined,
-                    category_id: parseInt(values.categoryId || categoryId) || undefined,
+                    date: values.date,
+                    description: values.description,
+                    amount: parseFloat(values.amount),
+                    tax_deductions: parseFloat(formik.values.taxDeductions?.toString() || "0"),
+                    cheque_number: values.chequeNumber,
+                    category_id: parseInt(values.categoryId || categoryId),
                 });
                 updateFinance({
                     ...editingFinance,
@@ -75,18 +79,19 @@ const Form = () => {
                 formik.resetForm();
             }
         } catch (err: any) {
-            setApiError(err.response?.data?.detail || "Failed to save finance record");
+            const detail = err.response?.data?.detail;
+            setApiError(typeof detail === "string" ? detail : Array.isArray(detail) ? detail.map((e: any) => e.msg).join(", ") : "Failed to save finance record");
         }
     };
 
     const formik = useFormik({
         initialValues: {
-            date: editingFinance?.Date || "",
-            amount: editingFinance?.Amount || "",
-            chequeNumber: editingFinance?.ChequeNumber || "",
-            description: editingFinance?.Description || "",
-            taxDeductions: editingFinance?.TaxDeductions || "",
-            categoryId: editingFinance?.CategoryID?.toString() || "",
+            date: editingFinance?.RawDate ?? "",
+            amount: editingFinance?.Amount ?? "",
+            chequeNumber: editingFinance?.ChequeNumber ?? "",
+            description: editingFinance?.Description ?? "",
+            taxDeductions: editingFinance?.TaxDeductions ?? 0,
+            categoryId: editingFinance?.CategoryID?.toString() ?? "",
         },
         validationSchema: formSchema,
         onSubmit: handleSubmit,
@@ -96,9 +101,13 @@ const Form = () => {
     const successfullyAdded = () => {
         setEditingFinance(null);
         setSuccessfullModal(false);
-        navigate('/finance');
-        window.scrollTo(0, 0);
         document.body.style.overflow = "auto";
+        if (onClose) {
+            onClose();
+        } else {
+            navigate('/finance');
+            window.scrollTo(0, 0);
+        }
     };
 
     const selectCategory = useCallback(() => {

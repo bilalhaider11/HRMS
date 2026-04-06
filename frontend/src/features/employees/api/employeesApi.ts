@@ -98,6 +98,28 @@ export async function updateEmployee(employeeCode: string, employeeData: Record<
   return res.data;
 }
 
+// --- Increment API ---
+
+export async function fetchIncrements(employeeCode: string) {
+  const res = await api.get(`/admin/get_increments/${encodeURIComponent(employeeCode)}`);
+  return res.data;
+}
+
+export async function createIncrement(data: { employee_code: string; increment_amount: number; effective_date: string; notes?: string }) {
+  const res = await api.post("/admin/create_increment", data);
+  return res.data;
+}
+
+export async function updateIncrement(incrementId: number, data: { increment_amount?: number; effective_date?: string; notes?: string }) {
+  const res = await api.patch(`/admin/update_increment/${incrementId}`, data);
+  return res.data;
+}
+
+export async function deleteIncrement(incrementId: number) {
+  const res = await api.delete(`/admin/delete_increment/${incrementId}`);
+  return res.data;
+}
+
 export async function uploadProfilePic(file: File) {
   const formData = new FormData();
   formData.append("file", file);

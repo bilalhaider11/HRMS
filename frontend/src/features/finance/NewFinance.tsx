@@ -1,9 +1,16 @@
 import { useNavigate } from "react-router-dom"
 import Form from "./ui/Form"
 import { ArrowLeft } from "lucide-react"
+import { useFinance } from "./modal/FinanceContext"
+import { useEffect } from "react"
 
 const NewFinance = () => {
     const navigate = useNavigate()
+    const { setEditingFinance } = useFinance()
+
+    useEffect(() => {
+        setEditingFinance(null);
+    }, [setEditingFinance]);
 
     return (
         <>

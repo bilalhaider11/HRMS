@@ -17,12 +17,27 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 
-const NAV_ITEMS = [
+interface NavItem {
+  label: string;
+  icon: any;
+  path: string;
+  adminOnly: boolean;
+  children?: { label: string; path: string }[];
+}
+
+const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/", adminOnly: false },
   { label: "Employees", icon: Users, path: "/employees", adminOnly: true },
-  { label: "Finance", icon: DollarSign, path: "/finance", adminOnly: true },
+  {
+    label: "Finance", icon: DollarSign, path: "/finance", adminOnly: true,
+    children: [
+      { label: "Finance Listing", path: "/finance" },
+      { label: "Categories", path: "/finance/category-lists" },
+    ],
+  },
   { label: "Inventory", icon: Package, path: "/inventory", adminOnly: true },
   { label: "Settings", icon: Settings, path: "/settings", adminOnly: false },
 ];
@@ -41,10 +56,27 @@ function Sidebar({
   onClose: () => void;
 }) {
   const location = useLocation();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.adminOnly || superAdmin
   );
+
+  // Auto-expand parent if a child route is active
+  useEffect(() => {
+    visibleItems.forEach((item) => {
+      if (item.children && location.pathname.startsWith(item.path)) {
+        setExpandedItems((prev) => prev.includes(item.path) ? prev : [...prev, item.path]);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  const toggleExpand = (path: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+    );
+  };
 
   return (
     <>
@@ -82,6 +114,47 @@ function Sidebar({
               item.path === "/"
                 ? location.pathname === "/"
                 : location.pathname.startsWith(item.path);
+            const isExpanded = expandedItems.includes(item.path);
+
+            if (item.children) {
+              return (
+                <div key={item.path}>
+                  <button
+                    onClick={() => toggleExpand(item.path)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-inter transition-colors ${
+                      isActive
+                        ? "bg-indigo-600/10 text-indigo-400"
+                        : "text-slate-400 hover:text-white hover:bg-slate-800"
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {item.label}
+                    <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                  </button>
+                  {isExpanded && (
+                    <div className="ml-4 mt-1 space-y-1 border-l border-slate-800 pl-3">
+                      {item.children.map((child) => {
+                        const isChildActive = location.pathname === child.path;
+                        return (
+                          <Link
+                            key={child.path}
+                            to={child.path}
+                            onClick={onClose}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-inter transition-colors ${
+                              isChildActive
+                                ? "bg-indigo-600 text-white"
+                                : "text-slate-400 hover:text-white hover:bg-slate-800"
+                            }`}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <Link

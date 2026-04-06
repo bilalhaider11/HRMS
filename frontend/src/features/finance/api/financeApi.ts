@@ -29,6 +29,11 @@ export async function updateFinanceRecord(financeId: number, data: Record<string
   return res.data;
 }
 
+export async function fetchEditHistory(financeId: number) {
+  const res = await api.get(`/finance/get_edit_history/${financeId}`);
+  return res.data;
+}
+
 // --- Finance Categories ---
 
 export async function fetchFinanceCategories() {

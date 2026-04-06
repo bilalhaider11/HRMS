@@ -7,9 +7,10 @@ import DeleteModal from "../../../shared/DeleteModal"
 import Pagination from "../../../shared/Pagination"
 import Select from "../../../shared/Select"
 import itemsSelectArrow from "../../../assets/images/itemsSelectArrow.svg"
+import { updateFinanceCategory } from "../api/financeApi"
 
 const CategoryTable = () => {
-    const { financeCategoriesList, isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete } = useFinance()
+    const { financeCategoriesList, isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete, updateFinanceCategory: updateCategoryCtx } = useFinance()
     const tableDataClassName = "py-4 px-4 text-sm text-slate-200 font-inter w-[17.5%] truncate"
     const tableHeadingClassName = "py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[17.5%]"
 
@@ -123,7 +124,28 @@ const CategoryTable = () => {
                                         {data.name}
                                     </td>
                                     <td className={`${tableDataClassName}`}>
-                                        {data.colorCode}
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full inline-block border-2 border-slate-600 flex-shrink-0" style={{ backgroundColor: data.colorCode }} />
+                                            <input
+                                                type="text"
+                                                defaultValue={data.colorCode || ""}
+                                                key={data.colorCode}
+                                                placeholder="#000000"
+                                                onBlur={async (e) => {
+                                                    const val = e.target.value.trim();
+                                                    if (val && /^#[0-9A-Fa-f]{6}$/.test(val) && val !== data.colorCode) {
+                                                        try {
+                                                            await updateFinanceCategory(parseInt(data.id || "0"), data.name || "", val);
+                                                            updateCategoryCtx({ ...data, colorCode: val });
+                                                        } catch (err) {
+                                                            console.error("Failed to update color:", err);
+                                                        }
+                                                    }
+                                                }}
+                                                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                                                className="bg-transparent text-slate-400 text-xs font-inter w-20 outline-none border-b border-transparent focus:border-slate-600 transition-colors"
+                                            />
+                                        </div>
                                     </td>
                                     <td className={`${tableDataClassName}`}>
                                         <div className="flex items-center h-full w-full justify-end gap-4">

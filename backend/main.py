@@ -183,6 +183,12 @@ def delete_increment(increment_id: int, session: Session = Depends(admin_db.get_
     return increment_db.delete_increment_in_db(increment_id, session=session)
 
 
+# ---------------- GET All Increments for Employee ----------------
+@admin_router.get("/get_increments/{employee_code}")
+def get_employee_increments(employee_code: str, session: Session = Depends(admin_db.get_session)):
+    return increment_db.get_increments_by_business_id(employee_code, session=session)
+
+
 # ------------------ Finance Endpoints ------------------
 @finance_router.post("/create_finance_record")
 def create_finance(finance: FinanceBase, session: Session = Depends(admin_db.get_session)):
@@ -197,6 +203,10 @@ def get_finance_records(page: int = 1, page_size: int = 10,
                         start_date: Optional[date] = None, end_date: Optional[date] = None,
                         category_id: Optional[int] = None, session: Session = Depends(admin_db.get_session)):
     return finance_db.get_finance_records_in_db(page, page_size, start_date, end_date, category_id, session=session)
+
+@finance_router.get("/get_edit_history/{finance_id}")
+def get_finance_edit_history(finance_id: int, session: Session = Depends(admin_db.get_session)):
+    return finance_db.get_edit_history_in_db(finance_id, session=session)
 
 
 # --- Finance Categories ---

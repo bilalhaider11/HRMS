@@ -1,72 +1,88 @@
 import { useRef, useEffect, useState } from "react";
-import Modal from "../../../shared/Modal"
-import { EmployeeTableData, StatusListData } from "../modal/EmployeesContext";
-import { useEmployees } from "../modal/EmployeesContext";
-import Button from "shared/Button";
+import Modal from "../../../shared/Modal";
+import { EmployeeTableData } from "../modal/EmployeesContext";
+import { deactivateEmployee } from "../api/employeesApi";
+
 interface StatusModalProps {
-  closeModal?: () => void,
-  statusFromTable?: string,
-  employeeCode?: string,
-  employeeStatus?: EmployeeTableData
-  onStatusUpdate?: (id: string, newStatus: string) => void
+    closeModal: () => void;
+    employeeStatus: EmployeeTableData;
+    onStatusUpdate: (id: string, newStatus: string) => void;
 }
+
 const StatusModal = ({ closeModal, onStatusUpdate, employeeStatus }: StatusModalProps) => {
-  const { statusList } = useEmployees();
-  const [statusText, setStatusText] = useState(employeeStatus?.status)
-  const [disable, setDisable] = useState<string | null>(employeeStatus?.status || null)
+    const [apiError, setApiError] = useState("");
+    const [saving, setSaving] = useState(false);
 
-  const modalRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
-        closeModal && closeModal();
-      }
-    };
-    if (closeModal) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [closeModal]);
-
-  const selectStatus = (status: string) => {
-    setStatusText(status)
-    setDisable(status)
-  }
-
-
-  console.log(statusText)
-  return (
-    <>
-      <Modal ref={modalRef} closeButtonCLick={closeModal}>
-        <h1 className="text-2xl text-center font-urbanist font-semibold leading-[150%] border-b border-solid border-[#CDD6D7] text-white p-6 mb-8">Status Modal</h1>
-        {statusList?.map((data: StatusListData, index: number) => (
-          <div key={index} className="flex flex-col gap-5 pb-8 px-5 max-h-[570px] overflowYAuto">
-            {Object.values(data).map((status: string, statusIndex: number) => (
-              <Button key={statusIndex} disabled={status === disable} onClick={() => selectStatus(status)} buttonClasses={`border min-h-[64px] border-white outline-none bg-transparent rounded-[15px] p-[18px] text-lg font-inter leading-7 font-semibold text-white transition-all duration-500 ${status === disable ? "opacity-50 !cursor-not-allowed scale-[0.97]" : "opacity-1 !cursor-pointer scale-1"}`}>
-                {status}
-              </Button>
-            ))}
-          </div>
-        ))}
-        <div className="border-t border-solid border-[#CDD6D7] py-6 px-5 flex justify-center">
-          <Button buttonClasses="min-h-[64px] px-11 pb-[15px] pt-4 border border-solid border-[#CDD6D7] bg-[#283573] font-urbanist font-semibold text-xl leading-[160%] rounded-[15px] text-white" type="button" onClick={() => {
-            if (employeeStatus?.id && onStatusUpdate && statusText) {
-              onStatusUpdate(employeeStatus.id, statusText);
+    const modalRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+                closeModal();
             }
-            closeModal && closeModal();
-          }}>
-            Save
-          </Button>
-        </div>
-      </Modal>
-    </>
-  )
-}
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [closeModal]);
 
-export default StatusModal
+    const isAlreadyInactive = employeeStatus?.status === "Inactive";
+
+    const handleDeactivate = async () => {
+        setSaving(true);
+        setApiError("");
+        try {
+            await deactivateEmployee(employeeStatus.id || "");
+            onStatusUpdate(employeeStatus.id || "", "Inactive");
+        } catch (err: any) {
+            const detail = err.response?.data?.detail;
+            setApiError(typeof detail === "string" ? detail : "Failed to update status");
+        }
+        setSaving(false);
+    };
+
+    return (
+        <Modal ref={modalRef} closeButtonCLick={closeModal}>
+            <h1 className="text-lg font-semibold text-center text-white font-inter border-b border-slate-700 p-5">
+                Update Status
+            </h1>
+            <div className="px-5 py-6 flex flex-col gap-3">
+                <p className="text-sm text-slate-400 font-inter mb-2">
+                    Employee: <span className="text-white font-medium">{employeeStatus?.name}</span>
+                </p>
+                <div className={`w-full px-4 py-3 rounded-xl text-sm font-inter border ${
+                    employeeStatus?.status === "Active"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                        : "border-amber-500 bg-amber-500/10 text-amber-400"
+                }`}>
+                    Current Status: {employeeStatus?.status}
+                </div>
+                {isAlreadyInactive && (
+                    <p className="text-sm text-slate-500 font-inter">This employee is already inactive.</p>
+                )}
+            </div>
+
+            {apiError && (
+                <div className="mx-5 mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                    <p className="text-red-400 text-sm font-inter">{apiError}</p>
+                </div>
+            )}
+
+            <div className="border-t border-slate-700 py-4 px-5 flex justify-end gap-3">
+                <button type="button" onClick={closeModal} className="px-4 py-2 text-sm text-slate-400 hover:text-white font-inter transition-colors">
+                    Cancel
+                </button>
+                {!isAlreadyInactive && (
+                    <button
+                        type="button"
+                        onClick={handleDeactivate}
+                        disabled={saving}
+                        className="px-6 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium font-inter rounded-xl transition-colors"
+                    >
+                        {saving ? "Saving..." : "Deactivate"}
+                    </button>
+                )}
+            </div>
+        </Modal>
+    );
+};
+
+export default StatusModal;

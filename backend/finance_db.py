@@ -119,6 +119,33 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
     offset = (page - 1) * page_size
     paginated_records = all_records[offset:offset + page_size]
 
+    # Resolve category names/colors and added_by names
+    category_map = {}
+    admin_map = {}
+    for record in paginated_records:
+        if record.category_id and record.category_id not in category_map:
+            cat = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == record.category_id)).first()
+            category_map[record.category_id] = {
+                "name": cat.category_name if cat else str(record.category_id),
+                "color": cat.color_code if cat else "",
+            }
+        if record.added_by and record.added_by not in admin_map:
+            admin = session.exec(select(Admin).where(Admin.id == record.added_by)).first()
+            admin_map[record.added_by] = admin.company_name if admin else str(record.added_by)
+
+    enriched_records = []
+    for record in paginated_records:
+        data = record.model_dump()
+        cat_info = category_map.get(record.category_id, {"name": "", "color": ""})
+        data["category_name"] = cat_info["name"]
+        data["category_color"] = cat_info["color"]
+        data["added_by_name"] = admin_map.get(record.added_by, "")
+        has_edits = session.exec(
+            select(FinanceEditHistory).where(FinanceEditHistory.finance_id == record.id)
+        ).first() is not None
+        data["has_edits"] = has_edits
+        enriched_records.append(data)
+
     # --- Summary calculations ---
     total_earnings = sum(f.amount for f in all_records)
     total_salaries = sum(f.amount for f in all_records if f.category_id == 1)  # Salary category
@@ -130,7 +157,7 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
         "page_size": page_size,
         "total_count": total_count,
         "total_pages": (total_count + page_size - 1) // page_size,
-        "records": paginated_records,
+        "records": enriched_records,
         "summary": {
             "total_earnings": total_earnings,
             "total_salaries": total_salaries,
@@ -200,3 +227,47 @@ def delete_category_in_db(category_id: int, session: Session):
     session.delete(existing)
     session.commit()
     return {"message": "Category deleted successfully"}
+
+
+# --- Finance Edit History ---
+
+def get_edit_history_in_db(finance_id: int, session: Session):
+    existing = session.exec(select(Finance).where(Finance.id == finance_id)).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Finance record not found")
+
+    history = session.exec(
+        select(FinanceEditHistory)
+        .where(FinanceEditHistory.finance_id == finance_id)
+        .order_by(FinanceEditHistory.edited_at.desc())
+    ).all()
+
+    admin_map = {}
+    category_map = {}
+    results = []
+    for h in history:
+        if h.edited_by and h.edited_by not in admin_map:
+            admin = session.exec(select(Admin).where(Admin.id == h.edited_by)).first()
+            admin_map[h.edited_by] = admin.company_name if admin else str(h.edited_by)
+
+        old_value = h.old_value
+        new_value = h.new_value
+        # Resolve category IDs to names
+        if h.field_name == "category_id":
+            for val in [old_value, new_value]:
+                if val and val.isdigit() and int(val) not in category_map:
+                    cat = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == int(val))).first()
+                    category_map[int(val)] = cat.category_name if cat else val
+            old_value = category_map.get(int(old_value), old_value) if old_value and old_value.isdigit() else old_value
+            new_value = category_map.get(int(new_value), new_value) if new_value and new_value.isdigit() else new_value
+
+        results.append({
+            "id": h.id,
+            "field_name": h.field_name,
+            "old_value": old_value,
+            "new_value": new_value,
+            "edited_by": admin_map.get(h.edited_by, ""),
+            "edited_at": h.edited_at.isoformat() if h.edited_at else "",
+        })
+
+    return results
