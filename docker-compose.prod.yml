@@ -18,7 +18,7 @@ services:
     build: ./backend
     restart: always
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:3011:8000"
     environment:
       - data_base_url=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - secret_key=${SECRET_KEY}
@@ -39,7 +39,7 @@ services:
         REACT_APP_API_URL: ${REACT_APP_API_URL}
     restart: always
     ports:
-      - "127.0.0.1:3000:80"
+      - "127.0.0.1:3017:80"
     depends_on:
       - backend
 
