@@ -1,31 +1,25 @@
-import ImageButton from "../../shared/ImageButton"
-import backImg from "../../assets/images/back.svg"
+import { Plus } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import CategoryTable from "./ui/CategoryTable"
-import Button from "shared/Button"
 
 const CategoryLists = () => {
     const navigate = useNavigate()
 
-    const backPgae = () => {
-        navigate(-1)
-    }
-
-    const handleNewCategory = () => {
-        navigate("new-category")
-    }
-
     return (
         <>
-            <ImageButton type="button" onClick={backPgae} buttonClasses="mt-5 w-5 h-5 md:w-7 md:h-7">
-                <img src={backImg} alt="back" />
-            </ImageButton>
-            <h2 className="mt-5 md:mt-[46px] text-2xl md:text-3xl lg:text-[58px] font-semibold font-poppins lg:leading-[140%] text-white">
-                Create New Finance
-            </h2>
-            <Button type="button" onClick={handleNewCategory} buttonClasses=" mt-4 bodyBackground px-4 py-6 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
-                Add Category
-            </Button>
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h1 className="text-2xl font-semibold text-white font-inter">Finance Categories</h1>
+                    <p className="text-sm text-slate-400 font-inter mt-1">Manage categories for finance records</p>
+                </div>
+                <button
+                    onClick={() => navigate("new-category")}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium font-inter rounded-xl transition-colors"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add Category
+                </button>
+            </div>
             <CategoryTable />
         </>
     )

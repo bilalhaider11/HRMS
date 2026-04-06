@@ -1,38 +1,48 @@
 import { useNavigate, useParams } from "react-router-dom"
-import backImg from "../../assets/images/back.svg"
-import ImageButton from "../../shared/ImageButton"
+import { ArrowLeft } from "lucide-react"
 import IncrementHistoryTable from "./ui/IncrementHistoryTable"
 import { useEffect, useState } from "react"
 import { useEmployees } from "./modal/EmployeesContext"
-import Button from "../../shared/Button"
 import IncrementModalForm from "./ui/IncreamentModalForm"
+import { fetchIncrements } from "./api/employeesApi"
 
 const IncreamentHistory = () => {
-    const { employeesList, setEmployeeIncreamentList, addNewIncrement } = useEmployees();
+    const { setEmployeeIncreamentList } = useEmployees();
     const [addIncreamentModalOpen, setAddIncreamentModalOpen] = useState(false)
+    const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
-
-    const backPgae = () => {
-        navigate(-1)
-    }
     const { employeeCode } = useParams()
-    useEffect(() => {
-        console.log(employeesList, "Employee")
-        if (employeesList.length > 0) {
-            const foundEmployee = employeesList.find((emp) => emp?.id === employeeCode);
-            console.log(foundEmployee, "Found")
-            setEmployeeIncreamentList(foundEmployee?.lastIncreament || [])
+
+    const loadIncrements = async () => {
+        if (!employeeCode) return;
+        setLoading(true);
+        try {
+            const data = await fetchIncrements(employeeCode);
+            const mapped = (data || []).map((inc: any) => ({
+                increamentId: String(inc.id),
+                increamentAmount: inc.increment_amount,
+                increamentDate: inc.effective_date,
+                notes: inc.notes || "",
+            }));
+            setEmployeeIncreamentList(mapped);
+        } catch (error) {
+            console.error("Failed to load increments:", error);
+            setEmployeeIncreamentList([]);
         }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        loadIncrements();
         return () => {
             setEmployeeIncreamentList([]);
         };
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [employeesList, employeeCode])
+    }, [employeeCode])
 
     const handleAddIncreamentModal = () => {
         setAddIncreamentModalOpen(true)
-       window.scrollTo(0, 0);
+        window.scrollTo(0, 0);
         document.body.style.overflow = "hidden"
     }
     const handleCloseIncreamentModal = () => {
@@ -41,26 +51,46 @@ const IncreamentHistory = () => {
         document.body.style.overflow = "auto"
     }
 
+    const handleAddSuccess = () => {
+        handleCloseIncreamentModal();
+        loadIncrements();
+    };
+
     return (
         <>
-            <ImageButton type="button" onClick={backPgae} buttonClasses="mt-5 w-5 h-5 md:w-7 md:h-7">
-                <img src={backImg} alt="back" />
-            </ImageButton>
-            <h2 className="mt-5 md:mt-[46px] text-2xl md:text-3xl lg:text-[58px] font-semibold font-poppins lg:leading-[140%] text-white">
-                Increament History
-            </h2>
-            <div className="flex justify-between items-center mt-6">
-                <p className="text-base md:text-lg lg:text-[21px] font-medium font-urbanist lg:leading-[180%] text-[#FFFFFF99]">
-                    Employee Code is <span className="font-semibold">{employeeCode}</span>
-                </p>
-                <Button onClick={handleAddIncreamentModal} buttonClasses="bodyBackground h-12 px-4 py-3 font-inter font-medium text-base sm:text-lg md:text-xl leading-normal text-white whitespace-nowrap rounded-[15px]">
-                    Add Increament
-                </Button>
+            <button onClick={() => navigate(-1)} className="mt-5 flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-inter text-sm">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+            </button>
+            <div className="mt-6 flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-semibold text-white font-inter">Increment History</h1>
+                    <p className="text-sm text-slate-400 font-inter mt-1">Employee Code: <span className="text-white font-medium">{employeeCode}</span></p>
+                </div>
+                <button
+                    onClick={handleAddIncreamentModal}
+                    type="button"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium font-inter rounded-xl transition-colors"
+                >
+                    Add Increment
+                </button>
             </div>
-            <IncrementHistoryTable />
-            {addIncreamentModalOpen &&
-                <IncrementModalForm addIncrement={addNewIncrement} closeModal={handleCloseIncreamentModal} />
-            }
+
+            {loading ? (
+                <div className="flex justify-center py-12">
+                    <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+            ) : (
+                <IncrementHistoryTable employeeCode={employeeCode || ""} onReload={loadIncrements} />
+            )}
+
+            {addIncreamentModalOpen && (
+                <IncrementModalForm
+                    employeeCode={employeeCode || ""}
+                    onSuccess={handleAddSuccess}
+                    closeModal={handleCloseIncreamentModal}
+                />
+            )}
         </>
     )
 }

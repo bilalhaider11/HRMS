@@ -29,24 +29,52 @@ def seed_admin(session: Session):
 # --- Seed default finance categories ---
 def seed_categories(session: Session):
     default_categories = [
-        ("Salaries", "Blue"),
-        ("With Holding Income Tax", "Black"),
-        ("Office Expenses", "Golden / Orange"),
-        ("Office Rent", "Red"),
-        ("Loan", "Parrot Green"),
-        ("Benefits", "Parrot Green"),
-        ("Utility Bills", "Pink"),
-        ("Bank Charges", "Purple"),
-        ("Remittance", "Green"),
-        ("Cancelled?", "Light Gray")
+        ("Salaries", "#3B82F6"),
+        ("With Holding Income Tax", "#1E293B"),
+        ("Office Expenses", "#F59E0B"),
+        ("Office Rent", "#EF4444"),
+        ("Loan", "#22C55E"),
+        ("Reimbursement", "#10B981"),
+        ("Utility Bills", "#EC4899"),
+        ("Bank Charges", "#8B5CF6"),
+        ("Income (Remittance)", "#14B8A6"),
+        ("Income (Others)", "#06B6D4")
     ]
 
+    # Rename old categories to new names
+    renames = {
+        "Benefits": "Reimbursement",
+        "Remittance": "Income (Remittance)",
+    }
+    for old_name, new_name in renames.items():
+        old_cat = session.exec(
+            select(FinanceCategory).where(FinanceCategory.category_name == old_name)
+        ).first()
+        if old_cat:
+            old_cat.category_name = new_name
+            print(f"Renamed category '{old_name}' → '{new_name}'")
+
+    # Upsert: create missing categories, fix color codes on existing ones
     for name, color in default_categories:
         existing = session.exec(
             select(FinanceCategory).where(FinanceCategory.category_name == name)
         ).first()
-        if not existing:
+        if existing:
+            if existing.color_code != color:
+                existing.color_code = color
+                print(f"Updated color for '{name}' → {color}")
+        else:
             session.add(FinanceCategory(category_name=name, color_code=color))
+
+    # Remove dropped categories
+    dropped = ["Cancelled?"]
+    for name in dropped:
+        old = session.exec(
+            select(FinanceCategory).where(FinanceCategory.category_name == name)
+        ).first()
+        if old:
+            session.delete(old)
+            print(f"Removed category '{name}'")
 
     session.commit()
     print("Default finance categories seeded successfully.")

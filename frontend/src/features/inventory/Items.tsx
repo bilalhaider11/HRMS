@@ -1,35 +1,28 @@
-import ImageButton from "../../shared/ImageButton"
-import backImg from "../../assets/images/back.svg"
 import { useNavigate } from "react-router-dom"
-
-import registerIcon from "../../assets/images/register.svg"
-import Button from "shared/Button"
+import { ArrowLeft, Plus } from "lucide-react"
 import ItemsTable from "./ui/ItemsTable"
-
 
 const Items = () => {
     const navigate = useNavigate()
 
-    const backPgae = () => {
-        navigate(-1)
-    }
-
     return (
         <>
-            <ImageButton type="button" onClick={backPgae} buttonClasses="mt-5 w-5 h-5 md:w-7 md:h-7">
-                <img src={backImg} alt="back" />
-            </ImageButton>
-            <div className="mt-5 md:mt-[46px] flex items-center justify-between gap-4 flex-wrap">
-                <h2 className="text-2xl md:text-3xl lg:text-[58px] font-semibold font-poppins lg:leading-[140%] text-white">
+            <button onClick={() => navigate(-1)} className="mt-5 flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-inter text-sm">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+            </button>
+            <div className="mt-6 flex items-center justify-between">
+                <h2 className="text-xl md:text-2xl font-semibold text-white font-inter">
                     Items
                 </h2>
-                <Button onClick={() => navigate("/inventory/new-items")} type="button" buttonClasses="bodyBackground w-fit fade-bottom rounded-[15px] p-2.5 md:py-[26px] md:px-2 lg:px-8 flex justify-center items-center font-poppins font-semibold md:text-lg leading-normal gap-[18px] h-11 sm:h-14 md:h-[73px] text-white" >
-                    <div className="sm:w-[21px] sm:h-[21px] w-4 h-4">
-                        <img src={registerIcon} alt="date" className="w-full h-full" />
-                    </div>
-                    Add New Items
-                </Button>
-
+                <button
+                    onClick={() => navigate("/inventory/new-items")}
+                    type="button"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium font-inter rounded-xl transition-colors"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add New Item
+                </button>
             </div>
             <ItemsTable />
         </>
