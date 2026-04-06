@@ -5,6 +5,7 @@ export interface IncrementHistory {
   increamentId?: string;
   increamentAmount: number;
   increamentDate: string;
+  notes?: string;
 }
 
 export interface EmployeeTableData {

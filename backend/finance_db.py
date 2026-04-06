@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlmodel import select, Session
-from models import Finance, FinanceUpdate, FinanceCategory, Admin
+from models import Finance, FinanceUpdate, FinanceCategory, FinanceEditHistory, Admin
 
 
 # --- Utility: get the single admin ID ---
@@ -68,9 +68,20 @@ def edit_finance_record_in_db(finance_id: int, finance: FinanceUpdate, session: 
         if not category:
             raise HTTPException(status_code=404, detail=f"Finance category with id {update_data['category_id']} does not exist")
 
-    # Update only provided fields
+    # Log each field change to edit history
     for key, value in update_data.items():
         if value is not None:
+            old_value = str(getattr(existing, key, ""))
+            new_value = str(value)
+            if old_value != new_value:
+                history = FinanceEditHistory(
+                    finance_id=finance_id,
+                    field_name=key,
+                    old_value=old_value,
+                    new_value=new_value,
+                    edited_by=admin_id,
+                )
+                session.add(history)
             setattr(existing, key, value)
 
     # Ensure added_by still tracks admin
@@ -79,18 +90,6 @@ def edit_finance_record_in_db(finance_id: int, finance: FinanceUpdate, session: 
     session.commit()
     session.refresh(existing)
     return existing
-
-
-# --- Delete a finance record ---
-def delete_finance_record_in_db(finance_id: int, session: Session):
-    # Retrieve existing finance record
-    existing = session.exec(select(Finance).where(Finance.id == finance_id)).first()
-    if not existing:
-        raise HTTPException(status_code=404, detail="Finance Record does not exist")
-
-    session.delete(existing)
-    session.commit()
-    return {"Message": "Deleted Successfully"}
 
 
 # --- Get finance records with filters and pagination ---
@@ -120,6 +119,33 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
     offset = (page - 1) * page_size
     paginated_records = all_records[offset:offset + page_size]
 
+    # Resolve category names/colors and added_by names
+    category_map = {}
+    admin_map = {}
+    for record in paginated_records:
+        if record.category_id and record.category_id not in category_map:
+            cat = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == record.category_id)).first()
+            category_map[record.category_id] = {
+                "name": cat.category_name if cat else str(record.category_id),
+                "color": cat.color_code if cat else "",
+            }
+        if record.added_by and record.added_by not in admin_map:
+            admin = session.exec(select(Admin).where(Admin.id == record.added_by)).first()
+            admin_map[record.added_by] = admin.company_name if admin else str(record.added_by)
+
+    enriched_records = []
+    for record in paginated_records:
+        data = record.model_dump()
+        cat_info = category_map.get(record.category_id, {"name": "", "color": ""})
+        data["category_name"] = cat_info["name"]
+        data["category_color"] = cat_info["color"]
+        data["added_by_name"] = admin_map.get(record.added_by, "")
+        has_edits = session.exec(
+            select(FinanceEditHistory).where(FinanceEditHistory.finance_id == record.id)
+        ).first() is not None
+        data["has_edits"] = has_edits
+        enriched_records.append(data)
+
     # --- Summary calculations ---
     total_earnings = sum(f.amount for f in all_records)
     total_salaries = sum(f.amount for f in all_records if f.category_id == 1)  # Salary category
@@ -131,12 +157,7 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
         "page_size": page_size,
         "total_count": total_count,
         "total_pages": (total_count + page_size - 1) // page_size,
-        "filters": {
-            "start_date": str(start_date) if start_date else "All",
-            "end_date": str(end_date) if end_date else "All",
-            "category_id": category_id if category_id else "All",
-        },
-        "records": paginated_records,
+        "records": enriched_records,
         "summary": {
             "total_earnings": total_earnings,
             "total_salaries": total_salaries,
@@ -144,3 +165,109 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
             "total_profit": total_profit
         }
     }
+
+
+# --- Finance Categories ---
+
+def get_all_categories_in_db(session: Session):
+    categories = session.exec(select(FinanceCategory)).all()
+    return categories
+
+
+def create_category_in_db(category_name: str, color_code: str, session: Session):
+    if not category_name or category_name in ("", "string"):
+        raise HTTPException(status_code=400, detail="Enter category name")
+    if not color_code or color_code in ("", "string"):
+        raise HTTPException(status_code=400, detail="Enter color code")
+
+    existing = session.exec(
+        select(FinanceCategory).where(FinanceCategory.category_name == category_name)
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Category already exists")
+
+    new_category = FinanceCategory(category_name=category_name, color_code=color_code)
+    session.add(new_category)
+    session.commit()
+    session.refresh(new_category)
+    return new_category
+
+
+def update_category_in_db(category_id: int, category_name: str, color_code: str, session: Session):
+    existing = session.exec(
+        select(FinanceCategory).where(FinanceCategory.category_id == category_id)
+    ).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    if category_name and category_name not in ("", "string"):
+        existing.category_name = category_name
+    if color_code and color_code not in ("", "string"):
+        existing.color_code = color_code
+
+    session.commit()
+    session.refresh(existing)
+    return existing
+
+
+def delete_category_in_db(category_id: int, session: Session):
+    existing = session.exec(
+        select(FinanceCategory).where(FinanceCategory.category_id == category_id)
+    ).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    # Check if any finance records use this category
+    records = session.exec(
+        select(Finance).where(Finance.category_id == category_id)
+    ).first()
+    if records:
+        raise HTTPException(status_code=409, detail="Cannot delete category — finance records are using it")
+
+    session.delete(existing)
+    session.commit()
+    return {"message": "Category deleted successfully"}
+
+
+# --- Finance Edit History ---
+
+def get_edit_history_in_db(finance_id: int, session: Session):
+    existing = session.exec(select(Finance).where(Finance.id == finance_id)).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Finance record not found")
+
+    history = session.exec(
+        select(FinanceEditHistory)
+        .where(FinanceEditHistory.finance_id == finance_id)
+        .order_by(FinanceEditHistory.edited_at.desc())
+    ).all()
+
+    admin_map = {}
+    category_map = {}
+    results = []
+    for h in history:
+        if h.edited_by and h.edited_by not in admin_map:
+            admin = session.exec(select(Admin).where(Admin.id == h.edited_by)).first()
+            admin_map[h.edited_by] = admin.company_name if admin else str(h.edited_by)
+
+        old_value = h.old_value
+        new_value = h.new_value
+        # Resolve category IDs to names
+        if h.field_name == "category_id":
+            for val in [old_value, new_value]:
+                if val and val.isdigit() and int(val) not in category_map:
+                    cat = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == int(val))).first()
+                    category_map[int(val)] = cat.category_name if cat else val
+            old_value = category_map.get(int(old_value), old_value) if old_value and old_value.isdigit() else old_value
+            new_value = category_map.get(int(new_value), new_value) if new_value and new_value.isdigit() else new_value
+
+        results.append({
+            "id": h.id,
+            "field_name": h.field_name,
+            "old_value": old_value,
+            "new_value": new_value,
+            "edited_by": admin_map.get(h.edited_by, ""),
+            "edited_at": h.edited_at.isoformat() if h.edited_at else "",
+        })
+
+    return results

@@ -74,33 +74,10 @@ const EmployeesBody = () => {
     return (
         <div>
             {/* Page heading */}
-            <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-white font-inter">Employees</h1>
-                <p className="text-sm text-slate-400 font-inter mt-1">Manage your team members and their information</p>
-            </div>
-
-            {/* Top bar: search + register button */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mb-6">
-                <div className="flex items-center gap-2 flex-1 max-w-md">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                        <input
-                            type="text"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={handleSearchKeyDown}
-                            placeholder="Search by name, code, email, or designation..."
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white font-inter placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                        />
-                    </div>
-                    {search && (
-                        <button
-                            onClick={handleClearSearch}
-                            className="text-xs text-slate-400 hover:text-white font-inter px-2 py-1 transition-colors"
-                        >
-                            Clear
-                        </button>
-                    )}
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h1 className="text-2xl font-semibold text-white font-inter">Employees</h1>
+                    <p className="text-sm text-slate-400 font-inter mt-1">Manage your team members and their information</p>
                 </div>
                 <button
                     type="button"
@@ -110,6 +87,29 @@ const EmployeesBody = () => {
                     <UserPlus className="w-4 h-4" />
                     Register Employee
                 </button>
+            </div>
+
+            {/* Search bar */}
+            <div className="flex items-center gap-2 mb-6 max-w-md">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                        type="text"
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={handleSearchKeyDown}
+                        placeholder="Search by name, code, email, or designation..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white font-inter placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    />
+                </div>
+                {search && (
+                    <button
+                        onClick={handleClearSearch}
+                        className="text-xs text-slate-400 hover:text-white font-inter px-2 py-1 transition-colors"
+                    >
+                        Clear
+                    </button>
+                )}
             </div>
 
             {/* Loading overlay */}

@@ -1,6 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom"
-import ImageButton from "../../../shared/ImageButton"
-import backImg from "../../../assets/images/back.svg"
+import { ArrowLeft } from "lucide-react"
 import { useFinance } from "../modal/FinanceContext";
 import { useEffect } from "react";
 import CategoryForm from "./CategoryForm";
@@ -8,17 +7,13 @@ import CategoryForm from "./CategoryForm";
 const UpdateCategory = () => {
     const { financeCategoriesList, editCategoryData, editingCategory, setEditingCategory } = useFinance();
     const navigate = useNavigate()
-
-    const backPgae = () => {
-        navigate(-1)
-    }
     const { categoryId } = useParams()
+
     useEffect(() => {
         if (financeCategoriesList.length > 0 && editingCategory === null) {
-            const foundEmployee = financeCategoriesList.find((cate) => cate?.id === categoryId);
-            console.log(foundEmployee, "Found")
-            if (foundEmployee) {
-                editCategoryData(foundEmployee);
+            const found = financeCategoriesList.find((cate) => cate?.id === categoryId);
+            if (found) {
+                editCategoryData(found);
             }
         }
         return () => {
@@ -26,15 +21,19 @@ const UpdateCategory = () => {
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [financeCategoriesList, categoryId])
+
     return (
         <>
-            <ImageButton type="button" onClick={backPgae} buttonClasses="mt-5 w-5 h-5 md:w-7 md:h-7">
-                <img src={backImg} alt="back" />
-            </ImageButton>
-            <h2 className="mt-5 md:mt-[46px] text-2xl md:text-3xl lg:text-[58px] font-semibold font-poppins lg:leading-[140%] text-white">
-                Update the Category
-            </h2>
-            <CategoryForm />
+            <button onClick={() => navigate(-1)} className="mt-5 flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-inter text-sm">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+            </button>
+            <div className="mt-6 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 md:p-8">
+                <h2 className="text-xl md:text-2xl font-semibold text-white font-inter">
+                    Update Category
+                </h2>
+                <CategoryForm />
+            </div>
         </>
     )
 }
