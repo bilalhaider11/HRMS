@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlmodel import select, Session
-from models import Finance, FinanceUpdate, FinanceCategory, Admin
+from models import Finance, FinanceUpdate, FinanceCategory, FinanceEditHistory, Admin
 
 
 # --- Utility: get the single admin ID ---
@@ -68,9 +68,20 @@ def edit_finance_record_in_db(finance_id: int, finance: FinanceUpdate, session: 
         if not category:
             raise HTTPException(status_code=404, detail=f"Finance category with id {update_data['category_id']} does not exist")
 
-    # Update only provided fields
+    # Log each field change to edit history
     for key, value in update_data.items():
         if value is not None:
+            old_value = str(getattr(existing, key, ""))
+            new_value = str(value)
+            if old_value != new_value:
+                history = FinanceEditHistory(
+                    finance_id=finance_id,
+                    field_name=key,
+                    old_value=old_value,
+                    new_value=new_value,
+                    edited_by=admin_id,
+                )
+                session.add(history)
             setattr(existing, key, value)
 
     # Ensure added_by still tracks admin
@@ -79,18 +90,6 @@ def edit_finance_record_in_db(finance_id: int, finance: FinanceUpdate, session: 
     session.commit()
     session.refresh(existing)
     return existing
-
-
-# --- Delete a finance record ---
-def delete_finance_record_in_db(finance_id: int, session: Session):
-    # Retrieve existing finance record
-    existing = session.exec(select(Finance).where(Finance.id == finance_id)).first()
-    if not existing:
-        raise HTTPException(status_code=404, detail="Finance Record does not exist")
-
-    session.delete(existing)
-    session.commit()
-    return {"Message": "Deleted Successfully"}
 
 
 # --- Get finance records with filters and pagination ---
@@ -131,11 +130,6 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
         "page_size": page_size,
         "total_count": total_count,
         "total_pages": (total_count + page_size - 1) // page_size,
-        "filters": {
-            "start_date": str(start_date) if start_date else "All",
-            "end_date": str(end_date) if end_date else "All",
-            "category_id": category_id if category_id else "All",
-        },
         "records": paginated_records,
         "summary": {
             "total_earnings": total_earnings,
@@ -144,3 +138,65 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
             "total_profit": total_profit
         }
     }
+
+
+# --- Finance Categories ---
+
+def get_all_categories_in_db(session: Session):
+    categories = session.exec(select(FinanceCategory)).all()
+    return categories
+
+
+def create_category_in_db(category_name: str, color_code: str, session: Session):
+    if not category_name or category_name in ("", "string"):
+        raise HTTPException(status_code=400, detail="Enter category name")
+    if not color_code or color_code in ("", "string"):
+        raise HTTPException(status_code=400, detail="Enter color code")
+
+    existing = session.exec(
+        select(FinanceCategory).where(FinanceCategory.category_name == category_name)
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Category already exists")
+
+    new_category = FinanceCategory(category_name=category_name, color_code=color_code)
+    session.add(new_category)
+    session.commit()
+    session.refresh(new_category)
+    return new_category
+
+
+def update_category_in_db(category_id: int, category_name: str, color_code: str, session: Session):
+    existing = session.exec(
+        select(FinanceCategory).where(FinanceCategory.category_id == category_id)
+    ).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    if category_name and category_name not in ("", "string"):
+        existing.category_name = category_name
+    if color_code and color_code not in ("", "string"):
+        existing.color_code = color_code
+
+    session.commit()
+    session.refresh(existing)
+    return existing
+
+
+def delete_category_in_db(category_id: int, session: Session):
+    existing = session.exec(
+        select(FinanceCategory).where(FinanceCategory.category_id == category_id)
+    ).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    # Check if any finance records use this category
+    records = session.exec(
+        select(Finance).where(Finance.category_id == category_id)
+    ).first()
+    if records:
+        raise HTTPException(status_code=409, detail="Cannot delete category — finance records are using it")
+
+    session.delete(existing)
+    session.commit()
+    return {"message": "Category deleted successfully"}

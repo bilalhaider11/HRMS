@@ -179,6 +179,17 @@ class Finance(FinanceBase, table=True):
     added_by: Optional[int] = Field(default=None, foreign_key='admin.id')
 
 
+class FinanceEditHistory(SQLModel, table=True):
+    __tablename__ = "finance_edit_history"
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    finance_id: int = Field(foreign_key="finance.id")
+    field_name: str
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    edited_by: Optional[int] = Field(default=None, foreign_key='admin.id')
+    edited_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+
 # --- Inventory Models ---
 class ItemCategoryBase(SQLModel):
     name: str = Field(..., min_length=1)

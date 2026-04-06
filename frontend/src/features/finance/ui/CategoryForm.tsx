@@ -4,9 +4,9 @@ import { useFormik } from "formik";
 import { v4 as uuidv4 } from "uuid";
 import { useState } from "react";
 import { useFinance, FinanceCategoriesData } from "../modal/FinanceContext";
-import Button from "shared/Button";
 import SuccessfullModal from "shared/SuccessfullModal";
 import { useNavigate } from "react-router-dom";
+import { createFinanceCategory, updateFinanceCategory } from "../api/financeApi";
 
 const formSchema = Yup.object().shape({
     categoryName: Yup.string().required("Name is required"),
@@ -14,7 +14,7 @@ const formSchema = Yup.object().shape({
 
 });
 const CategoryForm = () => {
-    const { addCategory, clearError, successfullModal, setSuccessfullModal, setEditingCategory, editingCategory, updateFinanceCategory } = useFinance();
+    const { addCategory, clearError, successfullModal, setSuccessfullModal, setEditingCategory, editingCategory, updateFinanceCategory: updateFinanceCategoryCtx } = useFinance();
     const labelStyles = "font-urbanist font-semibold text-base md:text-lg lg:text-[21px] lg:leading-[180%] text-white"
     const inputBorder = "inputMainBorder mt-3.5 w-full rounded-[8px]"
     const inputStyles = "inputBox text-sm md:text-base leading-normal px-4 py-2.5 lg:py-[21px] lg:px-[29px] rounded-[15px] text-white placeholder-[#747681]"
@@ -24,25 +24,27 @@ const CategoryForm = () => {
 
     const [generatedCategoryId] = useState<string>(uuidv4())
 
-    const handleSubmit = (values: any) => {
-        if (editingCategory !== null && updateFinanceCategory) {
-            const updatedCategory = {
-                ...editingCategory,
-                ...values,
-            };
-            updateFinanceCategory(updatedCategory);
-            formik.resetForm();
-        } else {
-            const newCategory: FinanceCategoriesData = {
-                id: values.id,
-                name: values.categoryName,
-                colorCode: values.colorCode
-            }
-            const added = addCategory(newCategory);
-            console.log(added)
-            if (added) {
+    const [apiError, setApiError] = useState("");
+
+    const handleSubmit = async (values: any) => {
+        setApiError("");
+        try {
+            if (editingCategory !== null && updateFinanceCategoryCtx) {
+                await updateFinanceCategory(parseInt(editingCategory.id || "0"), values.categoryName, values.colorCode);
+                updateFinanceCategoryCtx({ ...editingCategory, name: values.categoryName, colorCode: values.colorCode });
+                formik.resetForm();
+            } else {
+                const result = await createFinanceCategory(values.categoryName, values.colorCode);
+                const newCategory: FinanceCategoriesData = {
+                    id: String(result.category_id),
+                    name: result.category_name,
+                    colorCode: result.color_code,
+                };
+                addCategory(newCategory);
                 formik.resetForm();
             }
+        } catch (err: any) {
+            setApiError(err.response?.data?.detail || "Failed to save category");
         }
     }
     const successfullyAdded = () => {
@@ -99,9 +101,14 @@ const CategoryForm = () => {
                     </div>
                 </div>
 
-                <Button type="submit" disabled={editingCategory ? !formik.dirty : false} buttonClasses={`min-h-10 lg:min-h-[64px] border border-[#CDD6D7] border-solid bg-[#283573] py-3 px-2 lg:py-5 lg:px-[75px] rounded-[15px] flex mx-auto lg:mx-0 mt-4 md:mt-[58px] text-base md:text-lg lg:text-2xl font-semibold lg:leading-[160%] font-urbanist text-white min-w-[200px] lg:min-w-auto w-fit ${editingCategory && !formik.dirty ? 'opacity-50 !cursor-not-allowed' : 'opacity-1 !cursor-pointer'}`}>
-                    {editingCategory ? 'Update' : 'Register'}
-                </Button>
+                {apiError && (
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                        <p className="text-red-400 text-sm font-inter">{apiError}</p>
+                    </div>
+                )}
+                <button type="submit" disabled={editingCategory ? !formik.dirty : formik.isSubmitting} className="mt-6 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium font-inter rounded-xl transition-colors">
+                    {formik.isSubmitting ? 'Saving...' : editingCategory ? 'Update Category' : 'Add Category'}
+                </button>
             </form>
             {successfullModal &&
                 <SuccessfullModal modalClassName="" modalMain="" successfullOk={successfullyAdded}>

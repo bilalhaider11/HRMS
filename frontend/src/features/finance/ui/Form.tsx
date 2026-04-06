@@ -5,6 +5,7 @@ import Button from "../../../shared/Button";
 import { FinanceTableData } from "../modal/FinanceContext";
 import { useFinance, FinanceCategoriesData } from "../modal/FinanceContext";
 import { v4 as uuidv4 } from "uuid";
+import { createFinanceRecord, updateFinanceRecord } from "../api/financeApi";
 import { useCallback, useEffect, useState } from "react";
 import Select from "../../../shared/Select";
 import SuccessfullModal from "../../../shared/SuccessfullModal";
@@ -38,34 +39,51 @@ const Form = () => {
     const [selectedCategory, setSelectedCategory] = useState("Select the Category")
     const [categoryId, setCategoryId] = useState("")
 
-    const handleSubmit = (values: any) => {
-        console.log(editingFinance)
-        if (editingFinance !== null && updateFinance) {
-            const updatedFinance = {
-                ...editingFinance,
-                ...values,
-                Amount: parseFloat(values.amount.toString()) || 0,
-                TaxDeductions: calculatedFinal,
-                CategoryID: values.categoryId || categoryId,
-            };
-            updateFinance(updatedFinance);
-            formik.resetForm();
-        } else {
-            const newFinance: FinanceTableData = {
-                FinanceId: values.financeId,
-                Date: values.date,
-                Amount: parseFloat(values.amount) || 0,
-                ChequeNumber: values.chequeNumber,
-                AddedBy: values.addedBy,
-                TaxDeductions: calculatedFinal,
-                Description: values.description,
-                CategoryID: values.categoryId || undefined
-            }
-            const added = addFinance(newFinance);
-            console.log(added)
-            if (added) {
+    const [apiError, setApiError] = useState("");
+
+    const handleSubmit = async (values: any) => {
+        setApiError("");
+        try {
+            if (editingFinance !== null && updateFinance) {
+                await updateFinanceRecord(parseInt(editingFinance.FinanceId || "0"), {
+                    date: values.date || undefined,
+                    description: values.description || undefined,
+                    amount: parseFloat(values.amount) || undefined,
+                    tax_deductions: calculatedFinal || undefined,
+                    cheque_number: values.chequeNumber || undefined,
+                    category_id: parseInt(values.categoryId || categoryId) || undefined,
+                });
+                updateFinance({
+                    ...editingFinance,
+                    ...values,
+                    Amount: parseFloat(values.amount?.toString()) || 0,
+                    TaxDeductions: calculatedFinal,
+                    CategoryID: values.categoryId || categoryId,
+                });
+                formik.resetForm();
+            } else {
+                await createFinanceRecord({
+                    date: values.date,
+                    description: values.description,
+                    amount: parseFloat(values.amount) || 0,
+                    tax_deductions: calculatedFinal,
+                    cheque_number: values.chequeNumber,
+                    category_id: parseInt(values.categoryId || categoryId) || 0,
+                });
+                const newFinance: FinanceTableData = {
+                    FinanceId: values.financeId,
+                    Date: values.date,
+                    Amount: parseFloat(values.amount) || 0,
+                    ChequeNumber: values.chequeNumber,
+                    TaxDeductions: calculatedFinal,
+                    Description: values.description,
+                    CategoryID: parseInt(values.categoryId || categoryId) || undefined,
+                };
+                addFinance(newFinance);
                 formik.resetForm();
             }
+        } catch (err: any) {
+            setApiError(err.response?.data?.detail || "Failed to save finance record");
         }
     }
 
@@ -243,9 +261,14 @@ const Form = () => {
                         {idExistError}
                     </p>
                 )}
-                <Button type="submit" disabled={editingFinance ? !formik.dirty : false} buttonClasses={`min-h-10 lg:min-h-[64px] border border-[#CDD6D7] border-solid bg-[#283573] py-3 px-2 lg:py-5 lg:px-[75px] rounded-[15px] flex mx-auto lg:mx-0 mt-4 md:mt-[58px] text-base md:text-lg lg:text-2xl font-semibold lg:leading-[160%] font-urbanist text-white min-w-[200px] lg:min-w-auto w-fit ${editingFinance && !formik.dirty ? 'opacity-50 !cursor-not-allowed' : 'opacity-1 !cursor-pointer'}`}>
-                    {editingFinance ? 'Update' : 'Register'}
-                </Button>
+                {apiError && (
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                        <p className="text-red-400 text-sm font-inter">{apiError}</p>
+                    </div>
+                )}
+                <button type="submit" disabled={editingFinance ? !formik.dirty : formik.isSubmitting} className="mt-6 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium font-inter rounded-xl transition-colors">
+                    {formik.isSubmitting ? 'Saving...' : editingFinance ? 'Update Record' : 'Add Record'}
+                </button>
             </form>
             {successfullModal &&
                 <SuccessfullModal modalClassName="" modalMain="" successfullOk={successfullyAdded}>

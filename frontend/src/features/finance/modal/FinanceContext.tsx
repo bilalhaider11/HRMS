@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchFinanceTableData, fetchFinanceCategoriesData } from '../api/finance';
+import { fetchFinanceRecords, fetchFinanceCategories, deleteFinanceCategory as deleteCategoryApi } from '../api/financeApi';
 
 export interface FinanceTableData {
   FinanceId?: string,
@@ -72,25 +72,39 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   useEffect(() => {
     const loadFinance = async () => {
       try {
-        const data = await fetchFinanceTableData();
-        setFinanceList(data.financeAllList);
+        const data = await fetchFinanceRecords(1, 100);
+        const mapped = (data.records || []).map((r: any) => ({
+          FinanceId: String(r.id),
+          Date: r.date,
+          Description: r.description,
+          Amount: r.amount,
+          TaxDeductions: r.tax_deductions,
+          ChequeNumber: r.cheque_number,
+          CategoryID: r.category_id,
+          AddedBy: String(r.added_by || ""),
+        }));
+        setFinanceList(mapped);
       } catch (error) {
-        console.error(error);
+        console.error("Failed to load finance records:", error);
       }
     };
 
     const loadFinanceCategories = async () => {
       try {
-        const data = await fetchFinanceCategoriesData()
-        setFinanceCategoriesList(data.financeCategories)
+        const data = await fetchFinanceCategories();
+        const mapped = (data || []).map((c: any) => ({
+          id: String(c.category_id),
+          name: c.category_name,
+          colorCode: c.color_code,
+        }));
+        setFinanceCategoriesList(mapped);
       } catch (error) {
-        console.log(error)
+        console.error("Failed to load finance categories:", error);
       }
-    }
+    };
 
-    loadFinanceCategories()
+    loadFinanceCategories();
     loadFinance();
-
   }, []);
 
   const addFinance = (finance: FinanceTableData) => {
@@ -128,12 +142,9 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     setIdExistError("");
   };
 
-  const handleFinanceDelete = (finance: FinanceTableData) => {
-    const updatingList = financeList.filter(i => i.FinanceId !== finance.FinanceId)
-    setFinanceList(updatingList)
-    setIsDeleteModal(null)
-    window.scrollTo(0, 0);
-    document.body.style.overflow = "auto"
+  // Finance records cannot be deleted — only edited (with history tracking)
+  const handleFinanceDelete = (_finance: FinanceTableData) => {
+    setIsDeleteModal(null);
   }
 
   const addCategory = (category: FinanceCategoriesData) => {
@@ -170,12 +181,17 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     window.scrollTo(0, 0);
     setIdExistError("");
   };
-  const handleCategoryDelete = (category: FinanceCategoriesData) => {
-    const updatingList = financeCategoriesList.filter(c => c.id !== category.id)
-    setFinanceCategoriesList(updatingList)
-    setIsDeleteCategoryModal(null)
+  const handleCategoryDelete = async (category: FinanceCategoriesData) => {
+    try {
+      await deleteCategoryApi(parseInt(category.id || "0"));
+      const updatingList = financeCategoriesList.filter(c => c.id !== category.id);
+      setFinanceCategoriesList(updatingList);
+    } catch (error: any) {
+      console.error("Failed to delete category:", error?.response?.data?.detail || error);
+    }
+    setIsDeleteCategoryModal(null);
     window.scrollTo(0, 0);
-    document.body.style.overflow = "auto"
+    document.body.style.overflow = "auto";
   }
 
   const clearError = () => setIdExistError("");
