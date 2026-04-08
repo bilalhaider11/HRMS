@@ -110,6 +110,7 @@ def display_all_employee_in_db(
     page: int = 1, page_size: int = 10,
     department: Optional[str] = None,
     search: Optional[str] = None,
+    status: Optional[str] = None,
     session: Session = None
 ):
     if page < 1:
@@ -117,7 +118,11 @@ def display_all_employee_in_db(
     if page_size < 1:
         page_size = 10
 
-    query = select(Employee).where(Employee.status == True)
+    query = select(Employee)
+    if status == "inactive":
+        query = query.where(Employee.status == False)
+    elif status == "active" or status is None:
+        query = query.where(Employee.status == True)
 
     if department:
         query = query.where(Employee.department.ilike(f"%{department}%"))

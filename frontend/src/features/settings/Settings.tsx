@@ -1,8 +1,9 @@
 import { useContext, useEffect, useState } from "react";
-import { Mail, Lock, Building2, Globe, MapPin, Phone, Pencil, Loader2 } from "lucide-react";
+import { Mail, Lock, Building2, Globe, MapPin, Phone, Pencil, Loader2, Key, Wallet } from "lucide-react";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { VerifyContext } from "../../app/VerifyContext";
 import api from "api/axios";
+import { updateOpeningBalance } from "../finance/api/financeApi";
 
 interface CompanyProfile {
   company_name: string;
@@ -10,6 +11,7 @@ interface CompanyProfile {
   address: string;
   phone: string;
   email: string;
+  opening_balance?: number;
 }
 
 export default function Setting() {
@@ -21,6 +23,20 @@ export default function Setting() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [accessKey, setAccessKey] = useState("");
+  const [editingAccessKey, setEditingAccessKey] = useState(false);
+  const [accessKeyInput, setAccessKeyInput] = useState("");
+  const [accessKeySaving, setAccessKeySaving] = useState(false);
+  const [accessKeyError, setAccessKeyError] = useState("");
+  const [accessKeySuccess, setAccessKeySuccess] = useState(false);
+
+  // Opening balance
+  const [openingBalance, setOpeningBalance] = useState<number>(0);
+  const [editingOpeningBalance, setEditingOpeningBalance] = useState(false);
+  const [openingBalanceInput, setOpeningBalanceInput] = useState("");
+  const [openingBalanceSaving, setOpeningBalanceSaving] = useState(false);
+  const [openingBalanceError, setOpeningBalanceError] = useState("");
+  const [openingBalanceSuccess, setOpeningBalanceSuccess] = useState(false);
 
   // Edit form state
   const [formData, setFormData] = useState<CompanyProfile>({
@@ -33,6 +49,10 @@ export default function Setting() {
         const res = await api.get("/admin/company_profile");
         setProfile(res.data);
         setFormData(res.data);
+        setAccessKey(res.data.access_key || "");
+        setAccessKeyInput(res.data.access_key || "");
+        setOpeningBalance(res.data.opening_balance ?? 0);
+        setOpeningBalanceInput(String(res.data.opening_balance ?? 0));
       } catch (error) {
         console.error("Failed to load profile:", error);
       }
@@ -74,6 +94,47 @@ export default function Setting() {
 
   const handleChange = (field: keyof CompanyProfile, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAccessKeySave = async () => {
+    if (!accessKeyInput.trim()) {
+      setAccessKeyError("Access key cannot be empty");
+      return;
+    }
+    setAccessKeySaving(true);
+    setAccessKeyError("");
+    setAccessKeySuccess(false);
+    try {
+      await api.patch("/admin/update_access_key", { access_key: accessKeyInput.trim() });
+      setAccessKey(accessKeyInput.trim());
+      setEditingAccessKey(false);
+      setAccessKeySuccess(true);
+      setTimeout(() => setAccessKeySuccess(false), 3000);
+    } catch (err: any) {
+      setAccessKeyError(err.response?.data?.detail || "Failed to update access key");
+    }
+    setAccessKeySaving(false);
+  };
+
+  const handleOpeningBalanceSave = async () => {
+    const val = parseFloat(openingBalanceInput);
+    if (isNaN(val)) {
+      setOpeningBalanceError("Please enter a valid number");
+      return;
+    }
+    setOpeningBalanceSaving(true);
+    setOpeningBalanceError("");
+    setOpeningBalanceSuccess(false);
+    try {
+      await updateOpeningBalance(val);
+      setOpeningBalance(val);
+      setEditingOpeningBalance(false);
+      setOpeningBalanceSuccess(true);
+      setTimeout(() => setOpeningBalanceSuccess(false), 3000);
+    } catch (err: any) {
+      setOpeningBalanceError(err.response?.data?.detail || "Failed to update opening balance");
+    }
+    setOpeningBalanceSaving(false);
   };
 
   if (loading) {
@@ -190,6 +251,123 @@ export default function Setting() {
             Change Password
           </button>
         </div>
+
+        <div className="border-t border-slate-800 mt-5 pt-5">
+          {accessKeySuccess && (
+            <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <p className="text-emerald-400 text-sm font-inter">Access key updated successfully</p>
+            </div>
+          )}
+          {accessKeyError && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-red-400 text-sm font-inter">{accessKeyError}</p>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center">
+                <Key className="w-5 h-5 text-indigo-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-slate-500 font-inter">Access Key</p>
+                {editingAccessKey ? (
+                  <input
+                    type="text"
+                    value={accessKeyInput}
+                    onChange={(e) => setAccessKeyInput(e.target.value)}
+                    placeholder="Enter new access key"
+                    className="mt-1 w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white font-inter placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                ) : (
+                  <p className="text-sm text-slate-400 font-inter mt-0.5 font-mono">{accessKey || "—"}</p>
+                )}
+              </div>
+            </div>
+            {editingAccessKey ? (
+              <div className="flex items-center gap-2 ml-4">
+                <button onClick={() => { setEditingAccessKey(false); setAccessKeyInput(accessKey); setAccessKeyError(""); }} className="text-sm text-slate-400 hover:text-white font-inter transition-colors">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAccessKeySave}
+                  disabled={accessKeySaving}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium font-inter rounded-lg transition-colors"
+                >
+                  {accessKeySaving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setEditingAccessKey(true); setAccessKeyInput(accessKey); setAccessKeyError(""); setAccessKeySuccess(false); }}
+                className="text-sm text-indigo-400 hover:text-indigo-300 font-inter font-medium transition-colors"
+              >
+                Change
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Finance Card */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl mt-6">
+        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-5 font-inter">Finance</h2>
+
+        {openingBalanceSuccess && (
+          <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+            <p className="text-emerald-400 text-sm font-inter">Opening balance updated successfully</p>
+          </div>
+        )}
+        {openingBalanceError && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-red-400 text-sm font-inter">{openingBalanceError}</p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-1">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center flex-shrink-0">
+              <Wallet className="w-5 h-5 text-indigo-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-slate-500 font-inter">Opening Balance</p>
+              {editingOpeningBalance ? (
+                <input
+                  type="number"
+                  value={openingBalanceInput}
+                  onChange={(e) => setOpeningBalanceInput(e.target.value)}
+                  placeholder="0"
+                  className="mt-1 w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white font-inter placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                />
+              ) : (
+                <p className="text-sm text-white font-inter mt-0.5">{openingBalance.toLocaleString()}</p>
+              )}
+            </div>
+          </div>
+          {editingOpeningBalance ? (
+            <div className="flex items-center gap-2 ml-4">
+              <button onClick={() => { setEditingOpeningBalance(false); setOpeningBalanceInput(String(openingBalance)); setOpeningBalanceError(""); }} className="text-sm text-slate-400 hover:text-white font-inter transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleOpeningBalanceSave}
+                disabled={openingBalanceSaving}
+                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium font-inter rounded-lg transition-colors"
+              >
+                {openingBalanceSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setEditingOpeningBalance(true); setOpeningBalanceInput(String(openingBalance)); setOpeningBalanceError(""); setOpeningBalanceSuccess(false); }}
+              className="text-sm text-indigo-400 hover:text-indigo-300 font-inter font-medium transition-colors ml-4"
+            >
+              Change
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-slate-500 font-inter mt-3 ml-14">
+          The starting balance before any transactions. Used to compute the current running balance.
+        </p>
       </div>
 
       {showPasswordModal && (

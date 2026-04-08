@@ -13,7 +13,7 @@ const formSchema = Yup.object().shape({
     date: Yup.string().required("Date is required"),
     amount: Yup.number().required("Amount is required").positive("Amount must be positive"),
     taxDeductions: Yup.number().min(0, "Tax cannot be negative"),
-    chequeNumber: Yup.string().required("Cheque Number is required"),
+    chequeNumber: Yup.string(),
     description: Yup.string().required("Description is required"),
     categoryId: Yup.string().required("Category is required")
 });

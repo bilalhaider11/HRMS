@@ -23,9 +23,16 @@ export interface FinanceCategoriesData {
   colorCode?: string
 }
 
+export interface FinanceSummary {
+  total_income: number;
+  total_expense: number;
+  net: number;
+}
+
 interface FinanceContextType {
   financeList: FinanceTableData[];
   financeCategoriesList: FinanceCategoriesData[];
+  financeSummary: FinanceSummary;
   setEditingFinance: (fin: FinanceTableData | null) => void;
   setEditingCategory: (category: FinanceCategoriesData | null) => void;
   addFinance: (finance: FinanceTableData) => boolean;
@@ -48,7 +55,7 @@ interface FinanceContextType {
   handleFinanceDelete: (finance: FinanceTableData) => void;
   handleCategoryDelete: (category: FinanceCategoriesData) => void;
 
-  loadFinance: (page?: number, pageSize?: number) => Promise<void>;
+  loadFinance: (page?: number, pageSize?: number, startDate?: string, endDate?: string, categoryId?: string) => Promise<void>;
   financePage: number;
   financeTotalPages: number;
   financeTotalCount: number;
@@ -72,6 +79,7 @@ interface FinanceProviderProps {
 export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) => {
   const [financeList, setFinanceList] = useState<FinanceTableData[]>([]);
   const [financeCategoriesList, setFinanceCategoriesList] = useState<FinanceCategoriesData[]>([])
+  const [financeSummary, setFinanceSummary] = useState<FinanceSummary>({ total_income: 0, total_expense: 0, net: 0 });
   const [idExistError, setIdExistError] = useState("")
   const [editingFinance, setEditingFinance] = useState<FinanceTableData | null>(null);
   const [successfullModal, setSuccessfullModal] = useState<boolean>(false)
@@ -82,22 +90,25 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   const [financeTotalPages, setFinanceTotalPages] = useState(1);
   const [financeTotalCount, setFinanceTotalCount] = useState(0);
   const [lastPageSize, setLastPageSize] = useState(50);
+  const [lastFilters, setLastFilters] = useState<{ startDate?: string; endDate?: string; categoryId?: string }>({});
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr + "T00:00:00");
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   };
   const formatDateTime = (dateStr: string) => {
-    const d = new Date(dateStr);
+    const d = new Date(dateStr.endsWith("Z") ? dateStr : dateStr + "Z");
     const datePart = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
     const timePart = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }).toLowerCase();
     return `${datePart} ${timePart}`;
   };
 
-  const loadFinance = async (page: number = 1, pageSize: number = 50) => {
+  const loadFinance = async (page: number = 1, pageSize: number = 50, startDate?: string, endDate?: string, categoryId?: string) => {
     try {
       setLastPageSize(pageSize);
-      const data = await fetchFinanceRecords(page, pageSize);
+      setLastFilters({ startDate, endDate, categoryId });
+      const catIdNum = categoryId ? parseInt(categoryId) : undefined;
+      const data = await fetchFinanceRecords(page, pageSize, startDate, endDate, catIdNum);
       const mapped = (data.records || []).map((r: any) => ({
         FinanceId: String(r.id),
         Date: r.date ? formatDate(r.date) : "",
@@ -117,6 +128,13 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
       setFinancePage(data.page || 1);
       setFinanceTotalPages(data.total_pages || 1);
       setFinanceTotalCount(data.total_count || 0);
+      if (data.summary) {
+        setFinanceSummary({
+          total_income: data.summary.total_income || 0,
+          total_expense: data.summary.total_expense || 0,
+          net: data.summary.net || 0,
+        });
+      }
     } catch (error) {
       console.error("Failed to load finance records:", error);
     }
@@ -138,12 +156,11 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     };
 
     loadFinanceCategories();
-    loadFinance(1, 50);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addFinance = (_finance: FinanceTableData) => {
-    loadFinance(financePage, lastPageSize);
+    loadFinance(financePage, lastPageSize, lastFilters.startDate, lastFilters.endDate, lastFilters.categoryId);
     setEditingFinance(null)
     setIdExistError("")
     setSuccessfullModal(true)
@@ -161,7 +178,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   };
 
   const updateFinance = (_updatedFinance: FinanceTableData) => {
-    loadFinance(financePage, lastPageSize);
+    loadFinance(financePage, lastPageSize, lastFilters.startDate, lastFilters.endDate, lastFilters.categoryId);
     setSuccessfullModal(true);
     document.body.style.overflow = "hidden";
     window.scrollTo(0, 0);
@@ -224,7 +241,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
 
 
   return (
-    <FinanceContext.Provider value={{ financeList, addFinance, clearError, idExistError, successfullModal, setSuccessfullModal, editingFinance, editFinanceData, updateFinance, setEditingFinance, isDeleteModal, setIsDeleteModal, handleFinanceDelete, financeCategoriesList, editCategoryData, editingCategory, setEditingCategory, addCategory, updateFinanceCategory, isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete, loadFinance, financePage, financeTotalPages, financeTotalCount }}>
+    <FinanceContext.Provider value={{ financeList, financeSummary, addFinance, clearError, idExistError, successfullModal, setSuccessfullModal, editingFinance, editFinanceData, updateFinance, setEditingFinance, isDeleteModal, setIsDeleteModal, handleFinanceDelete, financeCategoriesList, editCategoryData, editingCategory, setEditingCategory, addCategory, updateFinanceCategory, isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete, loadFinance, financePage, financeTotalPages, financeTotalCount }}>
       {children}
     </FinanceContext.Provider>
   );
