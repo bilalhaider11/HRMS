@@ -31,10 +31,11 @@ function mapEmployeeResponse(emp: any): EmployeeTableData {
   };
 }
 
-export async function fetchEmployees(page = 1, pageSize = 10, department?: string, search?: string) {
+export async function fetchEmployees(page = 1, pageSize = 10, department?: string, search?: string, status?: string) {
   const params: Record<string, any> = { page, page_size: pageSize };
   if (department) params.department = department;
   if (search) params.search = search;
+  if (status) params.status = status;
 
   const res = await api.get("/admin/display_all_employees", { params });
   return {

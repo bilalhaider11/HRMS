@@ -194,6 +194,7 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
       console.error("Failed to deactivate employee:", error);
     }
     setIsEmployeeDelete(null);
+    document.body.style.overflow = "auto";
   }
 
 

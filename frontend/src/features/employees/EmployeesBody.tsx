@@ -2,7 +2,7 @@ import EmployeeTable from "./ui/EmployeeTable"
 import { useNavigate } from "react-router-dom";
 import { useEmployees } from "./modal/EmployeesContext";
 import { fetchEmployees } from "./api/employeesApi";
-import { UserPlus, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { UserPlus, Search, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 
 const PAGE_SIZES = [10, 25, 50];
@@ -17,12 +17,14 @@ const EmployeesBody = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
+    const [statusFilter, setStatusFilter] = useState("active");
+    const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const loadEmployees = useCallback(async (p: number, q: string, size?: number) => {
+    const loadEmployees = useCallback(async (p: number, q: string, size?: number, status?: string) => {
         setLoading(true);
         try {
-            const data = await fetchEmployees(p, size || pageSize, undefined, q || undefined);
+            const data = await fetchEmployees(p, size || pageSize, undefined, q || undefined, status ?? statusFilter);
             setEmployeesList(data.employees);
             setTotalPages(data.totalPages);
             setTotalCount(data.totalCount);
@@ -31,7 +33,8 @@ const EmployeesBody = () => {
             console.error("Failed to load employees:", error);
         }
         setLoading(false);
-    }, [setEmployeesList, pageSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setEmployeesList, pageSize, statusFilter]);
 
     useEffect(() => {
         loadEmployees(page, search);
@@ -41,6 +44,12 @@ const EmployeesBody = () => {
     const handleSearch = () => {
         setSearch(searchInput);
         loadEmployees(1, searchInput);
+    };
+
+    const handleStatusFilter = (status: string) => {
+        setStatusFilter(status);
+        setStatusDropdownOpen(false);
+        loadEmployees(1, search, pageSize, status);
     };
 
     const handleSearchKeyDown = (e: React.KeyboardEvent) => {
@@ -89,9 +98,9 @@ const EmployeesBody = () => {
                 </button>
             </div>
 
-            {/* Search bar */}
-            <div className="flex items-center gap-2 mb-6 max-w-md">
-                <div className="relative flex-1">
+            {/* Search bar + status filter */}
+            <div className="flex items-center gap-3 mb-6">
+                <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
                         type="text"
@@ -110,6 +119,36 @@ const EmployeesBody = () => {
                         Clear
                     </button>
                 )}
+                <div className="relative">
+                    <button
+                        type="button"
+                        onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 text-sm font-medium font-inter rounded-xl transition-colors min-w-[140px] justify-between"
+                    >
+                        {statusFilter === "active" ? "Active" : statusFilter === "inactive" ? "Inactive" : "All"}
+                        <ChevronDown className={`w-4 h-4 transition-transform ${statusDropdownOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    {statusDropdownOpen && (
+                        <div className="absolute right-0 top-full mt-1 z-50 w-full bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-xl">
+                            {[
+                                { value: "active", label: "Active", color: "text-emerald-400" },
+                                { value: "inactive", label: "Inactive", color: "text-amber-400" },
+                                { value: "all", label: "All", color: "text-slate-300" },
+                            ].map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => handleStatusFilter(opt.value)}
+                                    className={`w-full text-left px-4 py-2.5 text-sm font-inter transition-colors border-b border-slate-700 last:border-0 ${
+                                        statusFilter === opt.value ? `${opt.color} bg-slate-700/50` : "text-slate-300 hover:bg-slate-700"
+                                    }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Loading overlay */}
