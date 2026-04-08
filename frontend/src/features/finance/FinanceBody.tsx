@@ -1,8 +1,9 @@
 import FinanceTable from "./ui/FinanceTable"
 import Form from "./ui/Form"
-import { Plus, ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react"
+import { Plus, ChevronDown, ChevronLeft, ChevronRight, X, TrendingUp, TrendingDown, Wallet, ChevronUp, RotateCcw } from "lucide-react"
 import { useFinance } from "./modal/FinanceContext"
 import { useState, useCallback, useEffect, useRef } from "react"
+import { fetchBalance, fetchMonthlySummary } from "./api/financeApi"
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
@@ -14,6 +15,26 @@ const getDefaultDateRange = () => {
     return { from: fmt(from), to: fmt(to) };
 };
 
+interface BalanceData {
+    opening_balance: number;
+    total_income: number;
+    total_expense: number;
+    net_transactions: number;
+    current_balance: number;
+}
+
+interface MonthRow {
+    month: number;
+    month_name: string;
+    opening_balance: number;
+    income: number;
+    expense: number;
+    net: number;
+    closing_balance: number;
+}
+
+const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
 const FinanceBody = () => {
     const { financeCategoriesList, loadFinance, financePage, financeTotalPages, financeTotalCount, setEditingFinance } = useFinance()
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>("")
@@ -21,6 +42,21 @@ const FinanceBody = () => {
     const [pageSize, setPageSize] = useState(50);
     const [showFormModal, setShowFormModal] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const [balance, setBalance] = useState<BalanceData | null>(null);
+    const [monthlyData, setMonthlyData] = useState<MonthRow[]>([]);
+    const [showMonthly, setShowMonthly] = useState(false);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+    useEffect(() => {
+        fetchBalance().then(setBalance).catch(console.error);
+    }, []);
+
+    useEffect(() => {
+        if (showMonthly) {
+            fetchMonthlySummary(selectedYear).then((d) => setMonthlyData(d.months || [])).catch(console.error);
+        }
+    }, [showMonthly, selectedYear]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -36,6 +72,12 @@ const FinanceBody = () => {
     const [dateFrom, setDateFrom] = useState(defaultRange.from);
     const [dateTo, setDateTo] = useState(defaultRange.to);
 
+    // Reload when filters change (reset to page 1)
+    useEffect(() => {
+        loadFinance(1, pageSize, dateFrom, dateTo, selectedCategoryId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dateFrom, dateTo, selectedCategoryId]);
+
     const inputStyles = "text-sm px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-inter focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all";
     const labelStyles = "text-xs font-medium text-slate-400 font-inter";
 
@@ -49,12 +91,19 @@ const FinanceBody = () => {
     }, [])
 
     const handlePageChange = (newPage: number) => {
-        loadFinance(newPage, pageSize);
+        loadFinance(newPage, pageSize, dateFrom, dateTo, selectedCategoryId);
     };
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);
-        loadFinance(1, newSize);
+        loadFinance(1, newSize, dateFrom, dateTo, selectedCategoryId);
+    };
+
+    const resetFilters = () => {
+        const def = getDefaultDateRange();
+        setDateFrom(def.from);
+        setDateTo(def.to);
+        setSelectedCategoryId("");
     };
 
     const openAddModal = () => {
@@ -67,6 +116,15 @@ const FinanceBody = () => {
         setShowFormModal(false);
         setEditingFinance(null);
         document.body.style.overflow = "auto";
+        // Refresh balance to reflect any newly added/updated records
+        fetchBalance().then(setBalance).catch(console.error);
+    };
+
+    const refreshBalance = () => {
+        fetchBalance().then(setBalance).catch(console.error);
+        if (showMonthly) {
+            fetchMonthlySummary(selectedYear).then((d) => setMonthlyData(d.months || [])).catch(console.error);
+        }
     };
 
     return (
@@ -82,6 +140,99 @@ const FinanceBody = () => {
                 </button>
             </div>
 
+            {/* Balance Summary Cards */}
+            {balance && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Wallet className="w-4 h-4 text-indigo-400" />
+                            <span className="text-xs text-slate-400 font-inter">Current Balance</span>
+                        </div>
+                        <p className={`text-xl font-semibold font-inter ${balance.current_balance >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {balance.current_balance < 0 ? "-" : ""}{fmt(Math.abs(balance.current_balance))}
+                        </p>
+                        <p className="text-xs text-slate-500 font-inter mt-0.5">Opening: {fmt(balance.opening_balance)}</p>
+                    </div>
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <TrendingUp className="w-4 h-4 text-emerald-400" />
+                            <span className="text-xs text-slate-400 font-inter">Total Income</span>
+                        </div>
+                        <p className="text-xl font-semibold font-inter text-emerald-400">{fmt(balance.total_income)}</p>
+                    </div>
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <TrendingDown className="w-4 h-4 text-red-400" />
+                            <span className="text-xs text-slate-400 font-inter">Total Expense</span>
+                        </div>
+                        <p className="text-xl font-semibold font-inter text-red-400">-{fmt(balance.total_expense)}</p>
+                    </div>
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs text-slate-400 font-inter">Net Transactions</span>
+                            <button onClick={refreshBalance} className="ml-auto p-0.5 text-slate-500 hover:text-slate-300 transition-colors" title="Refresh balance">
+                                <RotateCcw className="w-3 h-3" />
+                            </button>
+                        </div>
+                        <p className={`text-xl font-semibold font-inter ${balance.net_transactions >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {balance.net_transactions < 0 ? "-" : ""}{fmt(Math.abs(balance.net_transactions))}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Monthly Summary Toggle */}
+            <div className="mb-6">
+                <button
+                    type="button"
+                    onClick={() => setShowMonthly(!showMonthly)}
+                    className="inline-flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 font-inter font-medium transition-colors"
+                >
+                    {showMonthly ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    Monthly Summary
+                </button>
+                {showMonthly && (
+                    <div className="mt-3 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800">
+                            <span className="text-sm font-semibold text-slate-300 font-inter">Monthly Balance — {selectedYear}</span>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 text-slate-400 hover:text-white transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+                                <span className="text-sm text-white font-inter w-10 text-center">{selectedYear}</span>
+                                <button onClick={() => setSelectedYear(y => y + 1)} className="p-1 text-slate-400 hover:text-white transition-colors"><ChevronRight className="w-4 h-4" /></button>
+                            </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[700px]">
+                                <thead className="bg-slate-800/50">
+                                    <tr>
+                                        {["Month", "Opening Balance", "Income", "Expense", "Net", "Closing Balance"].map(h => (
+                                            <th key={h} className="py-2.5 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {monthlyData.map((row) => (
+                                        <tr key={row.month} className="border-t border-slate-800">
+                                            <td className="py-3 px-4 text-sm text-slate-300 font-inter">{row.month_name}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-300 font-inter">{fmt(row.opening_balance)}</td>
+                                            <td className="py-3 px-4 text-sm text-emerald-400 font-inter">{row.income > 0 ? fmt(row.income) : "—"}</td>
+                                            <td className="py-3 px-4 text-sm text-red-400 font-inter">{row.expense > 0 ? `-${fmt(row.expense)}` : "—"}</td>
+                                            <td className={`py-3 px-4 text-sm font-inter font-medium ${row.net >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                                {row.net === 0 ? "—" : `${row.net < 0 ? "-" : ""}${fmt(Math.abs(row.net))}`}
+                                            </td>
+                                            <td className={`py-3 px-4 text-sm font-inter font-semibold ${row.closing_balance >= 0 ? "text-white" : "text-red-400"}`}>
+                                                {fmt(row.closing_balance)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Filters */}
             <div className="flex flex-wrap items-end gap-4 mb-6">
                 <div className="flex flex-col gap-1">
                     <label className={labelStyles}>From</label>
@@ -134,9 +285,18 @@ const FinanceBody = () => {
                         </div>
                     )}
                 </div>
+
+                <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="px-3 py-2.5 text-sm text-slate-400 hover:text-white font-inter transition-colors"
+                    title="Reset to current month"
+                >
+                    Reset
+                </button>
             </div>
 
-            <FinanceTable filterCategoryId={selectedCategoryId} dateFrom={dateFrom} dateTo={dateTo} />
+            <FinanceTable />
 
             {/* Pagination */}
             {financeTotalCount > 0 && (

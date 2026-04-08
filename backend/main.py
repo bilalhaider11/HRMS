@@ -93,7 +93,9 @@ def get_company_profile(current_user: Admin = Depends(auth.get_current_user)):
         "website": current_user.website,
         "address": current_user.address,
         "phone": current_user.phone,
-        "email": current_user.email
+        "email": current_user.email,
+        "access_key": current_user.access_key or "",
+        "opening_balance": current_user.opening_balance or 0.0,
     }
 
 # Edit company profile
@@ -110,6 +112,19 @@ def update_password(passwords: AdminPasswordUpdate, current_user: Admin = Depend
     if not auth.verify_password(passwords.old_password, current_user.password):
         raise HTTPException(status_code=401, detail="Old password is incorrect")
     return admin_db.update_password_in_db(passwords.new_password, current_user, session)
+
+
+# Update access key
+@admin_router.patch("/update_access_key")
+def update_access_key(payload: dict, current_user: Admin = Depends(auth.get_current_user),
+                      session: Session = Depends(admin_db.get_session)):
+    new_key = payload.get("access_key", "").strip()
+    if not new_key:
+        raise HTTPException(status_code=400, detail="Access key cannot be empty")
+    current_user.access_key = new_key
+    session.add(current_user)
+    session.commit()
+    return {"message": "Access key updated successfully"}
 
 
 # ------------------ File Upload ------------------
@@ -144,8 +159,9 @@ def deactivate_employee(employee_code: str, session: Session = Depends(admin_db.
 
 @admin_router.get("/display_all_employees")
 def display_employees(page: int = 1, page_size: int = 10, department: Optional[str] = None,
-                      search: Optional[str] = None, session: Session = Depends(admin_db.get_session)):
-    return employee_db.display_all_employee_in_db(page, page_size, department, search, session=session)
+                      search: Optional[str] = None, status: Optional[str] = None,
+                      session: Session = Depends(admin_db.get_session)):
+    return employee_db.display_all_employee_in_db(page, page_size, department, search, status, session=session)
 
 
 # ------------------ Employee Increment Endpoints ------------------
@@ -208,6 +224,21 @@ def get_finance_records(page: int = 1, page_size: int = 10,
 @finance_router.get("/get_edit_history/{finance_id}")
 def get_finance_edit_history(finance_id: int, session: Session = Depends(admin_db.get_session)):
     return finance_db.get_edit_history_in_db(finance_id, session=session)
+
+@finance_router.get("/get_balance")
+def get_finance_balance(session: Session = Depends(admin_db.get_session)):
+    return finance_db.get_balance_in_db(session=session)
+
+@finance_router.get("/monthly_summary")
+def get_monthly_summary(year: Optional[int] = None, session: Session = Depends(admin_db.get_session)):
+    return finance_db.get_monthly_summary_in_db(year or date.today().year, session=session)
+
+@finance_router.patch("/update_opening_balance")
+def update_opening_balance(payload: dict, session: Session = Depends(admin_db.get_session)):
+    val = payload.get("opening_balance")
+    if val is None:
+        raise HTTPException(status_code=400, detail="opening_balance is required")
+    return finance_db.update_opening_balance_in_db(float(val), session=session)
 
 
 # --- Finance Categories ---

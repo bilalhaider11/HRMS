@@ -61,3 +61,22 @@ export async function deleteFinanceCategory(categoryId: number) {
   const res = await api.delete(`/finance/delete_category/${categoryId}`);
   return res.data;
 }
+
+// --- Balance ---
+
+export async function fetchBalance() {
+  const res = await api.get("/finance/get_balance");
+  return res.data;
+}
+
+export async function fetchMonthlySummary(year?: number) {
+  const params: Record<string, any> = {};
+  if (year) params.year = year;
+  const res = await api.get("/finance/monthly_summary", { params });
+  return res.data;
+}
+
+export async function updateOpeningBalance(openingBalance: number) {
+  const res = await api.patch("/finance/update_opening_balance", { opening_balance: openingBalance });
+  return res.data;
+}

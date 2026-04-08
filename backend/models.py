@@ -13,6 +13,7 @@ class AdminBase(SQLModel):
     email: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
     access_key: Optional[str] = None
+    opening_balance: float = Field(default=0.0)
 
 
 class AdminProfileUpdate(SQLModel):
@@ -21,6 +22,7 @@ class AdminProfileUpdate(SQLModel):
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    opening_balance: Optional[float] = None
 
 
 class AdminPasswordUpdate(SQLModel):
@@ -158,7 +160,7 @@ class FinanceBase(SQLModel):
     description: str
     amount: float
     tax_deductions: float
-    cheque_number: str
+    cheque_number: Optional[str] = None
     category_id: int = Field(foreign_key='financecategory.category_id')
 
 

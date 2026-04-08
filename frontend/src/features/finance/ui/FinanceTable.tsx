@@ -23,31 +23,16 @@ const hexToRowBg = (hex: string) => {
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     if (isNaN(r) || isNaN(g) || isNaN(b)) return undefined;
-    // Perceived brightness (0-255). Dark colors get higher opacity so they still show.
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
     const alpha = brightness < 80 ? 0.9 : 0.75;
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-
-interface FinanceTableProps {
-    filterCategoryId?: string;
-    dateFrom?: string;
-    dateTo?: string;
-}
-
-const FinanceTable = ({ filterCategoryId, dateFrom, dateTo }: FinanceTableProps) => {
-    const { financeList } = useFinance()
+const FinanceTable = () => {
+    const { financeList, financeSummary } = useFinance()
     const tableDataClassName = "py-4 px-4 text-sm text-slate-200 font-inter w-[10%] truncate"
     const tableHeadingClassName = "py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[10%]"
     const navigate = useNavigate()
-
-    const filteredList = financeList.filter(f => {
-        if (filterCategoryId && f.CategoryID?.toString() !== filterCategoryId) return false;
-        if (dateFrom && f.RawDate && f.RawDate < dateFrom) return false;
-        if (dateTo && f.RawDate && f.RawDate > dateTo) return false;
-        return true;
-    });
 
     const [historyModal, setHistoryModal] = useState<{ financeId: string; entries: EditHistoryEntry[] } | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -104,7 +89,7 @@ const FinanceTable = ({ filterCategoryId, dateFrom, dateTo }: FinanceTableProps)
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredList.map((data: FinanceTableData, index: number) => {
+                            {financeList.map((data: FinanceTableData, index: number) => {
                                 const bgColor = data.CategoryColor ? hexToRowBg(data.CategoryColor) : undefined;
                                 const rowBg = bgColor ? { backgroundColor: bgColor } : undefined;
                                 return (
@@ -113,18 +98,22 @@ const FinanceTable = ({ filterCategoryId, dateFrom, dateTo }: FinanceTableProps)
                                         {data.Date}
                                     </td>
                                     <td className={`${tableDataClassName} w-[20%]`} style={rowBg}>
-                                        <div className="w-full truncate max-w-[200px]">
+                                        <div className="w-full truncate max-w-[200px]" title={data.Description}>
                                             {data.Description}
                                         </div>
                                     </td>
                                     <td className={`${tableDataClassName}`} style={rowBg}>
-                                        {data.Amount}
+                                        {(() => {
+                                            const isIncome = data.CategoryName?.startsWith("Income");
+                                            const formatted = data.Amount?.toLocaleString();
+                                            return isIncome ? formatted : `-${formatted}`;
+                                        })()}
                                     </td>
                                     <td className={`${tableDataClassName}`} style={rowBg}>
-                                        {data.TaxDeductions}
+                                        {data.TaxDeductions?.toLocaleString()}
                                     </td>
                                     <td className={`${tableDataClassName}`} style={rowBg}>
-                                        {data.ChequeNumber}
+                                        {data.ChequeNumber || "—"}
                                     </td>
                                     <td className={`${tableDataClassName}`} style={rowBg}>
                                         {data.CategoryName}
@@ -156,6 +145,22 @@ const FinanceTable = ({ filterCategoryId, dateFrom, dateTo }: FinanceTableProps)
                                 );
                             })}
                         </tbody>
+                        {financeList.length > 0 && (
+                            <tfoot>
+                                <tr className="border-t-2 border-slate-700">
+                                    <td className="py-4 px-4 text-sm font-semibold text-slate-300 font-inter" colSpan={2}>Totals (filtered)</td>
+                                    <td className="py-4 px-4 text-sm font-semibold font-inter text-white" colSpan={7}>
+                                        <div className="flex items-center gap-6">
+                                            <span className="text-emerald-400">Income: {financeSummary.total_income.toLocaleString()}</span>
+                                            <span className="text-red-400">Expense: -{financeSummary.total_expense.toLocaleString()}</span>
+                                            <span className={financeSummary.net >= 0 ? "text-emerald-400" : "text-red-400"}>
+                                                Net: {financeSummary.net >= 0 ? "" : "-"}{Math.abs(financeSummary.net).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        )}
                     </table>
                 </div>
             </Box>

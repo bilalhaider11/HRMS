@@ -1,6 +1,8 @@
 from fastapi import HTTPException
 from sqlmodel import select, Session
 from models import Finance, FinanceUpdate, FinanceCategory, FinanceEditHistory, Admin
+from collections import defaultdict
+import calendar
 
 
 # --- Utility: get the single admin ID ---
@@ -15,24 +17,23 @@ def get_single_admin_id(session: Session) -> int:
 def create_finance_in_db(finance, session: Session):
     admin_id = get_single_admin_id(session)
 
-    # Check for duplicate finance record
-    existing = session.exec(
-        select(Finance).where(
-            Finance.cheque_number == finance.cheque_number,
-            Finance.date == finance.date,
-            Finance.amount == finance.amount
-        )
-    ).first()
-    if existing:
-        raise HTTPException(status_code=409, detail="Finance Record already exists")
+    # Check for duplicate finance record (only if cheque_number is provided)
+    if finance.cheque_number:
+        existing = session.exec(
+            select(Finance).where(
+                Finance.cheque_number == finance.cheque_number,
+                Finance.date == finance.date,
+                Finance.amount == finance.amount
+            )
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Finance Record already exists")
 
     # Validate mandatory fields
     if finance.description in ("", "string"):
         raise HTTPException(status_code=400, detail="Enter Description")
     if finance.amount == 0:
         raise HTTPException(status_code=400, detail="Enter Amount")
-    if finance.cheque_number in ("", "string"):
-        raise HTTPException(status_code=400, detail="Enter Cheque Number")
     if finance.category_id == 0:
         raise HTTPException(status_code=400, detail="Enter Category ID")
 
@@ -146,11 +147,19 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
         data["has_edits"] = has_edits
         enriched_records.append(data)
 
-    # --- Summary calculations ---
-    total_earnings = sum(f.amount for f in all_records)
-    total_salaries = sum(f.amount for f in all_records if f.category_id == 1)  # Salary category
-    total_expenses = sum(f.amount for f in all_records if f.category_id in [3, 4, 7, 8])  # Non-salary expenses
-    total_profit = total_earnings - total_salaries - total_expenses
+    # --- Summary calculations (based on category names, not hardcoded IDs) ---
+    # Build category name lookup for all_records
+    all_category_ids = {f.category_id for f in all_records if f.category_id}
+    all_cat_map = {}
+    for cid in all_category_ids:
+        if cid not in category_map:
+            cat = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == cid)).first()
+            all_cat_map[cid] = cat.category_name if cat else ""
+        else:
+            all_cat_map[cid] = category_map[cid]["name"]
+
+    total_income = sum(f.amount for f in all_records if all_cat_map.get(f.category_id, "").startswith("Income"))
+    total_expense = sum(f.amount for f in all_records if not all_cat_map.get(f.category_id, "").startswith("Income"))
 
     return {
         "page": page,
@@ -159,10 +168,9 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
         "total_pages": (total_count + page_size - 1) // page_size,
         "records": enriched_records,
         "summary": {
-            "total_earnings": total_earnings,
-            "total_salaries": total_salaries,
-            "total_expenses": total_expenses,
-            "total_profit": total_profit
+            "total_income": total_income,
+            "total_expense": total_expense,
+            "net": total_income - total_expense,
         }
     }
 
@@ -271,3 +279,98 @@ def get_edit_history_in_db(finance_id: int, session: Session):
         })
 
     return results
+
+
+# --- Balance ---
+
+def _get_category_name_map(session: Session) -> dict:
+    """Return {category_id: category_name} for all categories."""
+    cats = session.exec(select(FinanceCategory)).all()
+    return {c.category_id: c.category_name for c in cats}
+
+
+def get_balance_in_db(session: Session):
+    """Return current total balance = opening_balance + all income - all expense."""
+    admin = session.exec(select(Admin)).first()
+    if not admin:
+        raise HTTPException(status_code=500, detail="No admin exists")
+
+    cat_map = _get_category_name_map(session)
+    records = session.exec(select(Finance)).all()
+
+    total_income = sum(r.amount for r in records if cat_map.get(r.category_id, "").startswith("Income"))
+    total_expense = sum(r.amount for r in records if not cat_map.get(r.category_id, "").startswith("Income"))
+    net_transactions = total_income - total_expense
+    current_balance = (admin.opening_balance or 0.0) + net_transactions
+
+    return {
+        "opening_balance": admin.opening_balance or 0.0,
+        "total_income": total_income,
+        "total_expense": total_expense,
+        "net_transactions": net_transactions,
+        "current_balance": current_balance,
+    }
+
+
+def get_monthly_summary_in_db(year: int, session: Session):
+    """Return month-by-month summary for a given year with opening/closing balance."""
+    admin = session.exec(select(Admin)).first()
+    if not admin:
+        raise HTTPException(status_code=500, detail="No admin exists")
+
+    cat_map = _get_category_name_map(session)
+
+    # All records up to end of requested year (for running balance calc)
+    all_records = session.exec(select(Finance)).all()
+
+    # Records before the requested year (to compute opening balance of Jan)
+    pre_year_income = sum(
+        r.amount for r in all_records
+        if r.date.year < year and cat_map.get(r.category_id, "").startswith("Income")
+    )
+    pre_year_expense = sum(
+        r.amount for r in all_records
+        if r.date.year < year and not cat_map.get(r.category_id, "").startswith("Income")
+    )
+    year_opening = (admin.opening_balance or 0.0) + pre_year_income - pre_year_expense
+
+    # Group records by month for the requested year
+    monthly: dict = defaultdict(lambda: {"income": 0.0, "expense": 0.0})
+    for r in all_records:
+        if r.date.year == year:
+            name = cat_map.get(r.category_id, "")
+            if name.startswith("Income"):
+                monthly[r.date.month]["income"] += r.amount
+            else:
+                monthly[r.date.month]["expense"] += r.amount
+
+    months = []
+    running_balance = year_opening
+    for m in range(1, 13):
+        opening = running_balance
+        income = monthly[m]["income"]
+        expense = monthly[m]["expense"]
+        closing = opening + income - expense
+        running_balance = closing
+        months.append({
+            "month": m,
+            "month_name": calendar.month_abbr[m],
+            "opening_balance": opening,
+            "income": income,
+            "expense": expense,
+            "net": income - expense,
+            "closing_balance": closing,
+        })
+
+    return {"year": year, "months": months}
+
+
+def update_opening_balance_in_db(opening_balance: float, session: Session):
+    """Update admin opening balance."""
+    admin = session.exec(select(Admin)).first()
+    if not admin:
+        raise HTTPException(status_code=500, detail="No admin exists")
+    admin.opening_balance = opening_balance
+    session.add(admin)
+    session.commit()
+    return {"opening_balance": admin.opening_balance}
