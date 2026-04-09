@@ -1,9 +1,8 @@
 import { useContext, useEffect, useState } from "react";
-import { Mail, Lock, Building2, Globe, MapPin, Phone, Pencil, Loader2, Key, Wallet } from "lucide-react";
+import { Mail, Lock, Building2, Globe, MapPin, Phone, Pencil, Loader2, Key } from "lucide-react";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { VerifyContext } from "../../app/VerifyContext";
 import api from "api/axios";
-import { updateOpeningBalance } from "../finance/api/financeApi";
 
 interface CompanyProfile {
   company_name: string;
@@ -11,7 +10,6 @@ interface CompanyProfile {
   address: string;
   phone: string;
   email: string;
-  opening_balance?: number;
 }
 
 export default function Setting() {
@@ -30,14 +28,6 @@ export default function Setting() {
   const [accessKeyError, setAccessKeyError] = useState("");
   const [accessKeySuccess, setAccessKeySuccess] = useState(false);
 
-  // Opening balance
-  const [openingBalance, setOpeningBalance] = useState<number>(0);
-  const [editingOpeningBalance, setEditingOpeningBalance] = useState(false);
-  const [openingBalanceInput, setOpeningBalanceInput] = useState("");
-  const [openingBalanceSaving, setOpeningBalanceSaving] = useState(false);
-  const [openingBalanceError, setOpeningBalanceError] = useState("");
-  const [openingBalanceSuccess, setOpeningBalanceSuccess] = useState(false);
-
   // Edit form state
   const [formData, setFormData] = useState<CompanyProfile>({
     company_name: "", website: "", address: "", phone: "", email: ""
@@ -51,8 +41,6 @@ export default function Setting() {
         setFormData(res.data);
         setAccessKey(res.data.access_key || "");
         setAccessKeyInput(res.data.access_key || "");
-        setOpeningBalance(res.data.opening_balance ?? 0);
-        setOpeningBalanceInput(String(res.data.opening_balance ?? 0));
       } catch (error) {
         console.error("Failed to load profile:", error);
       }
@@ -114,27 +102,6 @@ export default function Setting() {
       setAccessKeyError(err.response?.data?.detail || "Failed to update access key");
     }
     setAccessKeySaving(false);
-  };
-
-  const handleOpeningBalanceSave = async () => {
-    const val = parseFloat(openingBalanceInput);
-    if (isNaN(val)) {
-      setOpeningBalanceError("Please enter a valid number");
-      return;
-    }
-    setOpeningBalanceSaving(true);
-    setOpeningBalanceError("");
-    setOpeningBalanceSuccess(false);
-    try {
-      await updateOpeningBalance(val);
-      setOpeningBalance(val);
-      setEditingOpeningBalance(false);
-      setOpeningBalanceSuccess(true);
-      setTimeout(() => setOpeningBalanceSuccess(false), 3000);
-    } catch (err: any) {
-      setOpeningBalanceError(err.response?.data?.detail || "Failed to update opening balance");
-    }
-    setOpeningBalanceSaving(false);
   };
 
   if (loading) {
@@ -306,68 +273,6 @@ export default function Setting() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Finance Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl mt-6">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-5 font-inter">Finance</h2>
-
-        {openingBalanceSuccess && (
-          <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-            <p className="text-emerald-400 text-sm font-inter">Opening balance updated successfully</p>
-          </div>
-        )}
-        {openingBalanceError && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-            <p className="text-red-400 text-sm font-inter">{openingBalanceError}</p>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center flex-shrink-0">
-              <Wallet className="w-5 h-5 text-indigo-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-slate-500 font-inter">Opening Balance</p>
-              {editingOpeningBalance ? (
-                <input
-                  type="number"
-                  value={openingBalanceInput}
-                  onChange={(e) => setOpeningBalanceInput(e.target.value)}
-                  placeholder="0"
-                  className="mt-1 w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white font-inter placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-              ) : (
-                <p className="text-sm text-white font-inter mt-0.5">{openingBalance.toLocaleString()}</p>
-              )}
-            </div>
-          </div>
-          {editingOpeningBalance ? (
-            <div className="flex items-center gap-2 ml-4">
-              <button onClick={() => { setEditingOpeningBalance(false); setOpeningBalanceInput(String(openingBalance)); setOpeningBalanceError(""); }} className="text-sm text-slate-400 hover:text-white font-inter transition-colors">
-                Cancel
-              </button>
-              <button
-                onClick={handleOpeningBalanceSave}
-                disabled={openingBalanceSaving}
-                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium font-inter rounded-lg transition-colors"
-              >
-                {openingBalanceSaving ? "Saving..." : "Save"}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => { setEditingOpeningBalance(true); setOpeningBalanceInput(String(openingBalance)); setOpeningBalanceError(""); setOpeningBalanceSuccess(false); }}
-              className="text-sm text-indigo-400 hover:text-indigo-300 font-inter font-medium transition-colors ml-4"
-            >
-              Change
-            </button>
-          )}
-        </div>
-        <p className="text-xs text-slate-500 font-inter mt-3 ml-14">
-          The starting balance before any transactions. Used to compute the current running balance.
-        </p>
       </div>
 
       {showPasswordModal && (
