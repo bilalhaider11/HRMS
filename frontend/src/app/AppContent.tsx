@@ -36,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
     children: [
       { label: "Finance Listing", path: "/finance" },
       { label: "Categories", path: "/finance/category-lists" },
+      { label: "Bank Accounts", path: "/finance/bank-accounts" },
     ],
   },
   { label: "Inventory", icon: Package, path: "/inventory", adminOnly: true },

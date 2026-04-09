@@ -21,6 +21,7 @@ import UpdateInventoryItemPage from "../pages/UpdateInventoryItemPage";
 import TeamPage from "../pages/TeamPage";
 import NewTeamPage from "../pages/NewTeamPage";
 import UpdateTeamsPage from "../pages/UpdateTeamsPage";
+import BankAccountsPage from "../pages/BankAccountsPage";
 
 interface UserPageProps {
   name: string;
@@ -48,6 +49,7 @@ export default function UserPage({ superAdmin }: UserPageProps) {
         <Route path="/finance/category-lists" element={<CategoryListsPage />} />
         <Route path="/finance/category-lists/new-category" element={<NewCategoryPage />} />
         <Route path="/finance/category-lists/update-category/:categoryId" element={<UpdateCategoryPage />} />
+        <Route path="/finance/bank-accounts" element={<BankAccountsPage />} />
         <Route path="/inventory" element={<InventoryBodyPage />} />
         <Route path="/inventory/categories" element={<InventoryCategoriesPage />} />
         <Route path="/inventory/new-category" element={<NewInventoryCategoryPage />} />

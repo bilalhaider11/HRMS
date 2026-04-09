@@ -13,7 +13,6 @@ class AdminBase(SQLModel):
     email: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
     access_key: Optional[str] = None
-    opening_balance: float = Field(default=0.0)
 
 
 class AdminProfileUpdate(SQLModel):
@@ -22,7 +21,6 @@ class AdminProfileUpdate(SQLModel):
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
-    opening_balance: Optional[float] = None
 
 
 class AdminPasswordUpdate(SQLModel):
@@ -35,9 +33,23 @@ class Admin(AdminBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
 
 
+# --- Bank Account Models ---
+class BankAccountBase(SQLModel):
+    account_name: str = Field(..., min_length=1)
+    bank_name: str = Field(..., min_length=1)
+    account_number: str = Field(..., min_length=1)
+    branch_code: Optional[str] = None
+    iban_number: Optional[str] = None
+    opening_balance: float = Field(default=0.0)
+
+
+class BankAccount(BankAccountBase, table=True):
+    __tablename__ = "bank_account"
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+
+
 # --- Employee Increment Models ---
 class EmployeeIncrementBase(SQLModel):
-    # IMPORTANT FIX → use employee.id
     employee_id: int = Field(foreign_key="employee.id", nullable=False)
     increment_amount: float
     effective_date: date
@@ -53,7 +65,7 @@ class EmployeeIncrement(EmployeeIncrementBase, table=True):
 
 # --- Employee Models ---
 class EmployeeBase(SQLModel):
-    employee_code: str  # Business code
+    employee_code: str
     name: str
     bank_name: str
     bank_account_title: str
@@ -162,6 +174,7 @@ class FinanceBase(SQLModel):
     tax_deductions: float
     cheque_number: Optional[str] = None
     category_id: int = Field(foreign_key='financecategory.category_id')
+    bank_account_id: int = Field(foreign_key='bank_account.id')
 
 
 class FinanceUpdate(SQLModel):
@@ -171,13 +184,13 @@ class FinanceUpdate(SQLModel):
     tax_deductions: Optional[float] = None
     cheque_number: Optional[str] = None
     category_id: Optional[int] = None
+    bank_account_id: Optional[int] = None
 
 
 class Finance(FinanceBase, table=True):
     __tablename__ = "finance"
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
 
-    # Single admin system → optional tracking
     added_by: Optional[int] = Field(default=None, foreign_key='admin.id')
     created_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
@@ -234,7 +247,7 @@ class AttendanceRaw(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     serial_number: str
     employee_code: str
-    status: int  # 0 = check-in, 1 = check-out
+    status: int
     timestamp: datetime.datetime
     date: date
 
@@ -246,5 +259,4 @@ class jwt_tokens(SQLModel, table=True):
     client_ip: str = Field(..., min_length=1)
     token: str = Field(..., min_length=1)
 
-    # IMPORTANT FIX
     created_at: date = Field(default_factory=date.today)

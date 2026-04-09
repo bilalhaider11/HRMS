@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta, date
 from typing import Optional
-import admin_db, auth, employee_db, increment_db, finance_db, inventory_db, attendance_db
+import admin_db, auth, employee_db, increment_db, finance_db, inventory_db, attendance_db, bank_account_db
 from models import AdminProfileUpdate, AdminPasswordUpdate, EmployeeBase, EmployeeUpdate, FinanceBase, FinanceUpdate, ItemCategoryBase, ItemCategoryUpdate, InventoryItemBase, InventoryItemUpdate
 from models import Admin
 from increment_db import IncrementUpdate, IncrementCreate, IncrementResponse
@@ -31,7 +31,6 @@ app.add_middleware(
 # ------------------ Auto-Auth Middleware ------------------
 @app.middleware("http")
 async def auto_auth_middleware(request: Request, call_next):
-    # Skip public endpoints
     if request.url.path == "/admin/login" and request.method == "POST":
         return await call_next(request)
     if request.url.path.startswith("/attendances/"):
@@ -47,26 +46,21 @@ async def auto_auth_middleware(request: Request, call_next):
                         (b"authorization", f"Bearer {token_record}".encode())
                     )
     except Exception:
-        pass  # Don't let middleware errors block requests
+        pass
 
     return await call_next(request)
 
 
 # ------------------ Routers ------------------
-# Public admin routes (no auth required)
 admin_public_router = APIRouter(prefix="/admin")
-
-# Protected admin routes (auth required)
 admin_router = APIRouter(prefix="/admin", dependencies=[Depends(auth.get_current_user)])
-
-# Protected feature routers
 finance_router = APIRouter(prefix="/finance", dependencies=[Depends(auth.get_current_user)])
+bank_account_router = APIRouter(prefix="/bank_accounts", dependencies=[Depends(auth.get_current_user)])
 inventory_router = APIRouter(prefix="/inventory", dependencies=[Depends(auth.get_current_user)])
 
 
 # ------------------ Public Admin Endpoints ------------------
 
-# Admin login
 @admin_public_router.post("/login", status_code=200)
 def admin_login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(admin_db.get_session),
                 request: Request = None):
@@ -85,7 +79,6 @@ def admin_login(form_data: OAuth2PasswordRequestForm = Depends(), session: Sessi
 
 # ------------------ Protected Admin Endpoints ------------------
 
-# Get company profile
 @admin_router.get("/company_profile")
 def get_company_profile(current_user: Admin = Depends(auth.get_current_user)):
     return {
@@ -95,17 +88,13 @@ def get_company_profile(current_user: Admin = Depends(auth.get_current_user)):
         "phone": current_user.phone,
         "email": current_user.email,
         "access_key": current_user.access_key or "",
-        "opening_balance": current_user.opening_balance or 0.0,
     }
 
-# Edit company profile
 @admin_router.patch("/update_company_profile")
 def update_company_profile(profile: AdminProfileUpdate, current_user: Admin = Depends(auth.get_current_user),
                            session: Session = Depends(admin_db.get_session)):
     return admin_db.update_company_profile_in_db(profile, current_user, session)
 
-
-# Update admin password
 @admin_router.patch("/update_password")
 def update_password(passwords: AdminPasswordUpdate, current_user: Admin = Depends(auth.get_current_user),
                     session: Session = Depends(admin_db.get_session)):
@@ -113,8 +102,6 @@ def update_password(passwords: AdminPasswordUpdate, current_user: Admin = Depend
         raise HTTPException(status_code=401, detail="Old password is incorrect")
     return admin_db.update_password_in_db(passwords.new_password, current_user, session)
 
-
-# Update access key
 @admin_router.patch("/update_access_key")
 def update_access_key(payload: dict, current_user: Admin = Depends(auth.get_current_user),
                       session: Session = Depends(admin_db.get_session)):
@@ -167,43 +154,41 @@ def display_employees(page: int = 1, page_size: int = 10, department: Optional[s
 # ------------------ Employee Increment Endpoints ------------------
 @admin_router.post("/create_increment", response_model=IncrementResponse)
 def create_increment(new_increment: IncrementCreate, session: Session = Depends(admin_db.get_session)):
-    """
-    User enters business ID (string) here. Backend will lookup Employee.id internally.
-    """
     return increment_db.create_increment_in_db(new_increment, session=session)
 
-
-# ---------------- GET Increment by ID ----------------
 @admin_router.get("/get_increment/{increment_id}", response_model=IncrementResponse)
 def get_increment(increment_id: int, session: Session = Depends(admin_db.get_session)):
-    """
-    Get increment by primary key id.
-    """
     return increment_db.get_increment_by_id_in_db(increment_id, session=session)
 
-
-# ---------------- UPDATE Increment ----------------
 @admin_router.patch("/update_increment/{increment_id}", response_model=IncrementResponse)
 def update_increment(increment_id: int, new_increment: IncrementUpdate, session: Session = Depends(admin_db.get_session)):
-    """
-    Update increment. Use primary key id in path, not business ID.
-    """
     return increment_db.update_increment_in_db(increment_id, new_increment, session=session)
 
-
-# ---------------- DELETE Increment ----------------
 @admin_router.delete("/delete_increment/{increment_id}")
 def delete_increment(increment_id: int, session: Session = Depends(admin_db.get_session)):
-    """
-    Delete increment by primary key id.
-    """
     return increment_db.delete_increment_in_db(increment_id, session=session)
 
-
-# ---------------- GET All Increments for Employee ----------------
 @admin_router.get("/get_increments/{employee_code}")
 def get_employee_increments(employee_code: str, session: Session = Depends(admin_db.get_session)):
     return increment_db.get_increments_by_business_id(employee_code, session=session)
+
+
+# ------------------ Bank Account Endpoints ------------------
+@bank_account_router.get("/")
+def get_bank_accounts(session: Session = Depends(admin_db.get_session)):
+    return bank_account_db.get_all_bank_accounts_in_db(session=session)
+
+@bank_account_router.post("/")
+def create_bank_account(payload: dict, session: Session = Depends(admin_db.get_session)):
+    return bank_account_db.create_bank_account_in_db(payload, session=session)
+
+@bank_account_router.patch("/{account_id}")
+def update_bank_account(account_id: int, payload: dict, session: Session = Depends(admin_db.get_session)):
+    return bank_account_db.update_bank_account_in_db(account_id, payload, session=session)
+
+@bank_account_router.delete("/{account_id}")
+def delete_bank_account(account_id: int, session: Session = Depends(admin_db.get_session)):
+    return bank_account_db.delete_bank_account_in_db(account_id, session=session)
 
 
 # ------------------ Finance Endpoints ------------------
@@ -218,27 +203,20 @@ def edit_finance(finance_id: int, finance: FinanceUpdate, session: Session = Dep
 @finance_router.get("/get_finance_records")
 def get_finance_records(page: int = 1, page_size: int = 10,
                         start_date: Optional[date] = None, end_date: Optional[date] = None,
-                        category_id: Optional[int] = None, session: Session = Depends(admin_db.get_session)):
-    return finance_db.get_finance_records_in_db(page, page_size, start_date, end_date, category_id, session=session)
+                        category_id: Optional[int] = None, bank_account_id: Optional[int] = None,
+                        session: Session = Depends(admin_db.get_session)):
+    return finance_db.get_finance_records_in_db(
+        page, page_size, start_date, end_date, category_id, bank_account_id, session=session
+    )
 
 @finance_router.get("/get_edit_history/{finance_id}")
 def get_finance_edit_history(finance_id: int, session: Session = Depends(admin_db.get_session)):
     return finance_db.get_edit_history_in_db(finance_id, session=session)
 
-@finance_router.get("/get_balance")
-def get_finance_balance(session: Session = Depends(admin_db.get_session)):
-    return finance_db.get_balance_in_db(session=session)
-
 @finance_router.get("/monthly_summary")
-def get_monthly_summary(year: Optional[int] = None, session: Session = Depends(admin_db.get_session)):
-    return finance_db.get_monthly_summary_in_db(year or date.today().year, session=session)
-
-@finance_router.patch("/update_opening_balance")
-def update_opening_balance(payload: dict, session: Session = Depends(admin_db.get_session)):
-    val = payload.get("opening_balance")
-    if val is None:
-        raise HTTPException(status_code=400, detail="opening_balance is required")
-    return finance_db.update_opening_balance_in_db(float(val), session=session)
+def get_monthly_summary(bank_account_id: int, year: Optional[int] = None,
+                        session: Session = Depends(admin_db.get_session)):
+    return finance_db.get_monthly_summary_in_db(bank_account_id, year or date.today().year, session=session)
 
 
 # --- Finance Categories ---
@@ -300,46 +278,36 @@ def get_all_items(page: int = 1, page_size: int = 10, category_id: Optional[int]
     return inventory_db.get_all_items_in_db(page, page_size, category_id, session=session)
 
 
-# ------------------ Attendance Endpoints (public, access-key auth) ------------------
+# ------------------ Attendance Endpoints ------------------
 import logging
 attendance_logger = logging.getLogger("attendance")
 attendance_router = APIRouter(prefix="/attendances")
 
 @attendance_router.post("/bulk-raw-attendance")
-def create_bulk_raw_attendance(
-    payload: dict,
-    request: Request,
-    session: Session = Depends(admin_db.get_session),
-):
+def create_bulk_raw_attendance(payload: dict, request: Request, session: Session = Depends(admin_db.get_session)):
     client_ip = request.client.host if request.client else "unknown"
     attendance_logger.info(f"[ATTENDANCE] Incoming request from {client_ip}")
 
     access_key = request.headers.get("access-key")
     if not access_key:
-        attendance_logger.warning(f"[ATTENDANCE] Rejected: missing access-key from {client_ip}")
         raise HTTPException(status_code=403, detail="access-key header is required")
 
     if not attendance_db.validate_access_key(access_key, session):
-        attendance_logger.warning(f"[ATTENDANCE] Rejected: invalid access-key from {client_ip}")
         raise HTTPException(status_code=403, detail="Invalid access-key")
 
     records = payload.get("createBulkAttendanceRaw", [])
     if not records:
-        attendance_logger.warning(f"[ATTENDANCE] Rejected: empty records from {client_ip}")
         raise HTTPException(status_code=400, detail="No attendance records provided")
-
-    attendance_logger.info(f"[ATTENDANCE] Processing batch of {len(records)} records from {client_ip}")
 
     result = attendance_db.insert_raw_attendances(records, session)
     result["message"] = f"{result['inserted']} of {result['total']} records inserted successfully"
-
-    attendance_logger.info(f"[ATTENDANCE] Batch complete: {result['inserted']} inserted, {result['duplicates_skipped']} duplicates skipped, {result['failures']} failures (total: {result['total']})")
     return result
 
 
 # ------------------ Include Routers ------------------
 app.include_router(admin_public_router)
 app.include_router(admin_router)
+app.include_router(bank_account_router)
 app.include_router(finance_router)
 app.include_router(inventory_router)
 app.include_router(attendance_router)
