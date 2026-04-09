@@ -1,26 +1,40 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchFinanceRecords, fetchFinanceCategories, deleteFinanceCategory as deleteCategoryApi } from '../api/financeApi';
+import { fetchFinanceRecords, fetchFinanceCategories, fetchBankAccounts, deleteFinanceCategory as deleteCategoryApi } from '../api/financeApi';
 
 export interface FinanceTableData {
-  FinanceId?: string,
-  Date?: string,
-  RawDate?: string,
-  Description?: string,
-  Amount?: number,
-  TaxDeductions?: number,
-  ChequeNumber?: string,
-  CategoryID?: number,
-  CategoryName?: string,
-  CategoryColor?: string,
-  AddedBy?: string,
-  CreatedAt?: string,
-  HasEdits?: boolean
+  FinanceId?: string;
+  Date?: string;
+  RawDate?: string;
+  Description?: string;
+  Amount?: number;
+  TaxDeductions?: number;
+  ChequeNumber?: string;
+  CategoryID?: number;
+  CategoryName?: string;
+  CategoryColor?: string;
+  BankAccountId?: number;
+  AddedBy?: string;
+  CreatedAt?: string;
+  HasEdits?: boolean;
 }
 
 export interface FinanceCategoriesData {
-  id?: string,
-  name?: string,
-  colorCode?: string
+  id?: string;
+  name?: string;
+  colorCode?: string;
+}
+
+export interface BankAccountData {
+  id?: string;
+  account_name?: string;
+  bank_name?: string;
+  account_number?: string;
+  branch_code?: string;
+  iban_number?: string;
+  opening_balance?: number;
+  total_income?: number;
+  total_expense?: number;
+  current_balance?: number;
 }
 
 export interface FinanceSummary {
@@ -32,7 +46,12 @@ export interface FinanceSummary {
 interface FinanceContextType {
   financeList: FinanceTableData[];
   financeCategoriesList: FinanceCategoriesData[];
+  bankAccountsList: BankAccountData[];
+  selectedBankAccountId: string;
+  setSelectedBankAccountId: (id: string) => void;
   financeSummary: FinanceSummary;
+  loadBankAccounts: () => Promise<void>;
+
   setEditingFinance: (fin: FinanceTableData | null) => void;
   setEditingCategory: (category: FinanceCategoriesData | null) => void;
   addFinance: (finance: FinanceTableData) => boolean;
@@ -47,50 +66,46 @@ interface FinanceContextType {
   editFinanceData: (fin: FinanceTableData) => void;
   updateFinanceCategory: (cate: FinanceCategoriesData) => void;
   editCategoryData: (cate: FinanceCategoriesData) => void;
-  isDeleteModal: FinanceTableData | null
-  setIsDeleteModal: (fin: FinanceTableData | null) => void
-  isDeleteCategoryModal: FinanceCategoriesData | null
-  setIsDeleteCategoryModal: (cate: FinanceCategoriesData | null) => void
-
+  isDeleteModal: FinanceTableData | null;
+  setIsDeleteModal: (fin: FinanceTableData | null) => void;
+  isDeleteCategoryModal: FinanceCategoriesData | null;
+  setIsDeleteCategoryModal: (cate: FinanceCategoriesData | null) => void;
   handleFinanceDelete: (finance: FinanceTableData) => void;
   handleCategoryDelete: (category: FinanceCategoriesData) => void;
 
-  loadFinance: (page?: number, pageSize?: number, startDate?: string, endDate?: string, categoryId?: string) => Promise<void>;
+  loadFinance: (page?: number, pageSize?: number, startDate?: string, endDate?: string, categoryId?: string, bankAccountId?: string) => Promise<void>;
   financePage: number;
   financeTotalPages: number;
   financeTotalCount: number;
 }
 
-
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 export const useFinance = () => {
   const context = useContext(FinanceContext);
-  if (!context) {
-    throw new Error('Error');
-  }
+  if (!context) throw new Error('useFinance must be used inside FinanceProvider');
   return context;
 };
 
-interface FinanceProviderProps {
-  children: ReactNode;
-}
-
-export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) => {
+export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [financeList, setFinanceList] = useState<FinanceTableData[]>([]);
-  const [financeCategoriesList, setFinanceCategoriesList] = useState<FinanceCategoriesData[]>([])
+  const [financeCategoriesList, setFinanceCategoriesList] = useState<FinanceCategoriesData[]>([]);
+  const [bankAccountsList, setBankAccountsList] = useState<BankAccountData[]>([]);
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>("");
   const [financeSummary, setFinanceSummary] = useState<FinanceSummary>({ total_income: 0, total_expense: 0, net: 0 });
-  const [idExistError, setIdExistError] = useState("")
+  const [idExistError, setIdExistError] = useState("");
   const [editingFinance, setEditingFinance] = useState<FinanceTableData | null>(null);
-  const [successfullModal, setSuccessfullModal] = useState<boolean>(false)
+  const [successfullModal, setSuccessfullModal] = useState(false);
   const [isDeleteModal, setIsDeleteModal] = useState<FinanceTableData | null>(null);
-  const [isDeleteCategoryModal, setIsDeleteCategoryModal] = useState<FinanceCategoriesData | null>(null)
-  const [editingCategory, setEditingCategory] = useState<FinanceCategoriesData | null>(null)
+  const [isDeleteCategoryModal, setIsDeleteCategoryModal] = useState<FinanceCategoriesData | null>(null);
+  const [editingCategory, setEditingCategory] = useState<FinanceCategoriesData | null>(null);
   const [financePage, setFinancePage] = useState(1);
   const [financeTotalPages, setFinanceTotalPages] = useState(1);
   const [financeTotalCount, setFinanceTotalCount] = useState(0);
   const [lastPageSize, setLastPageSize] = useState(50);
-  const [lastFilters, setLastFilters] = useState<{ startDate?: string; endDate?: string; categoryId?: string }>({});
+  const [lastFilters, setLastFilters] = useState<{
+    startDate?: string; endDate?: string; categoryId?: string; bankAccountId?: string;
+  }>({});
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr + "T00:00:00");
@@ -103,12 +118,42 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
     return `${datePart} ${timePart}`;
   };
 
-  const loadFinance = async (page: number = 1, pageSize: number = 50, startDate?: string, endDate?: string, categoryId?: string) => {
+  const loadBankAccounts = async () => {
+    try {
+      const data = await fetchBankAccounts();
+      const mapped = (data || []).map((a: any) => ({
+        id: String(a.id),
+        account_name: a.account_name,
+        bank_name: a.bank_name,
+        account_number: a.account_number,
+        branch_code: a.branch_code,
+        iban_number: a.iban_number,
+        opening_balance: a.opening_balance,
+        total_income: a.total_income,
+        total_expense: a.total_expense,
+        current_balance: a.current_balance,
+      }));
+      setBankAccountsList(mapped);
+      // Auto-select first account if nothing selected yet
+      if (!selectedBankAccountId && mapped.length > 0) {
+        setSelectedBankAccountId(mapped[0].id || "");
+      }
+    } catch (error) {
+      console.error("Failed to load bank accounts:", error);
+    }
+  };
+
+  const loadFinance = async (
+    page = 1, pageSize = 50,
+    startDate?: string, endDate?: string,
+    categoryId?: string, bankAccountId?: string,
+  ) => {
     try {
       setLastPageSize(pageSize);
-      setLastFilters({ startDate, endDate, categoryId });
+      setLastFilters({ startDate, endDate, categoryId, bankAccountId });
       const catIdNum = categoryId ? parseInt(categoryId) : undefined;
-      const data = await fetchFinanceRecords(page, pageSize, startDate, endDate, catIdNum);
+      const bankAccIdNum = bankAccountId ? parseInt(bankAccountId) : undefined;
+      const data = await fetchFinanceRecords(page, pageSize, startDate, endDate, catIdNum, bankAccIdNum);
       const mapped = (data.records || []).map((r: any) => ({
         FinanceId: String(r.id),
         Date: r.date ? formatDate(r.date) : "",
@@ -120,6 +165,7 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
         CategoryID: r.category_id,
         CategoryName: r.category_name || "",
         CategoryColor: r.category_color || "",
+        BankAccountId: r.bank_account_id,
         AddedBy: r.added_by_name || "",
         CreatedAt: r.created_at ? formatDateTime(r.created_at) : "",
         HasEdits: r.has_edits || false,
@@ -141,36 +187,56 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   };
 
   useEffect(() => {
-    const loadFinanceCategories = async () => {
+    const init = async () => {
       try {
-        const data = await fetchFinanceCategories();
-        const mapped = (data || []).map((c: any) => ({
+        const [catData, bankData] = await Promise.all([
+          fetchFinanceCategories(),
+          fetchBankAccounts(),
+        ]);
+        const mappedCats = (catData || []).map((c: any) => ({
           id: String(c.category_id),
           name: c.category_name,
           colorCode: c.color_code,
         }));
-        setFinanceCategoriesList(mapped);
+        setFinanceCategoriesList(mappedCats);
+
+        const mappedBanks = (bankData || []).map((a: any) => ({
+          id: String(a.id),
+          account_name: a.account_name,
+          bank_name: a.bank_name,
+          account_number: a.account_number,
+          branch_code: a.branch_code,
+          iban_number: a.iban_number,
+          opening_balance: a.opening_balance,
+          total_income: a.total_income,
+          total_expense: a.total_expense,
+          current_balance: a.current_balance,
+        }));
+        setBankAccountsList(mappedBanks);
+
+        if (mappedBanks.length > 0) {
+          setSelectedBankAccountId(mappedBanks[0].id || "");
+        }
       } catch (error) {
-        console.error("Failed to load finance categories:", error);
+        console.error("Failed to load finance init data:", error);
       }
     };
-
-    loadFinanceCategories();
+    init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addFinance = (_finance: FinanceTableData) => {
-    loadFinance(financePage, lastPageSize, lastFilters.startDate, lastFilters.endDate, lastFilters.categoryId);
-    setEditingFinance(null)
-    setIdExistError("")
-    setSuccessfullModal(true)
+    loadFinance(financePage, lastPageSize, lastFilters.startDate, lastFilters.endDate, lastFilters.categoryId, lastFilters.bankAccountId);
+    loadBankAccounts();
+    setEditingFinance(null);
+    setIdExistError("");
+    setSuccessfullModal(true);
     window.scrollTo(0, 0);
-    document.body.style.overflow = "hidden"
-    return true
+    document.body.style.overflow = "hidden";
+    return true;
   };
 
   const editFinanceData = (finance: FinanceTableData) => {
-    console.log(finance)
     setEditingFinance(finance);
     setSuccessfullModal(false);
     document.body.style.overflow = "auto";
@@ -178,34 +244,29 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   };
 
   const updateFinance = (_updatedFinance: FinanceTableData) => {
-    loadFinance(financePage, lastPageSize, lastFilters.startDate, lastFilters.endDate, lastFilters.categoryId);
+    loadFinance(financePage, lastPageSize, lastFilters.startDate, lastFilters.endDate, lastFilters.categoryId, lastFilters.bankAccountId);
+    loadBankAccounts();
     setSuccessfullModal(true);
     document.body.style.overflow = "hidden";
     window.scrollTo(0, 0);
     setIdExistError("");
   };
 
-  // Finance records cannot be deleted — only edited (with history tracking)
   const handleFinanceDelete = (_finance: FinanceTableData) => {
     setIsDeleteModal(null);
-  }
+  };
 
   const addCategory = (category: FinanceCategoriesData) => {
-
-    const updatedCategoryList = [...financeCategoriesList, category];
-    console.log("added")
-    setFinanceCategoriesList(updatedCategoryList);
-    setEditingCategory(null)
-    setIdExistError("")
-    setSuccessfullModal(true)
+    setFinanceCategoriesList(prev => [...prev, category]);
+    setEditingCategory(null);
+    setIdExistError("");
+    setSuccessfullModal(true);
     window.scrollTo(0, 0);
-    document.body.style.overflow = "hidden"
-    return true
-
+    document.body.style.overflow = "hidden";
+    return true;
   };
 
   const editCategoryData = (category: FinanceCategoriesData) => {
-    console.log(category)
     setEditingCategory(category);
     setSuccessfullModal(false);
     document.body.style.overflow = "auto";
@@ -213,35 +274,42 @@ export const FinanceProvider: React.FC<FinanceProviderProps> = ({ children }) =>
   };
 
   const updateFinanceCategory = (updatedCategory: FinanceCategoriesData) => {
-
-    const updatedList = financeCategoriesList.map((cate) =>
-      cate.id === updatedCategory.id ? updatedCategory : cate
+    setFinanceCategoriesList(prev =>
+      prev.map(c => c.id === updatedCategory.id ? updatedCategory : c)
     );
-    console.log("updateList", updatedList)
-    setFinanceCategoriesList(updatedList);
     setSuccessfullModal(true);
     document.body.style.overflow = "hidden";
     window.scrollTo(0, 0);
     setIdExistError("");
   };
+
   const handleCategoryDelete = async (category: FinanceCategoriesData) => {
     try {
       await deleteCategoryApi(parseInt(category.id || "0"));
-      const updatingList = financeCategoriesList.filter(c => c.id !== category.id);
-      setFinanceCategoriesList(updatingList);
+      setFinanceCategoriesList(prev => prev.filter(c => c.id !== category.id));
     } catch (error: any) {
       console.error("Failed to delete category:", error?.response?.data?.detail || error);
     }
     setIsDeleteCategoryModal(null);
     window.scrollTo(0, 0);
     document.body.style.overflow = "auto";
-  }
+  };
 
   const clearError = () => setIdExistError("");
 
-
   return (
-    <FinanceContext.Provider value={{ financeList, financeSummary, addFinance, clearError, idExistError, successfullModal, setSuccessfullModal, editingFinance, editFinanceData, updateFinance, setEditingFinance, isDeleteModal, setIsDeleteModal, handleFinanceDelete, financeCategoriesList, editCategoryData, editingCategory, setEditingCategory, addCategory, updateFinanceCategory, isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete, loadFinance, financePage, financeTotalPages, financeTotalCount }}>
+    <FinanceContext.Provider value={{
+      financeList, financeCategoriesList, bankAccountsList,
+      selectedBankAccountId, setSelectedBankAccountId, financeSummary,
+      loadBankAccounts, addFinance, clearError, idExistError,
+      successfullModal, setSuccessfullModal,
+      editingFinance, editFinanceData, updateFinance, setEditingFinance,
+      isDeleteModal, setIsDeleteModal, handleFinanceDelete,
+      editCategoryData, editingCategory, setEditingCategory,
+      addCategory, updateFinanceCategory,
+      isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete,
+      loadFinance, financePage, financeTotalPages, financeTotalCount,
+    }}>
       {children}
     </FinanceContext.Provider>
   );

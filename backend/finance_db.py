@@ -1,11 +1,11 @@
 from fastapi import HTTPException
 from sqlmodel import select, Session
-from models import Finance, FinanceUpdate, FinanceCategory, FinanceEditHistory, Admin
+from models import Finance, FinanceUpdate, FinanceCategory, FinanceEditHistory, Admin, BankAccount
 from collections import defaultdict
 import calendar
 
 
-# --- Utility: get the single admin ID ---
+# --- Utility ---
 def get_single_admin_id(session: Session) -> int:
     admin = session.exec(select(Admin)).first()
     if not admin:
@@ -13,21 +13,14 @@ def get_single_admin_id(session: Session) -> int:
     return admin.id
 
 
+def _category_name_map(session: Session) -> dict:
+    cats = session.exec(select(FinanceCategory)).all()
+    return {c.category_id: c.category_name for c in cats}
+
+
 # --- Create a new finance record ---
 def create_finance_in_db(finance, session: Session):
     admin_id = get_single_admin_id(session)
-
-    # Check for duplicate finance record (only if cheque_number is provided)
-    if finance.cheque_number:
-        existing = session.exec(
-            select(Finance).where(
-                Finance.cheque_number == finance.cheque_number,
-                Finance.date == finance.date,
-                Finance.amount == finance.amount
-            )
-        ).first()
-        if existing:
-            raise HTTPException(status_code=409, detail="Finance Record already exists")
 
     # Validate mandatory fields
     if finance.description in ("", "string"):
@@ -36,15 +29,38 @@ def create_finance_in_db(finance, session: Session):
         raise HTTPException(status_code=400, detail="Enter Amount")
     if finance.category_id == 0:
         raise HTTPException(status_code=400, detail="Enter Category ID")
+    if finance.bank_account_id == 0:
+        raise HTTPException(status_code=400, detail="Select a Bank Account")
 
     # Validate category exists
-    category = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == finance.category_id)).first()
+    category = session.exec(
+        select(FinanceCategory).where(FinanceCategory.category_id == finance.category_id)
+    ).first()
     if not category:
-        raise HTTPException(status_code=404, detail=f"Finance category with id {finance.category_id} does not exist")
+        raise HTTPException(status_code=404, detail=f"Finance category {finance.category_id} does not exist")
 
-    # Create finance record
+    # Validate bank account exists
+    account = session.exec(
+        select(BankAccount).where(BankAccount.id == finance.bank_account_id)
+    ).first()
+    if not account:
+        raise HTTPException(status_code=404, detail=f"Bank account {finance.bank_account_id} does not exist")
+
+    # Check for duplicate (only if cheque_number provided)
+    if finance.cheque_number:
+        existing = session.exec(
+            select(Finance).where(
+                Finance.cheque_number == finance.cheque_number,
+                Finance.date == finance.date,
+                Finance.amount == finance.amount,
+                Finance.bank_account_id == finance.bank_account_id,
+            )
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Finance Record already exists")
+
     new_finance = Finance.model_validate(finance)
-    new_finance.added_by = admin_id  # assign the single admin
+    new_finance.added_by = admin_id
     session.add(new_finance)
     session.commit()
     session.refresh(new_finance)
@@ -55,21 +71,26 @@ def create_finance_in_db(finance, session: Session):
 def edit_finance_record_in_db(finance_id: int, finance: FinanceUpdate, session: Session):
     admin_id = get_single_admin_id(session)
 
-    # Retrieve existing finance record
     existing = session.exec(select(Finance).where(Finance.id == finance_id)).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Finance Record does not exist")
 
-    # Validate category if being changed
     update_data = finance.model_dump(exclude_unset=True)
-    if "category_id" in update_data and update_data["category_id"] is not None:
-        category = session.exec(select(FinanceCategory).where(
-            FinanceCategory.category_id == update_data["category_id"]
-        )).first()
-        if not category:
-            raise HTTPException(status_code=404, detail=f"Finance category with id {update_data['category_id']} does not exist")
 
-    # Log each field change to edit history
+    if "category_id" in update_data and update_data["category_id"]:
+        category = session.exec(
+            select(FinanceCategory).where(FinanceCategory.category_id == update_data["category_id"])
+        ).first()
+        if not category:
+            raise HTTPException(status_code=404, detail=f"Finance category {update_data['category_id']} does not exist")
+
+    if "bank_account_id" in update_data and update_data["bank_account_id"]:
+        account = session.exec(
+            select(BankAccount).where(BankAccount.id == update_data["bank_account_id"])
+        ).first()
+        if not account:
+            raise HTTPException(status_code=404, detail=f"Bank account {update_data['bank_account_id']} does not exist")
+
     for key, value in update_data.items():
         if value is not None:
             old_value = str(getattr(existing, key, ""))
@@ -85,47 +106,49 @@ def edit_finance_record_in_db(finance_id: int, finance: FinanceUpdate, session: 
                 session.add(history)
             setattr(existing, key, value)
 
-    # Ensure added_by still tracks admin
     existing.added_by = admin_id
-
     session.commit()
     session.refresh(existing)
     return existing
 
 
 # --- Get finance records with filters and pagination ---
-def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_date=None, category_id=None, session: Session = None):
+def get_finance_records_in_db(
+    page: int, page_size: int,
+    start_date=None, end_date=None,
+    category_id=None, bank_account_id=None,
+    session: Session = None,
+):
     if page < 1:
         page = 1
     if page_size < 1:
         page_size = 10
 
-    # Base query for finance records
     query = select(Finance)
 
-    # Apply date range filters
     if start_date:
         query = query.where(Finance.date >= start_date)
     if end_date:
         query = query.where(Finance.date <= end_date)
-
-    # Apply category filter
     if category_id:
         query = query.where(Finance.category_id == category_id)
+    if bank_account_id:
+        query = query.where(Finance.bank_account_id == bank_account_id)
 
     all_records = session.exec(query).all()
     total_count = len(all_records)
 
-    # Pagination
     offset = (page - 1) * page_size
     paginated_records = all_records[offset:offset + page_size]
 
-    # Resolve category names/colors and added_by names
+    # Resolve category names/colors and added_by names for paginated records
     category_map = {}
     admin_map = {}
     for record in paginated_records:
         if record.category_id and record.category_id not in category_map:
-            cat = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == record.category_id)).first()
+            cat = session.exec(
+                select(FinanceCategory).where(FinanceCategory.category_id == record.category_id)
+            ).first()
             category_map[record.category_id] = {
                 "name": cat.category_name if cat else str(record.category_id),
                 "color": cat.color_code if cat else "",
@@ -141,45 +164,50 @@ def get_finance_records_in_db(page: int, page_size: int, start_date=None, end_da
         data["category_name"] = cat_info["name"]
         data["category_color"] = cat_info["color"]
         data["added_by_name"] = admin_map.get(record.added_by, "")
-        has_edits = session.exec(
+        data["has_edits"] = session.exec(
             select(FinanceEditHistory).where(FinanceEditHistory.finance_id == record.id)
         ).first() is not None
-        data["has_edits"] = has_edits
         enriched_records.append(data)
 
-    # --- Summary calculations (based on category names, not hardcoded IDs) ---
-    # Build category name lookup for all_records
-    all_category_ids = {f.category_id for f in all_records if f.category_id}
+    # Summary — based on category name prefix for all filtered records
+    all_cat_ids = {f.category_id for f in all_records if f.category_id}
     all_cat_map = {}
-    for cid in all_category_ids:
-        if cid not in category_map:
-            cat = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == cid)).first()
-            all_cat_map[cid] = cat.category_name if cat else ""
-        else:
+    for cid in all_cat_ids:
+        if cid in category_map:
             all_cat_map[cid] = category_map[cid]["name"]
+        else:
+            cat = session.exec(
+                select(FinanceCategory).where(FinanceCategory.category_id == cid)
+            ).first()
+            all_cat_map[cid] = cat.category_name if cat else ""
 
-    total_income = sum(f.amount for f in all_records if all_cat_map.get(f.category_id, "").startswith("Income"))
-    total_expense = sum(f.amount for f in all_records if not all_cat_map.get(f.category_id, "").startswith("Income"))
+    total_income = sum(
+        f.amount for f in all_records
+        if all_cat_map.get(f.category_id, "").startswith("Income")
+    )
+    total_expense = sum(
+        f.amount for f in all_records
+        if not all_cat_map.get(f.category_id, "").startswith("Income")
+    )
 
     return {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
-        "total_pages": (total_count + page_size - 1) // page_size,
+        "total_pages": (total_count + page_size - 1) // page_size if total_count else 1,
         "records": enriched_records,
         "summary": {
             "total_income": total_income,
             "total_expense": total_expense,
             "net": total_income - total_expense,
-        }
+        },
     }
 
 
 # --- Finance Categories ---
 
 def get_all_categories_in_db(session: Session):
-    categories = session.exec(select(FinanceCategory)).all()
-    return categories
+    return session.exec(select(FinanceCategory)).all()
 
 
 def create_category_in_db(category_name: str, color_code: str, session: Session):
@@ -225,7 +253,6 @@ def delete_category_in_db(category_id: int, session: Session):
     if not existing:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    # Check if any finance records use this category
     records = session.exec(
         select(Finance).where(Finance.category_id == category_id)
     ).first()
@@ -260,11 +287,12 @@ def get_edit_history_in_db(finance_id: int, session: Session):
 
         old_value = h.old_value
         new_value = h.new_value
-        # Resolve category IDs to names
         if h.field_name == "category_id":
             for val in [old_value, new_value]:
                 if val and val.isdigit() and int(val) not in category_map:
-                    cat = session.exec(select(FinanceCategory).where(FinanceCategory.category_id == int(val))).first()
+                    cat = session.exec(
+                        select(FinanceCategory).where(FinanceCategory.category_id == int(val))
+                    ).first()
                     category_map[int(val)] = cat.category_name if cat else val
             old_value = category_map.get(int(old_value), old_value) if old_value and old_value.isdigit() else old_value
             new_value = category_map.get(int(new_value), new_value) if new_value and new_value.isdigit() else new_value
@@ -281,49 +309,20 @@ def get_edit_history_in_db(finance_id: int, session: Session):
     return results
 
 
-# --- Balance ---
+# --- Monthly Summary (per bank account) ---
 
-def _get_category_name_map(session: Session) -> dict:
-    """Return {category_id: category_name} for all categories."""
-    cats = session.exec(select(FinanceCategory)).all()
-    return {c.category_id: c.category_name for c in cats}
+def get_monthly_summary_in_db(bank_account_id: int, year: int, session: Session):
+    account = session.exec(select(BankAccount).where(BankAccount.id == bank_account_id)).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Bank account not found")
 
+    cat_map = _category_name_map(session)
 
-def get_balance_in_db(session: Session):
-    """Return current total balance = opening_balance + all income - all expense."""
-    admin = session.exec(select(Admin)).first()
-    if not admin:
-        raise HTTPException(status_code=500, detail="No admin exists")
+    all_records = session.exec(
+        select(Finance).where(Finance.bank_account_id == bank_account_id)
+    ).all()
 
-    cat_map = _get_category_name_map(session)
-    records = session.exec(select(Finance)).all()
-
-    total_income = sum(r.amount for r in records if cat_map.get(r.category_id, "").startswith("Income"))
-    total_expense = sum(r.amount for r in records if not cat_map.get(r.category_id, "").startswith("Income"))
-    net_transactions = total_income - total_expense
-    current_balance = (admin.opening_balance or 0.0) + net_transactions
-
-    return {
-        "opening_balance": admin.opening_balance or 0.0,
-        "total_income": total_income,
-        "total_expense": total_expense,
-        "net_transactions": net_transactions,
-        "current_balance": current_balance,
-    }
-
-
-def get_monthly_summary_in_db(year: int, session: Session):
-    """Return month-by-month summary for a given year with opening/closing balance."""
-    admin = session.exec(select(Admin)).first()
-    if not admin:
-        raise HTTPException(status_code=500, detail="No admin exists")
-
-    cat_map = _get_category_name_map(session)
-
-    # All records up to end of requested year (for running balance calc)
-    all_records = session.exec(select(Finance)).all()
-
-    # Records before the requested year (to compute opening balance of Jan)
+    # Compute opening balance of the requested year
     pre_year_income = sum(
         r.amount for r in all_records
         if r.date.year < year and cat_map.get(r.category_id, "").startswith("Income")
@@ -332,26 +331,25 @@ def get_monthly_summary_in_db(year: int, session: Session):
         r.amount for r in all_records
         if r.date.year < year and not cat_map.get(r.category_id, "").startswith("Income")
     )
-    year_opening = (admin.opening_balance or 0.0) + pre_year_income - pre_year_expense
+    year_opening = account.opening_balance + pre_year_income - pre_year_expense
 
-    # Group records by month for the requested year
+    # Group by month for the requested year
     monthly: dict = defaultdict(lambda: {"income": 0.0, "expense": 0.0})
     for r in all_records:
         if r.date.year == year:
-            name = cat_map.get(r.category_id, "")
-            if name.startswith("Income"):
+            if cat_map.get(r.category_id, "").startswith("Income"):
                 monthly[r.date.month]["income"] += r.amount
             else:
                 monthly[r.date.month]["expense"] += r.amount
 
     months = []
-    running_balance = year_opening
+    running = year_opening
     for m in range(1, 13):
-        opening = running_balance
+        opening = running
         income = monthly[m]["income"]
         expense = monthly[m]["expense"]
         closing = opening + income - expense
-        running_balance = closing
+        running = closing
         months.append({
             "month": m,
             "month_name": calendar.month_abbr[m],
@@ -362,15 +360,4 @@ def get_monthly_summary_in_db(year: int, session: Session):
             "closing_balance": closing,
         })
 
-    return {"year": year, "months": months}
-
-
-def update_opening_balance_in_db(opening_balance: float, session: Session):
-    """Update admin opening balance."""
-    admin = session.exec(select(Admin)).first()
-    if not admin:
-        raise HTTPException(status_code=500, detail="No admin exists")
-    admin.opening_balance = opening_balance
-    session.add(admin)
-    session.commit()
-    return {"opening_balance": admin.opening_balance}
+    return {"year": year, "bank_account_id": bank_account_id, "months": months}
