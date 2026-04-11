@@ -18,6 +18,7 @@ import {
   X,
   ChevronRight,
   ChevronDown,
+  ClipboardList,
 } from "lucide-react";
 
 interface NavItem {
@@ -40,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Inventory", icon: Package, path: "/inventory", adminOnly: true },
+  { label: "Attendance", icon: ClipboardList, path: "/attendance", adminOnly: true },
   { label: "Settings", icon: Settings, path: "/settings", adminOnly: false },
 ];
 
