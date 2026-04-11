@@ -1,8 +1,9 @@
 # attendance_db.py
 import logging
-from sqlmodel import select, Session
-from models import AttendanceRaw, Admin
-from datetime import datetime
+from datetime import date as date_type, datetime
+from typing import Optional
+from sqlmodel import select, func, Session
+from models import AttendanceRaw, Admin, Employee
 
 logger = logging.getLogger("attendance")
 
@@ -90,4 +91,78 @@ def insert_raw_attendances(records: list, session: Session) -> dict:
         "inserted": inserted,
         "duplicates_skipped": duplicates,
         "failures": failures,
+    }
+
+
+def get_attendance_records_in_db(
+    page: int,
+    page_size: int,
+    start_date: Optional[date_type],
+    end_date: Optional[date_type],
+    search: Optional[str],
+    session: Session,
+) -> dict:
+    """Return paginated attendance records joined with employee names."""
+
+    # Build employee code → name map; also support name-based search
+    employees = session.exec(select(Employee)).all()
+    emp_map = {e.employee_code: e.name for e in employees}
+
+    # If search term matches an employee name, collect matching codes
+    matching_codes: Optional[set] = None
+    if search:
+        search_lower = search.strip().lower()
+        name_matches = {e.employee_code for e in employees if search_lower in e.name.lower()}
+        code_matches = {e.employee_code for e in employees if search_lower in e.employee_code.lower()}
+        matching_codes = name_matches | code_matches
+
+    # Build base query
+    base = select(AttendanceRaw)
+    if start_date:
+        base = base.where(AttendanceRaw.date >= start_date)
+    if end_date:
+        base = base.where(AttendanceRaw.date <= end_date)
+    if matching_codes is not None:
+        if not matching_codes:
+            return {"items": [], "total_count": 0, "page": page, "total_pages": 1}
+        base = base.where(AttendanceRaw.employee_code.in_(matching_codes))
+
+    # Count
+    count_q = select(func.count(AttendanceRaw.id))
+    if start_date:
+        count_q = count_q.where(AttendanceRaw.date >= start_date)
+    if end_date:
+        count_q = count_q.where(AttendanceRaw.date <= end_date)
+    if matching_codes is not None:
+        count_q = count_q.where(AttendanceRaw.employee_code.in_(matching_codes))
+    total_count = session.exec(count_q).one()
+
+    # Paginate
+    records = session.exec(
+        base.order_by(AttendanceRaw.date.desc(), AttendanceRaw.timestamp.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+    ).all()
+
+    status_label = {0: "Check In", 1: "Check Out"}
+
+    items = [
+        {
+            "id": r.id,
+            "date": str(r.date),
+            "timestamp": r.timestamp.isoformat(),
+            "employee_code": r.employee_code,
+            "employee_name": emp_map.get(r.employee_code, "—"),
+            "status": r.status,
+            "status_label": status_label.get(r.status, str(r.status)),
+            "serial_number": r.serial_number,
+        }
+        for r in records
+    ]
+
+    return {
+        "items": items,
+        "total_count": total_count,
+        "page": page,
+        "total_pages": max(1, (total_count + page_size - 1) // page_size),
     }
