@@ -22,6 +22,7 @@ import TeamPage from "../pages/TeamPage";
 import NewTeamPage from "../pages/NewTeamPage";
 import UpdateTeamsPage from "../pages/UpdateTeamsPage";
 import BankAccountsPage from "../pages/BankAccountsPage";
+import AttendancePage from "../pages/AttendancePage";
 
 interface UserPageProps {
   name: string;
@@ -60,6 +61,7 @@ export default function UserPage({ superAdmin }: UserPageProps) {
         <Route path="/teams" element={<TeamPage />} />
         <Route path="/teams/new-team" element={<NewTeamPage />} />
         <Route path="/teams/update-team/:teamId" element={<UpdateTeamsPage />} />
+        <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/settings" element={<Setting />} />
       </Routes>
 
