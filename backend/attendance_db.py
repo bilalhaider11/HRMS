@@ -100,6 +100,7 @@ def get_attendance_records_in_db(
     start_date: Optional[date_type],
     end_date: Optional[date_type],
     search: Optional[str],
+    status: Optional[int],
     session: Session,
 ) -> dict:
     """Return paginated attendance records joined with employee names."""
@@ -126,6 +127,8 @@ def get_attendance_records_in_db(
         if not matching_codes:
             return {"items": [], "total_count": 0, "page": page, "total_pages": 1}
         base = base.where(AttendanceRaw.employee_code.in_(matching_codes))
+    if status is not None:
+        base = base.where(AttendanceRaw.status == status)
 
     # Count
     count_q = select(func.count(AttendanceRaw.id))
@@ -135,6 +138,8 @@ def get_attendance_records_in_db(
         count_q = count_q.where(AttendanceRaw.date <= end_date)
     if matching_codes is not None:
         count_q = count_q.where(AttendanceRaw.employee_code.in_(matching_codes))
+    if status is not None:
+        count_q = count_q.where(AttendanceRaw.status == status)
     total_count = session.exec(count_q).one()
 
     # Paginate

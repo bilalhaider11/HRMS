@@ -16,6 +16,8 @@ interface AttendanceRecord {
 const inputStyles =
   "px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white font-inter placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all";
 
+const today = new Date().toISOString().split("T")[0];
+
 const AttendancePage = () => {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,11 +25,12 @@ const AttendancePage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
   const [appliedFilters, setAppliedFilters] = useState({
-    startDate: "", endDate: "", search: "",
+    startDate: today, endDate: today, search: "", status: "",
   });
 
   const PAGE_SIZE = 50;
@@ -35,11 +38,13 @@ const AttendancePage = () => {
   const load = useCallback(async (p: number, filters: typeof appliedFilters) => {
     setLoading(true);
     try {
+      const statusNum = filters.status !== "" ? Number(filters.status) : undefined;
       const data = await fetchAttendanceRecords(
         p, PAGE_SIZE,
         filters.startDate || undefined,
         filters.endDate || undefined,
         filters.search || undefined,
+        statusNum,
       );
       setRecords(data.items || []);
       setPage(data.page || 1);
@@ -57,21 +62,22 @@ const AttendancePage = () => {
   }, []);
 
   const handleApplyFilters = () => {
-    const filters = { startDate, endDate, search };
+    const filters = { startDate, endDate, search, status };
     setAppliedFilters(filters);
     load(1, filters);
   };
 
   const handleClearFilters = () => {
-    setStartDate("");
-    setEndDate("");
+    setStartDate(today);
+    setEndDate(today);
     setSearch("");
-    const empty = { startDate: "", endDate: "", search: "" };
-    setAppliedFilters(empty);
-    load(1, empty);
+    setStatus("");
+    const reset = { startDate: today, endDate: today, search: "", status: "" };
+    setAppliedFilters(reset);
+    load(1, reset);
   };
 
-  const hasFilters = startDate || endDate || search;
+  const hasFilters = startDate !== today || endDate !== today || search || status;
 
   const formatTime = (iso: string) => {
     // Python isoformat() returns +00:00 offset, not Z — new Date() handles both formats
@@ -118,6 +124,18 @@ const AttendancePage = () => {
               onChange={(e) => setEndDate(e.target.value)}
               className={inputStyles}
             />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-400 font-inter">Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className={inputStyles}
+            >
+              <option value="">All</option>
+              <option value="0">Check In</option>
+              <option value="1">Check Out</option>
+            </select>
           </div>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
             <label className="text-xs text-slate-400 font-inter">Search employee</label>
