@@ -288,9 +288,10 @@ def get_attendance_records(
     page: int = 1, page_size: int = 50,
     start_date: Optional[date] = None, end_date: Optional[date] = None,
     search: Optional[str] = None,
+    status: Optional[int] = None,
     session: Session = Depends(admin_db.get_session),
 ):
-    return attendance_db.get_attendance_records_in_db(page, page_size, start_date, end_date, search, session=session)
+    return attendance_db.get_attendance_records_in_db(page, page_size, start_date, end_date, search, status, session=session)
 
 @attendance_router.post("/bulk-raw-attendance")
 def create_bulk_raw_attendance(payload: dict, request: Request, session: Session = Depends(admin_db.get_session)):
