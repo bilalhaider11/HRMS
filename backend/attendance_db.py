@@ -105,17 +105,36 @@ def get_attendance_records_in_db(
 ) -> dict:
     """Return paginated attendance records joined with employee names."""
 
-    # Build employee code → name map; also support name-based search
+    # Build employee code → name map.
+    # Biometric devices often send plain integer codes (e.g. "7", "32") while
+    # employees may be stored as "EMP-007", "EMP-032". Map both forms so that
+    # attendance records resolve names regardless of which format is stored.
     employees = session.exec(select(Employee)).all()
-    emp_map = {e.employee_code: e.name for e in employees}
+    emp_map: dict = {}
+    for e in employees:
+        emp_map[e.employee_code] = e.name
+        if "-" in e.employee_code:
+            suffix = e.employee_code.rsplit("-", 1)[-1]
+            try:
+                emp_map[str(int(suffix))] = e.name  # "EMP-007" → also map "7"
+            except ValueError:
+                pass
 
-    # If search term matches an employee name, collect matching codes
+    # If search term matches an employee name or code, collect all matching
+    # attendance codes (both stored format and numeric biometric format).
     matching_codes: Optional[set] = None
     if search:
         search_lower = search.strip().lower()
-        name_matches = {e.employee_code for e in employees if search_lower in e.name.lower()}
-        code_matches = {e.employee_code for e in employees if search_lower in e.employee_code.lower()}
-        matching_codes = name_matches | code_matches
+        matching_codes = set()
+        for e in employees:
+            if search_lower in e.name.lower() or search_lower in e.employee_code.lower():
+                matching_codes.add(e.employee_code)
+                if "-" in e.employee_code:
+                    suffix = e.employee_code.rsplit("-", 1)[-1]
+                    try:
+                        matching_codes.add(str(int(suffix)))
+                    except ValueError:
+                        pass
 
     # Build base query
     base = select(AttendanceRaw)
