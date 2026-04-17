@@ -99,17 +99,17 @@ const EmployeeTable = () => {
                     <table className="w-full min-w-[1024px]">
                         <thead className="bg-slate-800/50">
                             <tr className="border-b border-slate-700">
-                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[40%] pl-6">
-                                    Name
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[30%] pl-6">
+                                    Employee
+                                </th>
+                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[20%]">
+                                    Designation
                                 </th>
                                 <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[20%]">
                                     Status
                                 </th>
                                 <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[20%]">
-                                    Increment
-                                </th>
-                                <th className="py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[20%]">
-                                    Action
+                                    Actions
                                 </th>
                             </tr>
                         </thead>
@@ -117,11 +117,19 @@ const EmployeeTable = () => {
                             {employeesList.map((data: EmployeeTableData, index: number) => (
                                 <tr key={index} className="border-t border-solid border-slate-800"
                                 >
-                                    <td className="py-4 px-4 w-[40%] flex items-center gap-4 md:gap-[29px]">
+                                    <td className="py-4 px-4 w-[30%] flex items-center gap-4 md:gap-[29px]">
                                         <img src={ProfileImage} alt="Profile" className="sm:w-10 sm:h-10 w-[30px] h-[30px]" />
-                                        <button onClick={() => handleNameClick(data)} className="text-sm font-inter text-slate-200 whitespace-nowrap">
-                                            {data.name}
-                                        </button>
+                                        <div className="flex flex-col items-start">
+                                            <button onClick={() => handleNameClick(data)} className="text-sm font-inter text-slate-200 whitespace-nowrap">
+                                                {data.name}
+                                            </button>
+                                            {data.id && (
+                                                <span className="text-xs text-slate-500 font-inter">{data.id}</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="w-[20%] py-4 px-4 text-sm text-slate-300 font-inter">
+                                        {data.designation || <span className="text-slate-600">—</span>}
                                     </td>
                                     <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
                                         <button type="button" onClick={() => statusModalOpen(data)}
@@ -134,14 +142,14 @@ const EmployeeTable = () => {
                                         </button>
                                     </td>
                                     <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
-                                        <Button onClick={() => handleHistoryClick(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
-                                            History
-                                        </Button>
-                                    </td>
-                                    <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
-                                        <Button onClick={() => deleteEmployee(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
-                                            Deactivate
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button onClick={() => handleHistoryClick(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
+                                                History
+                                            </Button>
+                                            <Button onClick={() => deleteEmployee(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
+                                                Deactivate
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

@@ -187,8 +187,7 @@ const AttendancePage = () => {
                 <tr className="border-b border-slate-700">
                   <th className={thClass}>Date</th>
                   <th className={thClass}>Time</th>
-                  <th className={thClass}>Employee Code</th>
-                  <th className={thClass}>Employee Name</th>
+                  <th className={thClass}>Employee</th>
                   <th className={thClass}>Status</th>
                   <th className={thClass}>Device</th>
                 </tr>
@@ -198,11 +197,11 @@ const AttendancePage = () => {
                   <tr key={r.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/30 transition-colors">
                     <td className={tdClass}>{formatDate(r.date)}</td>
                     <td className={`${tdClass} font-mono text-slate-300`}>{formatTime(r.timestamp)}</td>
-                    <td className={`${tdClass} font-mono text-slate-300`}>{r.employee_code}</td>
                     <td className={tdClass}>
                       <span className={r.employee_name === "—" ? "text-slate-500" : "text-white"}>
                         {r.employee_name}
                       </span>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">{r.employee_code}</div>
                     </td>
                     <td className={tdClass}>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-inter ${
