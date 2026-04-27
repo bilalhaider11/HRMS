@@ -1,30 +1,65 @@
-export interface TeamsTableData {
-    teamId: number,
-    teamName: string,
-    teamDescription: string,
-    teamLeadId: number,
-    teamLeadName: string,
-    teamMemebers: []
+import api from "api/axios";
+
+export interface TeamMemberApi {
+  id: number;
+  employee_code: string;
+  name: string;
 }
 
-export interface TeamsListData {
-    teamsAllList: TeamsTableData[]
+export interface TeamApi {
+  team_id: number;
+  team_name: string;
+  team_description: string;
+  team_lead_id: number | null;
+  team_lead_name: string | null;
+  team_members: TeamMemberApi[];
 }
 
+export interface TeamPayload {
+  team_name: string;
+  team_description: string;
+  team_lead_id: number | null;
+  member_ids: number[];
+}
 
-export const fetchTeamsTableData = async (): Promise<TeamsListData> => {
-    try {
-        const response = await fetch(
-            "/dummy_json_data/teams_json_data/teamsTable.json"
-        );
-        if (!response.ok) {
-            throw new Error(`${response.status}`);
-        }
-        const data = await response.json();
-        return { teamsAllList: data.teamsTable };
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-};
+export interface TeamEmployee {
+  id: number;
+  employee_code: string;
+  name: string;
+}
+
+export async function fetchTeamsTableData(): Promise<TeamApi[]> {
+  const res = await api.get("/admin/get_teams");
+  return res.data.teams || [];
+}
+
+export async function fetchTeamById(teamId: number): Promise<TeamApi> {
+  const res = await api.get(`/admin/get_team/${teamId}`);
+  return res.data.team;
+}
+
+export async function createTeam(payload: TeamPayload): Promise<TeamApi> {
+  const res = await api.post("/admin/create_team", payload);
+  return res.data.team;
+}
+
+export async function updateTeamById(teamId: number, payload: TeamPayload): Promise<TeamApi> {
+  const res = await api.patch(`/admin/update_team/${teamId}`, payload);
+  return res.data.team;
+}
+
+export async function deleteTeamById(teamId: number): Promise<void> {
+  await api.delete(`/admin/delete_team/${teamId}`);
+}
+
+export async function fetchEmployeesForTeams(): Promise<TeamEmployee[]> {
+  const res = await api.get("/admin/display_all_employees", {
+    params: { page: 1, page_size: 10, status: "active" },
+  });
+  return (res.data.employees || []).map((emp: any) => ({
+    id: emp.id,
+    employee_code: emp.employee_code,
+    name: emp.name,
+  }));
+}
 

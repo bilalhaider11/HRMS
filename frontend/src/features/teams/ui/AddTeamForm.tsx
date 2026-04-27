@@ -1,6 +1,5 @@
 import Button from "shared/Button";
 import FormInput from "../../../shared/FormInputs";
-import { v4 as uuidv4 } from "uuid";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import {
@@ -19,7 +18,7 @@ import AddMemberModal from "./AddMemberModal";
 const formSchema = Yup.object().shape({
   teamName: Yup.string().required("Team Name is required"),
   teamDescription: Yup.string().required("Team Description is required"),
-  teamLeadName: Yup.string().required("Team Lead Name is required"),
+  teamLeadId: Yup.number().required("Team Lead Name is required"),
 });
 
 const AddTeamForm = () => {
@@ -46,12 +45,11 @@ const AddTeamForm = () => {
     "inputBox text-sm md:text-base leading-normal px-4 py-2.5 lg:py-[21px] lg:px-[29px] rounded-[15px] text-white placeholder-[#747681]";
   const errorClasses = "text-red-500 text-xs mt-1 absolute -bottom-6";
 
-  const [generatedTeamId] = useState<string>(uuidv4());
   const [teamLeadDropdownOpen, setTeamLeadDropdownOpen] = useState(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = async (values: any) => {
     console.log(editingTeam);
     if (editingTeam !== null && updateTeam) {
       const updatedTeam = {
@@ -62,20 +60,21 @@ const AddTeamForm = () => {
           name: member.name,
         })), // Include selectedMembers in update
       };
-      updateTeam(updatedTeam);
+      await updateTeam(updatedTeam);
       formik.resetForm();
     } else {
       const newTeam: TeamsTableData = {
-        teamId: parseInt(values.teamId || ""),
+        teamId: undefined,
         teamName: values.teamName,
         teamDescription: values.teamDescription,
+        teamLeadId: values.teamLeadId,
         teamLeadName: values.teamLeadName,
         teamMembers: selectedMembers.map((member) => ({
           id: member.id,
           name: member.name,
         })),
       };
-      const added = addTeam(newTeam);
+      const added = await addTeam(newTeam);
       console.log(added);
       if (added) {
         formik.resetForm();
@@ -102,17 +101,19 @@ const AddTeamForm = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  const addTeamLeadName = (item: string | undefined) => {
-    const name = item || "Unknown";
+  const addTeamLeadName = (item: EmployeeTableData) => {
+    const name = item.name || "Unknown";
     setTeamLeadDropdownOpen(false);
     formik.setFieldValue("teamLeadName", name);
+    formik.setFieldValue("teamLeadId", item.id);
   };
 
   const formik = useFormik({
     initialValues: {
-      teamId: editingTeam?.teamId || generatedTeamId,
+      teamId: editingTeam?.teamId || "",
       teamName: editingTeam?.teamName || "",
       teamDescription: editingTeam?.teamDescription || "",
+      teamLeadId: editingTeam?.teamLeadId || "",
       teamLeadName: editingTeam?.teamLeadName || "",
       teamMembers:
         editingTeam?.teamMembers || [],
@@ -194,7 +195,7 @@ const AddTeamForm = () => {
                       <li key={index} className="w-full">
                         <Button
                           type="button"
-                          onClick={() => addTeamLeadName(item.name)}
+                          onClick={() => addTeamLeadName(item)}
                           buttonClasses="border-b border-solid border-[#FFFFFF21] px-5 py-2.5 text-white text-sm w-full text-left hover:opacity-[0.4] transition-all"
                         >
                           {item.name}
@@ -205,8 +206,8 @@ const AddTeamForm = () => {
                 </ul>
               </div>
             )}
-            {formik.errors.teamLeadName && formik.touched.teamLeadName && (
-              <p className={`${errorClasses}`}>{formik.errors.teamLeadName}</p>
+            {formik.errors.teamLeadId && (
+              <p className={`${errorClasses}`}>{formik.errors.teamLeadId}</p>
             )}
           </div>
           <div className="relative">

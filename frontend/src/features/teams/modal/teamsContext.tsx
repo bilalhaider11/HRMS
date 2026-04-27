@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchTeamsTableData } from '../api/teams';
-import { fetchEmploeeTableData } from 'features/dashboard/api/dashboard';
+import { createTeam, deleteTeamById, fetchEmployeesForTeams, fetchTeamById, fetchTeamsTableData, updateTeamById } from '../api/teams';
 
 export interface TeamsTableData {
     teamId?: number,
@@ -11,7 +10,8 @@ export interface TeamsTableData {
     teamMembers?: EmployeeTableData[],
 }
 export interface EmployeeTableData {
-  id?: string;
+  id?: number;
+  employeeCode?: string;
   name?: string;
 }
 
@@ -20,7 +20,7 @@ interface TeamsContextType {
     employeeList: EmployeeTableData[];
     editingTeam: TeamsTableData | null;
     setEditingTeam: (team: TeamsTableData | null) => void;
-    addTeam: (team: TeamsTableData) => boolean;
+    addTeam: (team: TeamsTableData) => Promise<boolean>;
     idExistError: string;
     clearError: () => void;
     successfullModal: boolean;
@@ -29,14 +29,15 @@ interface TeamsContextType {
     setIsOpenMembersModal: (value: boolean) => void;
     isDeleteTeamModal: TeamsTableData | null
     setIsDeleteTeamModal: (team: TeamsTableData | null) => void
-    updateTeam: (team: TeamsTableData) => void
+    updateTeam: (team: TeamsTableData) => Promise<void>
     editTeamData: (team: TeamsTableData) => void;
-    handleTeamDelete: (team: TeamsTableData) => void
+    handleTeamDelete: (team: TeamsTableData) => Promise<void>
     handleAddMemberModal: () => void
     handleCloseMemberModal: () => void
     selectedMembers: EmployeeTableData[]
     setSelectedMembers: (members: EmployeeTableData[]) => void
     removeMember: (member: EmployeeTableData) => void
+    getTeamById: (teamId: number) => Promise<TeamsTableData>
 }
 
 
@@ -68,11 +69,24 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
 
     const clearError = () => setIdExistError("");
 
+    const mapTeam = (team: any): TeamsTableData => ({
+        teamId: team.team_id,
+        teamName: team.team_name,
+        teamDescription: team.team_description,
+        teamLeadId: team.team_lead_id || undefined,
+        teamLeadName: team.team_lead_name || "",
+        teamMembers: (team.team_members || []).map((member: any) => ({
+            id: member.id,
+            employeeCode: member.employee_code,
+            name: member.name,
+        })),
+    });
+
     useEffect(() => {
         const loadTeams = async () => {
             try {
                 const data = await fetchTeamsTableData();
-                setTeamList(data.teamsAllList);
+                setTeamList(data.map(mapTeam));
             } catch (error) {
                 console.error(error);
             }
@@ -80,8 +94,14 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
 
         const loadEmployees = async () => {
             try {
-                const data = await fetchEmploeeTableData()
-                setEmployeeList(data.employeesList)
+                const data = await fetchEmployeesForTeams()
+                setEmployeeList(
+                    data.map((emp) => ({
+                        id: emp.id,
+                        employeeCode: emp.employee_code,
+                        name: emp.name,
+                    }))
+                )
             } catch (error) {
                 console.log(error)
             }
@@ -93,10 +113,14 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
     }, []);
 
 
-    const addTeam = (team: TeamsTableData) => {
-        const updatedList = [...teamList, team];
-        console.log("added")
-        setTeamList(updatedList);
+    const addTeam = async (team: TeamsTableData) => {
+        const created = await createTeam({
+            team_name: team.teamName || "",
+            team_description: team.teamDescription || "",
+            team_lead_id: team.teamLeadId || null,
+            member_ids: (team.teamMembers || []).map((member) => member.id as number),
+        });
+        setTeamList((prev) => [...prev, mapTeam(created)]);
         setEditingTeam(null)
         setSelectedMembers([]);
         setIdExistError("")
@@ -117,9 +141,17 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         window.scrollTo(0, 0);
     };
 
-    const updateTeam = (updatedTeam: TeamsTableData) => {
+    const updateTeam = async (updatedTeam: TeamsTableData) => {
+        if (!updatedTeam.teamId) return;
+        const saved = await updateTeamById(updatedTeam.teamId, {
+            team_name: updatedTeam.teamName || "",
+            team_description: updatedTeam.teamDescription || "",
+            team_lead_id: updatedTeam.teamLeadId || null,
+            member_ids: (updatedTeam.teamMembers || []).map((member) => member.id as number),
+        });
+        const mappedTeam = mapTeam(saved);
         const updatedList = teamList.map((team) =>
-            team.teamId === updatedTeam.teamId ? updatedTeam : team
+            team.teamId === mappedTeam.teamId ? mappedTeam : team
         );
         console.log("updateList", updatedList)
         setTeamList(updatedList);
@@ -129,7 +161,9 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         setIdExistError("");
     };
 
-    const handleTeamDelete = (team: TeamsTableData) => {
+    const handleTeamDelete = async (team: TeamsTableData) => {
+        if (!team.teamId) return;
+        await deleteTeamById(team.teamId);
         const updatingList = teamList.filter(i => i.teamId !== team.teamId)
         setTeamList(updatingList)
         setIsDeleteTeamModal(null)
@@ -155,9 +189,14 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         setSelectedMembers(selectedMembers.filter(m => m.id !== member.id))
     }
 
+    const getTeamById = async (teamId: number) => {
+        const data = await fetchTeamById(teamId);
+        return mapTeam(data);
+    }
+
 
     return (
-        <TeamsContext.Provider value={{ teamList, employeeList, setEditingTeam, editingTeam, handleTeamDelete, addTeam, updateTeam, editTeamData, idExistError, setIsDeleteTeamModal, isDeleteTeamModal, setSuccessfullModal, successfullModal, clearError, handleAddMemberModal, isOpenMembersModal, setIsOpenMembersModal, handleCloseMemberModal, selectedMembers, setSelectedMembers, removeMember }}>
+        <TeamsContext.Provider value={{ teamList, employeeList, setEditingTeam, editingTeam, handleTeamDelete, addTeam, updateTeam, editTeamData, idExistError, setIsDeleteTeamModal, isDeleteTeamModal, setSuccessfullModal, successfullModal, clearError, handleAddMemberModal, isOpenMembersModal, setIsOpenMembersModal, handleCloseMemberModal, selectedMembers, setSelectedMembers, removeMember, getTeamById }}>
             {children}
         </TeamsContext.Provider>
     );

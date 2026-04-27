@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta, date
 from typing import Optional
-import admin_db, auth, employee_db, increment_db, finance_db, inventory_db, attendance_db, bank_account_db
+import admin_db, auth, employee_db, increment_db, finance_db, inventory_db, attendance_db, bank_account_db,teams_db
 from models import AdminProfileUpdate, AdminPasswordUpdate, EmployeeBase, EmployeeUpdate, FinanceBase, FinanceUpdate, ItemCategoryBase, ItemCategoryUpdate, InventoryItemBase, InventoryItemUpdate
 from models import Admin
 from increment_db import IncrementUpdate, IncrementCreate, IncrementResponse
@@ -22,7 +22,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=["*"],#cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -312,6 +312,52 @@ def create_bulk_raw_attendance(payload: dict, request: Request, session: Session
     result = attendance_db.insert_raw_attendances(records, session)
     result["message"] = f"{result['inserted']} of {result['total']} records inserted successfully"
     return result
+
+
+#...................... Teams implementation............................................
+@admin_router.post("/create_team")
+def create_team(
+    payload: dict,
+    current_user: Admin = Depends(auth.get_current_user),
+    session: Session = Depends(admin_db.get_session),
+):
+    return teams_db.create_team_in_db(payload, company_id=current_user.id, session=session)
+
+
+@admin_router.get("/get_teams")
+def get_teams(
+    current_user: Admin = Depends(auth.get_current_user),
+    session: Session = Depends(admin_db.get_session),
+):
+    return teams_db.get_teams_in_db(company_id=current_user.id, session=session)
+
+
+@admin_router.get("/get_team/{team_id}")
+def get_team(
+    team_id: int,
+    current_user: Admin = Depends(auth.get_current_user),
+    session: Session = Depends(admin_db.get_session),
+):
+    return teams_db.get_team_by_id_in_db(team_id, company_id=current_user.id, session=session)
+
+
+@admin_router.patch("/update_team/{team_id}")
+def update_team(
+    team_id: int,
+    payload: dict,
+    current_user: Admin = Depends(auth.get_current_user),
+    session: Session = Depends(admin_db.get_session),
+):
+    return teams_db.update_team_in_db(team_id, payload, company_id=current_user.id, session=session)
+
+
+@admin_router.delete("/delete_team/{team_id}")
+def delete_team(
+    team_id: int,
+    current_user: Admin = Depends(auth.get_current_user),
+    session: Session = Depends(admin_db.get_session),
+):
+    return teams_db.delete_team_in_db(team_id, company_id=current_user.id, session=session)
 
 
 # ------------------ Include Routers ------------------

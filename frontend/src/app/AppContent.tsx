@@ -43,6 +43,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Inventory", icon: Package, path: "/inventory", adminOnly: true },
   { label: "Attendance", icon: ClipboardList, path: "/attendance", adminOnly: true },
   { label: "Settings", icon: Settings, path: "/settings", adminOnly: false },
+  {label: "Teams", icon: Users, path: "/teams", adminOnly: true},
 ];
 
 function Sidebar({

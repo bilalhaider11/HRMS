@@ -156,6 +156,23 @@ class Employee(EmployeeBase, table=True):
     increments: List["EmployeeIncrement"] = Relationship(back_populates="employee")
 
 
+# --- Teams Models ---
+class Team(SQLModel, table=True):
+    __tablename__ = "teams"
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    team_name: str
+    team_description: Optional[str] = None
+    team_lead_id: Optional[int] = Field(default=None, foreign_key="employee.id")
+    company_id: Optional[int] = Field(default=None, foreign_key="admin.id")
+
+
+class TeamMember(SQLModel, table=True):
+    __tablename__ = "team_members"
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    team_id: int = Field(foreign_key="teams.id")
+    employee_id: int = Field(foreign_key="employee.id")
+
+
 # --- Finance Models ---
 class FinanceCategoryBase(SQLModel):
     category_name: str
