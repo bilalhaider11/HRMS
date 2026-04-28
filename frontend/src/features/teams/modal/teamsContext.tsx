@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { createTeam, deleteTeamById, fetchEmployeesForTeams, fetchTeamById, fetchTeamsTableData, updateTeamById } from '../api/teams';
+import { createTeam, deleteTeamById, fetchEmployeesForTeams, fetchTeamById, fetchTeamsTableData, updateTeamById, TeamUpdatePayload } from '../api/teams';
 
 export interface TeamsTableData {
     teamId?: number,
@@ -82,6 +82,48 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         })),
     });
 
+    const buildTeamUpdatePayload = (original: TeamsTableData | undefined, updated: TeamsTableData) => {
+        const payload: { team_name?: string; team_description?: string; team_lead_id?: number | null; member_ids?: number[] } = {};
+
+        if (!original) {
+            payload.team_name = updated.teamName || "";
+            payload.team_description = updated.teamDescription || "";
+            payload.team_lead_id = updated.teamLeadId ?? null;
+            payload.member_ids = (updated.teamMembers || []).map((member) => member.id).filter((id): id is number => typeof id === 'number');
+            return payload;
+        }
+
+        if (updated.teamName !== original.teamName) {
+            payload.team_name = updated.teamName || "";
+        }
+
+        if (updated.teamDescription !== original.teamDescription) {
+            payload.team_description = updated.teamDescription || "";
+        }
+
+        if (updated.teamLeadId !== original.teamLeadId) {
+            payload.team_lead_id = updated.teamLeadId ?? null;
+        }
+
+        const originalMemberIds = (original.teamMembers || []).map((member) => member.id).filter((id): id is number => typeof id === 'number');
+        const updatedMemberIds = (updated.teamMembers || []).map((member) => member.id).filter((id): id is number => typeof id === 'number');
+
+        // Send only the changed IDs (added + removed)
+        const originalSet = new Set(originalMemberIds);
+        const updatedSet = new Set(updatedMemberIds);
+        
+        const added = updatedMemberIds.filter(id => !originalSet.has(id));
+        const removed = originalMemberIds.filter(id => !updatedSet.has(id));
+        
+        const changedIds = [...added, ...removed];
+        
+        if (changedIds.length > 0) {
+            payload.member_ids = changedIds;
+        }
+
+        return payload;
+    };
+
     useEffect(() => {
         const loadTeams = async () => {
             try {
@@ -143,12 +185,23 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
 
     const updateTeam = async (updatedTeam: TeamsTableData) => {
         if (!updatedTeam.teamId) return;
-        const saved = await updateTeamById(updatedTeam.teamId, {
-            team_name: updatedTeam.teamName || "",
-            team_description: updatedTeam.teamDescription || "",
-            team_lead_id: updatedTeam.teamLeadId || null,
-            member_ids: (updatedTeam.teamMembers || []).map((member) => member.id as number),
-        });
+        const originalTeam = teamList.find((team) => team.teamId === updatedTeam.teamId);
+        const payload = buildTeamUpdatePayload(originalTeam, updatedTeam);
+        
+        // Filter out undefined values from payload
+        const cleanPayload = Object.fromEntries(
+            Object.entries(payload).filter(([, value]) => value !== undefined)
+        ) as TeamUpdatePayload;
+        
+        if (Object.keys(cleanPayload).length === 0) {
+            setSuccessfullModal(true);
+            document.body.style.overflow = "hidden";
+            window.scrollTo(0, 0);
+            setIdExistError("");
+            return;
+        }
+
+        const saved = await updateTeamById(updatedTeam.teamId, cleanPayload);
         const mappedTeam = mapTeam(saved);
         const updatedList = teamList.map((team) =>
             team.teamId === mappedTeam.teamId ? mappedTeam : team

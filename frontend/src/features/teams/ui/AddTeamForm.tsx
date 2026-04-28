@@ -108,6 +108,26 @@ const AddTeamForm = () => {
     formik.setFieldValue("teamLeadId", item.id);
   };
 
+  const getMemberIds = (members: EmployeeTableData[]) =>
+    members
+      .map((member) => member.id)
+      .filter((id): id is number => typeof id === "number");
+
+  const [initialMemberIds, setInitialMemberIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (editingTeam) {
+      setInitialMemberIds(getMemberIds(editingTeam.teamMembers || []));
+    } else {
+      setInitialMemberIds([]);
+    }
+  }, [editingTeam?.teamId]);
+
+  const selectedMemberIds = getMemberIds(selectedMembers);
+  const membersChanged =
+    selectedMemberIds.length !== initialMemberIds.length ||
+    !initialMemberIds.every((id) => selectedMemberIds.includes(id));
+
   const formik = useFormik({
     initialValues: {
       teamId: editingTeam?.teamId || "",
@@ -135,55 +155,19 @@ const AddTeamForm = () => {
     <>
       <form onSubmit={formik.handleSubmit} noValidate>
         <div className="grid md:grid-cols-2 gap-3 md:gap-5 lg:gap-[38px]">
-          <div className="relative">
-            <FormInput
-              label="Id"
-              type="text"
-              id="teamId"
-              name="teamId"
-              value={formik.values.teamId}
-              onChange={(e) => {
-                formik.handleChange(e);
-                clearError();
-              }}
-              readOnly
-              placeholder="Team ID"
-              labelClassName={`${labelStyles}`}
-              inputMainBorder={`${inputBorder}`}
-              inputClassName={`${inputStyles}`}
-            />
-          </div>
-          <div className="relative">
-            <FormInput
-              label="Team Name"
-              name="teamName"
-              type="text"
-              placeholder="Team Name"
-              value={formik.values.teamName}
-              onChange={formik.handleChange}
-              labelClassName={`${labelStyles}`}
-              inputMainBorder={`${inputBorder}`}
-              inputClassName={`${inputStyles}`}
-            />
-            {formik.errors.teamName && formik.touched.teamName && (
-              <p className={`${errorClasses}`}>{formik.errors.teamName}</p>
-            )}
-          </div>
-
           <div className="relative" ref={modalRef}>
+
             <label className={`${labelStyles}`}>Select Team Lead</label>
             <div className={`${inputBorder}`}>
               <Select
                 onClick={openTeamLeadDropdown}
-                selectClassName={`${inputStyles} ${
-                  formik.values.teamLeadName === "Select the Team Lead"
+                selectClassName={`${inputStyles} ${formik.values.teamLeadName === "Select the Team Lead"
                     ? "!text-[#747681]"
                     : "!text-white"
-                } cursor-pointer w-full justify-between`}
+                  } cursor-pointer w-full justify-between`}
                 children={formik.values.teamLeadName || "Select the Team Lead"}
-                selectArrowClassName={`${
-                  teamLeadDropdownOpen ? "-rotate-[180deg]" : "rotate-0"
-                } transition-all`}
+                selectArrowClassName={`${teamLeadDropdownOpen ? "-rotate-[180deg]" : "rotate-0"
+                  } transition-all`}
                 selectArrowPath={selectArrow}
               />
             </div>
@@ -209,15 +193,53 @@ const AddTeamForm = () => {
             {formik.errors.teamLeadId && (
               <p className={`${errorClasses}`}>{formik.errors.teamLeadId}</p>
             )}
+            {/* <FormInput
+              label="Id"
+              type="text"
+              id="teamId"
+              name="teamId"
+              value={formik.values.teamId}
+              onChange={(e) => {
+                formik.handleChange(e);
+                clearError();
+              }}
+              readOnly
+              placeholder="Team ID"
+              labelClassName={`${labelStyles}`}
+              inputMainBorder={`${inputBorder}`}
+              inputClassName={`${inputStyles}`}
+            /> */}
           </div>
           <div className="relative">
-            <label className={`${labelStyles}`}>Description</label>
+            <FormInput
+              label="Team Name"
+              name="teamName"
+              type="text"
+              placeholder="Team Name"
+              value={formik.values.teamName}
+              onChange={formik.handleChange}
+              labelClassName={`${labelStyles}`}
+              inputMainBorder={`${inputBorder}`}
+              inputClassName={`${inputStyles}`}
+            />
+            {formik.errors.teamName && formik.touched.teamName && (
+              <p className={`${errorClasses}`}>{formik.errors.teamName}</p>
+            )}
+          </div>
+
+
+          <div className="relative">
+            <label htmlFor="teamDescription" className={`${labelStyles}`}>
+              Description
+            </label>
+
             <div className={`${inputBorder} h-[76%]`}>
               <textarea
+                id="teamDescription"
+                name="teamDescription"
                 className={`${inputStyles} w-full h-[181px] outline-none`}
                 value={formik.values.teamDescription}
                 onChange={formik.handleChange}
-                name="teamDescription"
               />
             </div>
             {formik.errors.teamDescription &&
@@ -245,9 +267,9 @@ const AddTeamForm = () => {
                   key={member.id}
                   className="bg-white text-black rounded-[10px] p-2 flex gap-4 justify-between"
                 >
-                  {member.name} 
+                  {member.name}
                   <button type="button" onClick={() => removeMember(member)}>
-                    <img src={deleteIcon} alt="delete" className="w-6 h-6"/>
+                    <img src={deleteIcon} alt="delete" className="w-6 h-6" />
                   </button>
                 </div>
               ))}
@@ -257,7 +279,7 @@ const AddTeamForm = () => {
 
         <Button
           type="submit"
-          disabled={!formik.dirty}
+          disabled={!formik.dirty && !membersChanged}
           buttonClasses={`min-h-10 lg:min-h-[64px] border border-[#CDD6D7] border-solid bg-[#283573] py-3 px-2 lg:py-5 lg:px-[75px] rounded-[15px] flex mx-auto lg:mx-0 mt-4 md:mt-[58px] text-base md:text-lg lg:text-2xl font-semibold lg:leading-[160%] font-urbanist text-white min-w-[200px] lg:min-w-auto w-fit`}
         >
           {editingTeam ? "Update" : "Register"}

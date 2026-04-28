@@ -164,6 +164,7 @@ class Team(SQLModel, table=True):
     team_description: Optional[str] = None
     team_lead_id: Optional[int] = Field(default=None, foreign_key="employee.id")
     company_id: Optional[int] = Field(default=None, foreign_key="admin.id")
+    delete_record: bool = Field(default=False, nullable=False, index=True)
 
 
 class TeamMember(SQLModel, table=True):
@@ -171,8 +172,9 @@ class TeamMember(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     team_id: int = Field(foreign_key="teams.id")
     employee_id: int = Field(foreign_key="employee.id")
-
-
+    delete_record: bool = Field(default=False, nullable=False, index=True)
+     
+     
 # --- Finance Models ---
 class FinanceCategoryBase(SQLModel):
     category_name: str

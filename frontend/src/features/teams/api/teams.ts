@@ -22,6 +22,10 @@ export interface TeamPayload {
   member_ids: number[];
 }
 
+export type TeamUpdatePayload = Partial<Omit<TeamPayload, 'member_ids'> & {
+  member_ids: number[];
+}>;
+
 export interface TeamEmployee {
   id: number;
   employee_code: string;
@@ -43,7 +47,7 @@ export async function createTeam(payload: TeamPayload): Promise<TeamApi> {
   return res.data.team;
 }
 
-export async function updateTeamById(teamId: number, payload: TeamPayload): Promise<TeamApi> {
+export async function updateTeamById(teamId: number, payload: TeamUpdatePayload): Promise<TeamApi> {
   const res = await api.patch(`/admin/update_team/${teamId}`, payload);
   return res.data.team;
 }
