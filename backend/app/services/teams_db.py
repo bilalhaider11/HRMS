@@ -4,7 +4,8 @@ from sqlalchemy import update
 from fastapi import HTTPException
 from sqlmodel import Session, select, delete
 
-from models import Team, TeamMember, Employee
+from app.models.team import Team, TeamMember
+from app.models.employee import Employee
 
 
 def _serialize_team(team: Team, session: Session) -> dict:

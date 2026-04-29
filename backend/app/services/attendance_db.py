@@ -3,7 +3,9 @@ import logging
 from datetime import date as date_type, datetime
 from typing import Optional
 from sqlmodel import select, func, Session
-from models import AttendanceRaw, Admin, Employee
+from app.models.attendance import AttendanceRaw
+from app.models.admin import Admin
+from app.models.employee import Employee
 
 logger = logging.getLogger("attendance")
 

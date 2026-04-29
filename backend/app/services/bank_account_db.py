@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlmodel import select, Session
-from models import BankAccount, Finance, FinanceCategory
+from app.models.bank_account import BankAccount
+from app.models.finance import Finance, FinanceCategory
 
 
 def _category_name_map(session: Session) -> dict:
