@@ -10,10 +10,12 @@ from sqlmodel import Session, select
 from app.core.load_env import get_secret_key, get_algorithm, get_token_expire_minutes
 from app.services.admin_db import get_session
 from app.models.admin import Admin
+from app.models.employee import Employee
 
 
 # Configure OAuth2 scheme for token-based authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/admin/login")
+oauth2_employee_scheme = OAuth2PasswordBearer(tokenUrl="/employee/login")
 
 
 # --- Password Hashing ---
@@ -88,3 +90,28 @@ def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Dep
     if user is None:
         raise credentials_exception  # Raise if admin not found
     return user
+
+
+def get_current_employee(
+    token: str = Depends(oauth2_employee_scheme),
+    session: Session = Depends(get_session),
+) -> Employee:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, get_secret_key(), algorithms=[get_algorithm()])
+        user_type: Optional[str] = payload.get("user_type")
+        employee_id: Optional[int] = payload.get("user_id")
+        if employee_id is None or user_type != "employee":
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    employee = session.get(Employee, employee_id)
+    if employee is None:
+        raise credentials_exception
+    return employee

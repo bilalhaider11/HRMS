@@ -2,6 +2,7 @@ import datetime
 from datetime import date
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import Column, JSON
 
 if TYPE_CHECKING:
     from .increment import EmployeeIncrement
@@ -88,13 +89,23 @@ class EmployeeResponse(SQLModel):
     badge_number: Optional[str] = None
     profile_pic_url: Optional[str] = None
     status: bool = True
-
+    role_ids: List[int] = Field(default_factory=list)
 
 class Employee(EmployeeBase, table=True):
     __tablename__ = "employee"
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    role_ids: List[int] = Field(
+        default_factory=list,
+        sa_column=Column(JSON, nullable=False),
+    )
 
     status: bool = Field(default=True)
 
     increments: List["EmployeeIncrement"] = Relationship(back_populates="employee")
 
+
+from pydantic import BaseModel
+
+class AssignRoleRequest(BaseModel):
+    emp_id: int
+    role_ids: List[int]
