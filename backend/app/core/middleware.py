@@ -5,8 +5,10 @@ from app.services.admin_db import get_client_token_in_db
 
 
 async def auto_auth_middleware(request: Request, call_next):
-    if request.url.path == "/admin/login" and request.method == "POST":
+    
+    if request.url.path in ["/employee/login","/admin/login"] and request.method == "POST":
         return await call_next(request)
+    
     if request.url.path.startswith("/attendances/"):
         return await call_next(request)
 

@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
-from app.services import admin_db
+from app.services import admin_db,login_service
 from app.services import auth
 from app.models.admin import Admin, AdminProfileUpdate, AdminPasswordUpdate
 
@@ -16,15 +16,8 @@ def admin_login(
     session: Session = Depends(admin_db.get_session),
     request: Request = None,
 ):
+    return login_service.login(session,form_data,request,Admin)
     
-    admin = session.exec(select(Admin).where(Admin.email == form_data.username)).first()
-    if not admin or not auth.verify_password(form_data.password, admin.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    token = auth.create_access_token(data={"user_id": admin.id})
-    client_ip = request.client.host if request and request.client else "unknown"
-    admin_db.add_jwt_token_in_db(client_ip, token, session)
-    return {"access_token": token, "token_type": "bearer"}
 
 
 @router.get("/company_profile")
