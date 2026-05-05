@@ -1,4 +1,5 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
+import { ReactElement } from "react";
 import Dashboard from "../pages/Dashboard";
 import RegisterEmployeesPage from "../pages/RegisterEmployeesPage";
 import Setting from "../pages/Settings";
@@ -24,57 +25,53 @@ import UpdateTeamsPage from "../pages/UpdateTeamsPage";
 import TeamMembersPage from "../pages/TeamMembersPage";
 import BankAccountsPage from "../pages/BankAccountsPage";
 import AttendancePage from "../pages/AttendancePage";
+import RolesPage from "../pages/RolesPage";
+import RoleEmployeesPage from "../pages/RoleEmployeesPage";
 
 interface UserPageProps {
   name: string;
   superAdmin: boolean;
+  canAccessEmployees: boolean;
 }
 
-export default function UserPage({ superAdmin }: UserPageProps) {
+export default function UserPage({ superAdmin, canAccessEmployees }: UserPageProps) {
+  const withAdminGuard = (element: ReactElement) =>
+    superAdmin ? element : <Navigate to="/" replace />;
+  const withEmployeeGuard = (element: ReactElement) =>
+    canAccessEmployees ? element : <Navigate to="/" replace />;
+
   return (
     <>
       <Routes>
-        {/* {!superAdmin && (
-          <>
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/" element={<Dashboard />} />
-          </>
-        )} */}
         <Route path="/" element={<Dashboard />} />
-        <Route path="/employees" element={<EmployeesPage />} />
-        <Route path="/employees/register-employees" element={<RegisterEmployeesPage />} />
-        <Route path="/employees/update-employees/:employeeCode" element={<UpdateEmployeesPage />} />
-        <Route path="/employees/increament-history/:employeeCode" element={<IncreamentHistoryPage />} />
-        <Route path="/finance" element={<FinancePage />} />
-        <Route path="/finance/new-finance" element={<NewFinancePage />} />
-        <Route path="/finance/update-finance/:financeId" element={<UpdateFinancePage />} />
-        <Route path="/finance/category-lists" element={<CategoryListsPage />} />
-        <Route path="/finance/category-lists/new-category" element={<NewCategoryPage />} />
-        <Route path="/finance/category-lists/update-category/:categoryId" element={<UpdateCategoryPage />} />
-        <Route path="/finance/bank-accounts" element={<BankAccountsPage />} />
-        <Route path="/inventory" element={<InventoryBodyPage />} />
-        <Route path="/inventory/categories" element={<InventoryCategoriesPage />} />
-        <Route path="/inventory/new-category" element={<NewInventoryCategoryPage />} />
-        <Route path="/inventory/update-category/:categoryId" element={<UpdateInventoryCategoryPage />} />
-        <Route path="/inventory/items" element={<InventoryItemsPage />} />
-        <Route path="/inventory/new-items" element={<NewInventoryItemsPage />} />
-        <Route path="/inventory/update-items/:itemId" element={<UpdateInventoryItemPage />} />
-        <Route path="/teams" element={<TeamPage />} />
-        <Route path="/teams/new-team" element={<NewTeamPage />} />
-        <Route path="/teams/update-team/:teamId" element={<UpdateTeamsPage />} />
-        <Route path="/teams/:teamId/members" element={<TeamMembersPage />} />
-        <Route path="/attendance" element={<AttendancePage />} />
-        <Route path="/settings" element={<Setting />} />
+        <Route path="/employees" element={withEmployeeGuard(<EmployeesPage />)} />
+        <Route path="/employees/register-employees" element={withAdminGuard(<RegisterEmployeesPage />)} />
+        <Route path="/employees/update-employees/:employeeCode" element={withAdminGuard(<UpdateEmployeesPage />)} />
+        <Route path="/employees/increament-history/:employeeCode" element={withAdminGuard(<IncreamentHistoryPage />)} />
+        <Route path="/finance" element={withAdminGuard(<FinancePage />)} />
+        <Route path="/finance/new-finance" element={withAdminGuard(<NewFinancePage />)} />
+        <Route path="/finance/update-finance/:financeId" element={withAdminGuard(<UpdateFinancePage />)} />
+        <Route path="/finance/category-lists" element={withAdminGuard(<CategoryListsPage />)} />
+        <Route path="/finance/category-lists/new-category" element={withAdminGuard(<NewCategoryPage />)} />
+        <Route path="/finance/category-lists/update-category/:categoryId" element={withAdminGuard(<UpdateCategoryPage />)} />
+        <Route path="/finance/bank-accounts" element={withAdminGuard(<BankAccountsPage />)} />
+        <Route path="/inventory" element={withAdminGuard(<InventoryBodyPage />)} />
+        <Route path="/inventory/categories" element={withAdminGuard(<InventoryCategoriesPage />)} />
+        <Route path="/inventory/new-category" element={withAdminGuard(<NewInventoryCategoryPage />)} />
+        <Route path="/inventory/update-category/:categoryId" element={withAdminGuard(<UpdateInventoryCategoryPage />)} />
+        <Route path="/inventory/items" element={withAdminGuard(<InventoryItemsPage />)} />
+        <Route path="/inventory/new-items" element={withAdminGuard(<NewInventoryItemsPage />)} />
+        <Route path="/inventory/update-items/:itemId" element={withAdminGuard(<UpdateInventoryItemPage />)} />
+        <Route path="/teams" element={withAdminGuard(<TeamPage />)} />
+        <Route path="/teams/new-team" element={withAdminGuard(<NewTeamPage />)} />
+        <Route path="/teams/update-team/:teamId" element={withAdminGuard(<UpdateTeamsPage />)} />
+        <Route path="/teams/:teamId/members" element={withAdminGuard(<TeamMembersPage />)} />
+        <Route path="/attendance" element={withAdminGuard(<AttendancePage />)} />
+        <Route path="/roles" element={withAdminGuard(<RolesPage />)} />
+        <Route path="/roles/employees" element={withAdminGuard(<RoleEmployeesPage />)} />
+        <Route path="/settings" element={withAdminGuard(<Setting />)} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
-      {/* {superAdmin ? (
-        <>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/" element={<Dashboard />} />
-          </Routes>
-        </>
-      ) : null} */}
     </>
   );
 }

@@ -8,13 +8,19 @@ import { useEmployees } from "../modal/EmployeesContext";
 import { useNavigate } from "react-router-dom";
 import StatusModal from "./StatusModal";
 import DeleteModal from "shared/DeleteModal";
+import RoleModal from "features/roles/ui/RoleModal";
+import { Users } from "lucide-react";
+import { useContext } from "react";
+import { VerifyContext } from "app/VerifyContext";
 
 
+// import eatures/roles/ui/RoleModal as a module import and export
 
 console.log("table body")
 
 const EmployeeTable = () => {
-    const { employeesList, updateStatus, handleEmployeeDelete, isEmployeeDelete, setIsEmployeeDelete } = useEmployees();
+    const { employeesList, updateStatus, handleEmployeeDelete, isEmployeeDelete, setIsEmployeeDelete, openRoleModal, selectedEmployeeForRole, isRoleModalOpen, closeRoleModal } = useEmployees();
+    const { superAdmin } = useContext(VerifyContext);
     const navigate = useNavigate();
     const [currentEmployee, setCurrentEmployee] = useState<EmployeeTableData | null>(null)
 
@@ -132,24 +138,43 @@ const EmployeeTable = () => {
                                         {data.designation || <span className="text-slate-600">—</span>}
                                     </td>
                                     <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
-                                        <button type="button" onClick={() => statusModalOpen(data)}
-                                            className={`rounded-lg px-[15px] h-6 md:h-[30px] text-xs md:text-[15px] md:leading-6 font-medium font-inter pt-px flex items-center w-fit ${data.status === "Active"
-                                                ? "text-emerald-400 bg-emerald-400/10"
-                                                : "text-amber-400 bg-amber-400/10"
-                                                }`}
-                                        >
-                                            {data.status}
-                                        </button>
+                                        {superAdmin ? (
+                                            <button type="button" onClick={() => statusModalOpen(data)}
+                                                className={`rounded-lg px-[15px] h-6 md:h-[30px] text-xs md:text-[15px] md:leading-6 font-medium font-inter pt-px flex items-center w-fit ${data.status === "Active"
+                                                    ? "text-emerald-400 bg-emerald-400/10"
+                                                    : "text-amber-400 bg-amber-400/10"
+                                                    }`}
+                                            >
+                                                {data.status}
+                                            </button>
+                                        ) : (
+                                            <span
+                                                className={`rounded-lg px-[15px] h-6 md:h-[30px] text-xs md:text-[15px] md:leading-6 font-medium font-inter pt-px inline-flex items-center w-fit ${data.status === "Active"
+                                                    ? "text-emerald-400 bg-emerald-400/10"
+                                                    : "text-amber-400 bg-amber-400/10"
+                                                    }`}
+                                            >
+                                                {data.status}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="w-[20%] py-4 px-4 text-sm text-slate-200 font-inter">
-                                        <div className="flex items-center gap-2">
-                                            <Button onClick={() => handleHistoryClick(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
-                                                History
-                                            </Button>
-                                            <Button onClick={() => deleteEmployee(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
-                                                Deactivate
-                                            </Button>
-                                        </div>
+                                        {superAdmin ? (
+                                            <div className="flex items-center gap-2">
+                                                <Button onClick={() => handleHistoryClick(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
+                                                    History
+                                                </Button>
+                                                <Button onClick={() => openRoleModal(data)} buttonClasses="text-sm px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 rounded-lg transition-colors font-inter flex items-center gap-1.5">
+                                                    <Users className="w-3.5 h-3.5" />
+                                                    Roles
+                                                </Button>
+                                                <Button onClick={() => deleteEmployee(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
+                                                    Deactivate
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-500 text-xs font-inter">View only</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -157,10 +182,10 @@ const EmployeeTable = () => {
                     </table>
                 </div>
             </Box>
-            {currentEmployee &&
+            {superAdmin && currentEmployee &&
                 <StatusModal closeModal={closeStatusModal} employeeStatus={currentEmployee} onStatusUpdate={updateStatusText} />
             }
-            {isEmployeeDelete &&
+            {superAdmin && isEmployeeDelete &&
                 <DeleteModal ref={deleteModalRef} closeButtonCLick={deleteModalClose}>
                     <h1 className="text-lg text-center font-inter font-semibold text-white border-b border-slate-800 p-5 mb-6">Deactivate Employee</h1>
                     <div className="flex flex-col gap-3 px-5 mb-5">
@@ -185,6 +210,13 @@ const EmployeeTable = () => {
                     </div>
                 </DeleteModal>
             }
+            {superAdmin && isRoleModalOpen && selectedEmployeeForRole && (
+                <RoleModal 
+                    employee={selectedEmployeeForRole} 
+                    onClose={closeRoleModal}
+                    onRolesUpdated={() => {}}
+                />
+            )}
         </>
     )
 }

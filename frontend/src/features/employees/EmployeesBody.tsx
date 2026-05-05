@@ -1,14 +1,17 @@
 import EmployeeTable from "./ui/EmployeeTable"
 import { useNavigate } from "react-router-dom";
 import { useEmployees } from "./modal/EmployeesContext";
-import { fetchEmployees } from "./api/employeesApi";
+import { fetchEmployees, fetchEmployeesForEmployee } from "./api/employeesApi";
 import { UserPlus, Search, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
+import { VerifyContext } from "app/VerifyContext";
 
 const PAGE_SIZES = [10, 25, 50];
 
 const EmployeesBody = () => {
     const { setEditingEmployee, setEmployeesList } = useEmployees()
+    const { authUserType, superAdmin, user } = useContext(VerifyContext);
+    const employeeMode = authUserType === "employee" && !superAdmin;
     const navigate = useNavigate()
 
     const [page, setPage] = useState(1);
@@ -24,7 +27,12 @@ const EmployeesBody = () => {
     const loadEmployees = useCallback(async (p: number, q: string, size?: number, status?: string) => {
         setLoading(true);
         try {
-            const data = await fetchEmployees(p, size || pageSize, undefined, q || undefined, status ?? statusFilter);
+            if (employeeMode && !user?.id) {
+                throw new Error("Employee ID not found in session");
+            }
+            const data = employeeMode
+              ? await fetchEmployeesForEmployee(user?.id || 0)
+              : await fetchEmployees(p, size || pageSize, undefined, q || undefined, status ?? statusFilter);
             setEmployeesList(data.employees);
             setTotalPages(data.totalPages);
             setTotalCount(data.totalCount);
@@ -34,7 +42,7 @@ const EmployeesBody = () => {
         }
         setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [setEmployeesList, pageSize, statusFilter]);
+    }, [setEmployeesList, pageSize, statusFilter, employeeMode, user?.id]);
 
     useEffect(() => {
         loadEmployees(page, search);
@@ -88,14 +96,16 @@ const EmployeesBody = () => {
                     <h1 className="text-2xl font-semibold text-white font-inter">Employees</h1>
                     <p className="text-sm text-slate-400 font-inter mt-1">Manage your team members and their information</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={registerEmployee}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium font-inter rounded-xl transition-colors"
-                >
-                    <UserPlus className="w-4 h-4" />
-                    Register Employee
-                </button>
+                {!employeeMode && (
+                    <button
+                        type="button"
+                        onClick={registerEmployee}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium font-inter rounded-xl transition-colors"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        Register Employee
+                    </button>
+                )}
             </div>
 
             {/* Search bar + status filter */}
@@ -119,36 +129,38 @@ const EmployeesBody = () => {
                         Clear
                     </button>
                 )}
-                <div className="relative">
-                    <button
-                        type="button"
-                        onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 text-sm font-medium font-inter rounded-xl transition-colors min-w-[140px] justify-between"
-                    >
-                        {statusFilter === "active" ? "Active" : statusFilter === "inactive" ? "Inactive" : "All"}
-                        <ChevronDown className={`w-4 h-4 transition-transform ${statusDropdownOpen ? "rotate-180" : ""}`} />
-                    </button>
-                    {statusDropdownOpen && (
-                        <div className="absolute right-0 top-full mt-1 z-50 w-full bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-xl">
-                            {[
-                                { value: "active", label: "Active", color: "text-emerald-400" },
-                                { value: "inactive", label: "Inactive", color: "text-amber-400" },
-                                { value: "all", label: "All", color: "text-slate-300" },
-                            ].map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => handleStatusFilter(opt.value)}
-                                    className={`w-full text-left px-4 py-2.5 text-sm font-inter transition-colors border-b border-slate-700 last:border-0 ${
-                                        statusFilter === opt.value ? `${opt.color} bg-slate-700/50` : "text-slate-300 hover:bg-slate-700"
-                                    }`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                {!employeeMode && (
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 text-sm font-medium font-inter rounded-xl transition-colors min-w-[140px] justify-between"
+                        >
+                            {statusFilter === "active" ? "Active" : statusFilter === "inactive" ? "Inactive" : "All"}
+                            <ChevronDown className={`w-4 h-4 transition-transform ${statusDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {statusDropdownOpen && (
+                            <div className="absolute right-0 top-full mt-1 z-50 w-full bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-xl">
+                                {[
+                                    { value: "active", label: "Active", color: "text-emerald-400" },
+                                    { value: "inactive", label: "Inactive", color: "text-amber-400" },
+                                    { value: "all", label: "All", color: "text-slate-300" },
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => handleStatusFilter(opt.value)}
+                                        className={`w-full text-left px-4 py-2.5 text-sm font-inter transition-colors border-b border-slate-700 last:border-0 ${
+                                            statusFilter === opt.value ? `${opt.color} bg-slate-700/50` : "text-slate-300 hover:bg-slate-700"
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Loading overlay */}
@@ -162,7 +174,7 @@ const EmployeesBody = () => {
             {!loading && <EmployeeTable />}
 
             {/* Pagination */}
-            {!loading && totalCount > 0 && (
+            {!loading && totalCount > 0 && !employeeMode && (
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800">
                     <div className="flex items-center gap-4">
                         <p className="text-sm text-slate-400 font-inter">
@@ -188,8 +200,10 @@ const EmployeesBody = () => {
                     {totalPages > 1 && (
                     <div className="flex items-center gap-1">
                         <button
+                            type="button"
                             onClick={handlePrev}
                             disabled={page <= 1}
+                            title="Previous page"
                             className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:text-slate-600 disabled:hover:bg-transparent transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4" />
@@ -211,6 +225,7 @@ const EmployeesBody = () => {
 
                         <button
                             onClick={handleNext}
+                            title="Next page"
                             disabled={page >= totalPages}
                             className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:text-slate-600 disabled:hover:bg-transparent transition-colors"
                         >

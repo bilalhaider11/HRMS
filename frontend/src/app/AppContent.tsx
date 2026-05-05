@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ChevronDown,
   ClipboardList,
+  Shield,
 } from "lucide-react";
 
 interface NavItem {
@@ -31,7 +32,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/", adminOnly: false },
-  { label: "Employees", icon: Users, path: "/employees", adminOnly: true },
+  { label: "Employees", icon: Users, path: "/employees", adminOnly: false },
   {
     label: "Finance", icon: DollarSign, path: "/finance", adminOnly: true,
     children: [
@@ -42,19 +43,31 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: "Inventory", icon: Package, path: "/inventory", adminOnly: true },
   { label: "Attendance", icon: ClipboardList, path: "/attendance", adminOnly: true },
+  {
+    label: "Roles",
+    icon: Shield,
+    path: "/roles",
+    adminOnly: true,
+    children: [
+      { label: "Manage Roles", path: "/roles" },
+      { label: "Role Employees", path: "/roles/employees" },
+    ],
+  },
   { label: "Settings", icon: Settings, path: "/settings", adminOnly: false },
-  {label: "Teams", icon: Users, path: "/teams", adminOnly: true},
+  { label: "Teams", icon: Users, path: "/teams", adminOnly: true },
 ];
 
 function Sidebar({
   user,
   superAdmin,
+  canAccessEmployees,
   onLogout,
   sidebarOpen,
   onClose,
 }: {
   user: { name: string; email: string };
   superAdmin: boolean;
+  canAccessEmployees: boolean;
   onLogout: () => void;
   sidebarOpen: boolean;
   onClose: () => void;
@@ -62,9 +75,13 @@ function Sidebar({
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.adminOnly || superAdmin
-  );
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    const employeesNav = item.path === "/employees";
+    return (
+      (!item.adminOnly || superAdmin) &&
+      (!employeesNav || canAccessEmployees)
+    );
+  });
 
   // Auto-expand parent if a child route is active
   useEffect(() => {
@@ -104,8 +121,10 @@ function Sidebar({
             HRMS
           </span>
           <button
+            type="button"
             onClick={onClose}
             className="lg:hidden p-1 text-slate-400 hover:text-white"
+            aria-label="Close sidebar"
           >
             <X className="w-5 h-5" />
           </button>
@@ -214,6 +233,7 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
     <header className="sticky top-0 z-30 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center px-5 lg:px-8">
       <button
         onClick={onMenuClick}
+        title="Open sidebar"
         className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-white"
       >
         <Menu className="w-5 h-5" />
@@ -223,15 +243,16 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
 }
 
 export default function AppContent() {
-  const { user, setUser, superAdmin, authCheckLoading } =
+  const { user, setUser, superAdmin, authCheckLoading, canAccessEmployees } =
     useContext(VerifyContext);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogOut = useCallback(() => {
     localStorage.removeItem("token");
+    localStorage.removeItem("authUserType");
     setUser(null);
-    navigate("/admin/login");
+    navigate("/employee/login");
   }, [setUser, navigate]);
 
   // Close sidebar on route change (mobile)
@@ -252,44 +273,56 @@ export default function AppContent() {
     return (
       <Routes>
         <Route path="/admin/login" element={<LoginPage />} />
-        <Route path="*" element={<Navigate to="/admin/login" />} />
+        <Route path="/employee/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/employee/login" />} />
       </Routes>
     );
   }
 
+  const appShell = (
+    <div className="min-h-screen bg-slate-950">
+      <Sidebar
+        user={user}
+        superAdmin={superAdmin}
+        canAccessEmployees={canAccessEmployees}
+        onLogout={handleLogOut}
+        sidebarOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      {/* Main content */}
+      <div className="lg:ml-64 min-h-screen flex flex-col">
+        <TopBar onMenuClick={() => setSidebarOpen(true)} />
+
+        <main className="flex-1 p-5 lg:p-8">
+          <Routes>
+            <Route
+              path="/*"
+              element={
+                <UserPage
+                  superAdmin={superAdmin}
+                  canAccessEmployees={canAccessEmployees}
+                  name={user?.name || ""}
+                />
+              }
+            />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+
   return (
-    <TeamsProvider>
-      <InventoryProvider>
-        <FinanceProvider>
-          <EmployeesProvider>
-            <div className="min-h-screen bg-slate-950">
-              <Sidebar
-                user={user}
-                superAdmin={superAdmin}
-                onLogout={handleLogOut}
-                sidebarOpen={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
-              />
-
-              {/* Main content */}
-              <div className="lg:ml-64 min-h-screen flex flex-col">
-                <TopBar onMenuClick={() => setSidebarOpen(true)} />
-
-                <main className="flex-1 p-5 lg:p-8">
-                  <Routes>
-                    <Route
-                      path="/*"
-                      element={
-                        <UserPage superAdmin={superAdmin} name={user?.name || ""} />
-                      }
-                    />
-                  </Routes>
-                </main>
-              </div>
-            </div>
-          </EmployeesProvider>
-        </FinanceProvider>
-      </InventoryProvider>
-    </TeamsProvider>
+    <EmployeesProvider>
+      {superAdmin ? (
+        <TeamsProvider>
+          <InventoryProvider>
+            <FinanceProvider>{appShell}</FinanceProvider>
+          </InventoryProvider>
+        </TeamsProvider>
+      ) : (
+        appShell
+      )}
+    </EmployeesProvider>
   );
 }

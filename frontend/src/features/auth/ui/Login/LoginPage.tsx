@@ -1,6 +1,6 @@
-import { useState, useContext } from "react";
+import { useMemo, useState, useContext } from "react";
 import { useFormik } from "formik";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { VerifyContext } from "../../../../app/VerifyContext";
 import { Lock, Mail, Loader2 } from "lucide-react";
@@ -16,15 +16,20 @@ const formSchema = Yup.object().shape({
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { loginUser } = useContext(VerifyContext);
   const [loginError, setLoginError] = useState("");
+
+  const userType = useMemo<"admin" | "employee">(() => {
+    return location.pathname.startsWith("/admin") ? "admin" : "employee";
+  }, [location.pathname]);
 
   const handleSubmit = async (
     values: { email: string; password: string },
     { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }
   ) => {
     setLoginError("");
-    const result = await loginUser(values.email, values.password);
+    const result = await loginUser(values.email, values.password, userType);
     if (result.success) {
       navigate("/");
     } else {
@@ -50,10 +55,12 @@ export default function LoginPage() {
             <Lock className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-semibold text-white font-inter">
-            HRMS Admin
+            HRMS {userType === "admin" ? "Admin" : "Employee"}
           </h1>
           <p className="text-slate-400 text-sm mt-1 font-inter">
-            Sign in to manage your organization
+            {userType === "admin"
+              ? "Sign in to manage your organization"
+              : "Sign in to access your account"}
           </p>
         </div>
 
@@ -74,7 +81,9 @@ export default function LoginPage() {
                   type="email"
                   id="email"
                   name="email"
-                  placeholder="admin@hrms.com"
+                  placeholder={
+                    userType === "admin" ? "admin@hrms.com" : "employee@hrms.com"
+                  }
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   value={formik.values.email}

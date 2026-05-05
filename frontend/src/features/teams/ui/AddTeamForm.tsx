@@ -46,39 +46,48 @@ const AddTeamForm = () => {
   const errorClasses = "text-red-500 text-xs mt-1 absolute -bottom-6";
 
   const [teamLeadDropdownOpen, setTeamLeadDropdownOpen] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const modalRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (values: any) => {
-    console.log(editingTeam);
-    if (editingTeam !== null && updateTeam) {
-      const updatedTeam = {
-        ...editingTeam,
-        ...values,
-        teamMembers: selectedMembers.map((member) => ({
-          id: member.id,
-          name: member.name,
-        })), // Include selectedMembers in update
-      };
-      await updateTeam(updatedTeam);
-      formik.resetForm();
-    } else {
-      const newTeam: TeamsTableData = {
-        teamId: undefined,
-        teamName: values.teamName,
-        teamDescription: values.teamDescription,
-        teamLeadId: values.teamLeadId,
-        teamLeadName: values.teamLeadName,
-        teamMembers: selectedMembers.map((member) => ({
-          id: member.id,
-          name: member.name,
-        })),
-      };
-      const added = await addTeam(newTeam);
-      console.log(added);
-      if (added) {
+    setSubmitError("");
+    try {
+      if (editingTeam !== null && updateTeam) {
+        const updatedTeam = {
+          ...editingTeam,
+          ...values,
+          teamMembers: selectedMembers.map((member) => ({
+            id: member.id,
+            name: member.name,
+          })),
+        };
+        await updateTeam(updatedTeam);
         formik.resetForm();
+      } else {
+        const newTeam: TeamsTableData = {
+          teamId: undefined,
+          teamName: values.teamName,
+          teamDescription: values.teamDescription,
+          teamLeadId: values.teamLeadId,
+          teamLeadName: values.teamLeadName,
+          teamMembers: selectedMembers.map((member) => ({
+            id: member.id,
+            name: member.name,
+          })),
+        };
+        const added = await addTeam(newTeam);
+        if (added) {
+          formik.resetForm();
+        }
       }
+    } catch (error: any) {
+      const detail = error?.response?.data?.detail;
+      setSubmitError(
+        typeof detail === "string"
+          ? detail
+          : "You are not authorized for this action. Please login as admin."
+      );
     }
   };
 
@@ -149,11 +158,9 @@ const AddTeamForm = () => {
     window.scrollTo(0, 0);
     document.body.style.overflow = "auto";
   };
-  console.log(selectedMembers, "selected members");
-  console.log(editingTeam?.teamLeadName, "team");
   return (
     <>
-      <form onSubmit={formik.handleSubmit} noValidate>
+      <form onSubmit={formik.handleSubmit} noValidate className="mt-10 bg-[#102435] rounded-[15px] p-5 md:p-10 lg:p-[50px]">
         <div className="grid md:grid-cols-2 gap-3 md:gap-5 lg:gap-[38px]">
           <div className="relative" ref={modalRef}>
 
@@ -233,11 +240,11 @@ const AddTeamForm = () => {
               Description
             </label>
 
-            <div className={`${inputBorder} h-[76%]`}>
+            <div className={`${inputBorder} `}>
               <textarea
                 id="teamDescription"
                 name="teamDescription"
-                className={`${inputStyles} w-full h-[181px] outline-none`}
+                className={`${inputStyles} w-full outline-none`}
                 value={formik.values.teamDescription}
                 onChange={formik.handleChange}
               />
@@ -276,6 +283,9 @@ const AddTeamForm = () => {
             </div>
           </div>
         </div>
+        {submitError && (
+          <p className="text-red-500 text-sm mt-4">{submitError}</p>
+        )}
 
         <Button
           type="submit"

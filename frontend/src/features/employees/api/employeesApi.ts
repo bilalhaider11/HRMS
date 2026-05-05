@@ -4,6 +4,7 @@ import { EmployeeTableData } from "../modal/EmployeesContext";
 // Map backend snake_case response to frontend camelCase
 function mapEmployeeResponse(emp: any): EmployeeTableData {
   return {
+    empId: emp.id,
     id: emp.employee_code,
     name: emp.name,
     status: emp.status ? "Active" : "Inactive",
@@ -44,6 +45,18 @@ export async function fetchEmployees(page = 1, pageSize = 10, department?: strin
     totalPages: res.data.total_pages,
     page: res.data.page,
     pageSize: res.data.page_size,
+  };
+}
+
+export async function fetchEmployeesForEmployee(employeeId: number) {
+  const res = await api.get(`/employee/list/${employeeId}`);
+  const rows = (res.data.employees || []).map(mapEmployeeResponse);
+  return {
+    employees: rows,
+    totalCount: rows.length,
+    totalPages: 1,
+    page: 1,
+    pageSize: rows.length || 10,
   };
 }
 

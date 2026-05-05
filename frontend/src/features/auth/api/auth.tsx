@@ -7,7 +7,8 @@ type ApiResponse = {
 
 export async function login(
   email: string,
-  password: string
+  password: string,
+  userType: "admin" | "employee" = "employee"
 ): Promise<ApiResponse> {
   try {
     // Backend expects OAuth2 form data (username + password)
@@ -15,7 +16,8 @@ export async function login(
     formData.append("username", email);
     formData.append("password", password);
 
-    const res = await axios.post("/admin/login", formData, {
+    const endpoint = userType === "admin" ? "/admin/login" : "/employee/login";
+    const res = await axios.post(endpoint, formData, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 
@@ -33,9 +35,14 @@ export async function login(
   }
 }
 
-export async function verify(token: string): Promise<ApiResponse> {
+export async function verify(
+  token: string,
+  userType: "admin" | "employee" = "employee"
+): Promise<ApiResponse> {
   try {
-    const res = await axios.get("/admin/company_profile", {
+    const endpoint =
+      userType === "admin" ? "/admin/company_profile" : "/employee/profile";
+    const res = await axios.get(endpoint, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -44,9 +51,11 @@ export async function verify(token: string): Promise<ApiResponse> {
       data: {
         success: true,
         user: {
-          name: res.data.company_name,
+          id: userType === "employee" ? res.data.id : undefined,
+          name: userType === "admin" ? res.data.company_name : res.data.name,
           email: res.data.email,
         },
+        roles: userType === "employee" ? (res.data.roles || []) : [],
       },
     };
   } catch (error) {
