@@ -39,7 +39,7 @@ const AddTeamForm = () => {
   } = useTeams();
 
   const labelStyles =
-    "font-urbanist font-semibold text-base md:text-lg lg:text-[21px] lg:leading-[180%] text-white";
+    "font-urbanist font-semibold text-base md:text-lg lg:text-[21px] lg:leading-[180%] text-white align-center";
   const inputBorder = "inputMainBorder mt-3.5 w-full rounded-[8px]";
   const inputStyles =
     "inputBox text-sm md:text-base leading-normal px-4 py-2.5 lg:py-[21px] lg:px-[29px] rounded-[15px] text-white placeholder-[#747681]";
@@ -160,8 +160,8 @@ const AddTeamForm = () => {
   };
   return (
     <>
-      <form onSubmit={formik.handleSubmit} noValidate className="mt-10 bg-[#102435] rounded-[15px] p-5 md:p-10 lg:p-[50px]">
-        <div className="grid md:grid-cols-2 gap-3 md:gap-5 lg:gap-[38px]">
+      <form onSubmit={formik.handleSubmit} noValidate className="mt-10 bg-[#05243f] rounded-[15px] p-5 md:p-10 lg:p-[50px]">
+        <div className="grid md:grid-cols-1 gap-3 md:gap-5 lg:gap-[38px]">
           <div className="relative" ref={modalRef}>
 
             <label className={`${labelStyles}`}>Select Team Lead</label>
@@ -179,7 +179,7 @@ const AddTeamForm = () => {
               />
             </div>
             {teamLeadDropdownOpen && (
-              <div className="bodyBackground absolute top-[110px] md:top-[133px] rounded-[15px] overflow-hidden shadow-xl right-0 w-full z-[9999]">
+              <div className="bodyBackground absolute top-[110px] md:top-[90px] rounded-[15px] overflow-hidden shadow-xl right-0 w-full z-[9999]">
                 <ul>
                   {employeeList.map(
                     (item: EmployeeTableData, index: number) => (

@@ -15,8 +15,8 @@ class Team(SQLModel, table=True):
     delete_record: bool = Field(default=False, nullable=False, index=True)
 
 
-class TeamMember(SQLModel, table=True):
-    __tablename__ = "team_members"
+class Teams_to_Employee(SQLModel, table=True):
+    __tablename__ = "teams_to_employee"
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     team_id: int = Field(foreign_key="teams.id")
     employee_id: int = Field(foreign_key="employee.id")

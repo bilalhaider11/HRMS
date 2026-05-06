@@ -38,7 +38,7 @@ def upgrade() -> None:
 
     # ------------------ Team Members Table ------------------
     op.create_table(
-        'team_members',
+        'teams_to_employee',
         sa.Column('id', sa.Integer(), primary_key=True, nullable=False),
 
         sa.Column('team_id', sa.Integer(), nullable=False),
@@ -47,12 +47,12 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['team_id'], ['teams.id']),
         sa.ForeignKeyConstraint(['employee_id'], ['employee.id']),
     )
-    op.create_index(op.f('ix_team_members_id'), 'team_members', ['id'], unique=False)
+    op.create_index(op.f('ix_teams_to_employee_id'), 'teams_to_employee', ['id'], unique=False)
 
 
 def downgrade() -> None:
-    op.drop_index(op.f('ix_team_members_id'), table_name='team_members')
-    op.drop_table('team_members')
+    op.drop_index(op.f('ix_teams_to_employee_id'), table_name='teams_to_employee')
+    op.drop_table('teams_to_employee')
 
     op.drop_index(op.f('ix_teams_id'), table_name='teams')
     op.drop_table('teams')

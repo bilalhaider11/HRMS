@@ -10,7 +10,6 @@ from app.services import employee_db
 from app.services import role_db
 from app.models.employee import EmployeeBase, EmployeeUpdate,Employee, AssignRoleRequest
 from app.models.role import Role, RoleCreate, RoleUpdate
-from app.models.team import Team, TeamMember
 from app.repositories import employee as employee_repo
 from app.models.employee import EmployeeResponse
 admin_router = APIRouter(prefix="/admin", dependencies=[Depends(auth.get_current_user)])

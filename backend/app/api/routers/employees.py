@@ -11,7 +11,7 @@ from app.services import employee_db
 from app.services import role_db
 from app.models.employee import EmployeeBase, EmployeeUpdate,Employee, AssignRoleRequest
 from app.models.role import Role, RoleCreate, RoleUpdate
-from app.models.team import Team, TeamMember
+from app.models.team import Team, Teams_to_Employee
 from app.repositories import employee as employee_repo
 from app.models.employee import EmployeeResponse
 admin_router = APIRouter(prefix="/admin", dependencies=[Depends(auth.get_current_user)])
@@ -130,9 +130,9 @@ def get_employees_list(
             select(Team).where(
                 Team.delete_record == False,
                 Team.id.in_(
-                    select(TeamMember.team_id).where(
-                        TeamMember.employee_id == current_employee.id,
-                        TeamMember.delete_record == False,
+                    select(Teams_to_Employee.team_id).where(
+                        Teams_to_Employee.employee_id == current_employee.id,
+                        Teams_to_Employee.delete_record == False,
                     )
                 ),
             )
@@ -143,9 +143,9 @@ def get_employees_list(
         return {"scope": "team_basic", "employees": []}
 
     team_member_links = session.exec(
-        select(TeamMember).where(
-            TeamMember.team_id.in_(team_ids),
-            TeamMember.delete_record == False,
+        select(Teams_to_Employee).where(
+            Teams_to_Employee.team_id.in_(team_ids),
+            Teams_to_Employee.delete_record == False,
         )
     ).all()
     member_ids = sorted({link.employee_id for link in team_member_links})

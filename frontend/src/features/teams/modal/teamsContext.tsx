@@ -75,12 +75,12 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         teamDescription: team.team_description,
         teamLeadId: team.team_lead_id || undefined,
         teamLeadName: team.team_lead_name || "",
-        teamMembers: (team.team_members || []).map((member: any) => ({
+        teamMembers: (team.teams_to_employee || []).map((member: any) => ({
             id: member.id,
             employeeCode: member.employee_code,
             name: member.name,
         })),
-    });
+    });    
 
     const buildTeamUpdatePayload = (original: TeamsTableData | undefined, updated: TeamsTableData) => {
         const payload: { team_name?: string; team_description?: string; team_lead_id?: number | null; member_ids?: number[] } = {};
@@ -224,7 +224,11 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         document.body.style.overflow = "auto"
     }
     const handleAddMemberModal = () => {
-        setSelectedMembers(editingTeam?.teamMembers || []);
+        // Preserve in-progress selections while creating/editing a team.
+        // Only hydrate from editingTeam when nothing has been selected yet.
+        if (selectedMembers.length === 0 && editingTeam?.teamMembers?.length) {
+            setSelectedMembers(editingTeam.teamMembers);
+        }
         setIsOpenMembersModal(true)
         window.scrollTo(0, 0);
         document.body.style.overflow = "hidden"

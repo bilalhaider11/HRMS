@@ -24,14 +24,14 @@ def upgrade() -> None:
         sa.Column('delete_record', sa.Boolean(), nullable=False, server_default=sa.false())
     )
 
-    # Add soft delete column to team_members
+    # Add soft delete column to teams_to_employee
     op.add_column(
-        'team_members',
+        'teams_to_employee',
         sa.Column('delete_record', sa.Boolean(), nullable=False, server_default=sa.false())
     )
 
 
 def downgrade() -> None:
     # Remove columns (rollback)
-    op.drop_column('team_members', 'delete_record')
+    op.drop_column('teams_to_employee', 'delete_record')
     op.drop_column('teams', 'delete_record')

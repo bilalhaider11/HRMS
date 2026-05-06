@@ -4,7 +4,7 @@ from sqlalchemy import update
 from fastapi import HTTPException
 from sqlmodel import Session, select, delete
 
-from app.models.team import Team, TeamMember
+from app.models.team import Team, Teams_to_Employee
 from app.models.employee import Employee
 
 
@@ -15,7 +15,7 @@ def _serialize_team(team: Team, session: Session) -> dict:
         team_lead_name = lead.name if lead else None
 
     member_links = session.exec(
-        select(TeamMember).where(TeamMember.team_id == team.id, TeamMember.delete_record == False)
+        select(Teams_to_Employee).where(Teams_to_Employee.team_id == team.id, Teams_to_Employee.delete_record == False)
     ).all()
     members = []
     for link in member_links:
@@ -36,7 +36,7 @@ def _serialize_team(team: Team, session: Session) -> dict:
         "team_lead_id": team.team_lead_id,
         "team_lead_name": team_lead_name,
         "company_id": team.company_id,
-        "team_members": members,
+        "teams_to_employee": members,
     }
 
 
@@ -66,7 +66,7 @@ def create_team_in_db(payload: dict, company_id: int, session: Session):
     for employee_id in unique_member_ids:
         if session.get(Employee, employee_id) is None:
             raise HTTPException(status_code=404, detail=f"Employee {employee_id} not found")
-        session.add(TeamMember(team_id=team.id, employee_id=employee_id))
+        session.add(Teams_to_Employee(team_id=team.id, employee_id=employee_id, delete_record=False))
 
     session.commit()
     return {"message": "Team created successfully", "team": _serialize_team(team, session)}
@@ -117,9 +117,9 @@ def update_team_in_db(team_id: int, payload: dict, company_id: int, session: Ses
 
         # get current active members
         current_members = session.exec(
-            select(TeamMember).where(
-                TeamMember.team_id == team.id,
-                TeamMember.delete_record == False
+            select(Teams_to_Employee).where(
+                Teams_to_Employee.team_id == team.id,
+                Teams_to_Employee.delete_record == False
             )
         ).all()
 
@@ -138,16 +138,16 @@ def update_team_in_db(team_id: int, payload: dict, company_id: int, session: Ses
             
         if remove_members:
             session.exec(
-                update(TeamMember)
+                update(Teams_to_Employee)
                 .where(
-                    TeamMember.team_id == team.id,
-                    TeamMember.employee_id.in_(remove_members)
+                    Teams_to_Employee.team_id == team.id,
+                    Teams_to_Employee.employee_id.in_(remove_members)
                 )
                 .values(delete_record=True)
             )
         if add_members:
             session.add_all([
-                TeamMember(
+                Teams_to_Employee(
                     team_id=team.id,
                     employee_id=emp_id,
                     delete_record=False
@@ -173,8 +173,8 @@ def delete_team_in_db(team_id: int, company_id: int, session: Session):
     team.delete_record = True
     # soft delete members (bulk query)
     session.exec(
-        update(TeamMember)
-        .where(TeamMember.team_id == team.id)
+        update(Teams_to_Employee)
+        .where(Teams_to_Employee.team_id == team.id)
         .values(delete_record=True)
     )
     session.commit()
