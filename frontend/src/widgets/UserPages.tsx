@@ -27,6 +27,8 @@ import BankAccountsPage from "../pages/BankAccountsPage";
 import AttendancePage from "../pages/AttendancePage";
 import RolesPage from "../pages/RolesPage";
 import RoleEmployeesPage from "../pages/RoleEmployeesPage";
+import EmployeeEvaluationPage from "../pages/EmployeeEvaluationPage";
+import EmployeeEvaluationDetailsPage from "../pages/EmployeeEvaluationDetailsPage";
 
 interface UserPageProps {
   name: string;
@@ -70,6 +72,8 @@ export default function UserPage({ superAdmin, canAccessEmployees }: UserPagePro
         <Route path="/roles" element={withAdminGuard(<RolesPage />)} />
         <Route path="/roles/employees" element={withAdminGuard(<RoleEmployeesPage />)} />
         <Route path="/settings" element={withAdminGuard(<Setting />)} />
+        <Route path="/employee-evaluation" element={<EmployeeEvaluationPage />} />
+        <Route path="/employee-evaluation/:employeeId" element={<EmployeeEvaluationDetailsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

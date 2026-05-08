@@ -147,3 +147,8 @@ def display_all_employee_in_db(
         "employees": [EmployeeResponse.model_validate(emp) for emp in paginated_employees]
     }
 
+def get_employee(emp_id: int, session: Session) -> Employee:
+    employee = session.exec(select(Employee).where(Employee.id == emp_id)).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    return employee

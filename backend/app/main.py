@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.middleware import auto_auth_middleware
 from app.core.load_env import get_cors_origins
 
-from app.api.routers import admin, employees, finance, inventory, attendance, bank_accounts, teams, roles
+from app.api.routers import admin, employees, finance, inventory, attendance, bank_accounts, teams, roles, evaluation
 
 app = FastAPI(title="Celestials Management System")
 
@@ -39,3 +39,4 @@ app.include_router(attendance.router)
 app.include_router(bank_accounts.router)
 app.include_router(teams.router)
 app.include_router(roles.admin_router)
+app.include_router(evaluation.router)

@@ -55,6 +55,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: "Settings", icon: Settings, path: "/settings", adminOnly: false },
   { label: "Teams", icon: Users, path: "/teams", adminOnly: true },
+  { label: "Employees Evaluation", icon: Users, path: "/employee-evaluation", adminOnly: false }
 ];
 
 function Sidebar({

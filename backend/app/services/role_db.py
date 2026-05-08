@@ -197,18 +197,9 @@ def get_all_roles(session: Session):
     return [RoleResponse.model_validate(role) for role in roles]
 
 
-def get_active_role_names_for_employee(emp_id: int, session: Session) -> List[str]:
-    employee = session.exec(
-        select(Employee).where(Employee.id == emp_id)
-    ).first()
-    if not employee:
-        return []
-
-    role_ids = employee.role_ids or []
-    if not role_ids:
-        return []
+def get_active_role_names_for_employee(emp_id: int, session: Session, role_id:list) -> List[str]:
 
     roles = session.exec(
-        select(Role).where(Role.id.in_(role_ids), Role.is_active == True)
+        select(Role).where(Role.id.in_(role_id), Role.is_active == True)
     ).all()
     return [role.role_name for role in roles]

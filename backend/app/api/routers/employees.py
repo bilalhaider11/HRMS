@@ -39,7 +39,7 @@ def get_employee_profile(
     current_employee: Employee = Depends(auth.get_current_employee),
     session: Session = Depends(get_session),
 ):
-    role_names = role_db.get_active_role_names_for_employee(current_employee.id, session)
+    role_names = role_db.get_active_role_names_for_employee(current_employee.id, session,current_employee.role_ids)
     return {
         "id": current_employee.id,
         "name": current_employee.name,
@@ -102,7 +102,7 @@ def get_employees_list(
         raise HTTPException(status_code=403, detail="Access denied for requested employee data")
 
     role_names = set(
-        role_db.get_active_role_names_for_employee(current_employee.id, session)
+        role_db.get_active_role_names_for_employee(current_employee.id, session,current_employee.role_ids)
     )
     
     if "HR" in role_names:

@@ -115,3 +115,35 @@ def get_current_employee(
     if employee is None:
         raise credentials_exception
     return employee
+
+def get_current_role(
+    token: str = Depends(oauth2_scheme),
+    session: Session = Depends(get_session),
+):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+   
+    try:
+        payload = jwt.decode(token, get_secret_key(), algorithms=[get_algorithm()])
+        user_id: Optional[int] = payload.get("user_id")
+        user_type: Optional[str] = payload.get("user_type")
+        
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    if user_type == "employee":
+        employee = session.get(Employee, user_id)
+        if employee is None:
+            raise credentials_exception
+        return {"user_type": "employee", "user": employee}
+    else:
+        user_type = "admin"
+        admin = session.get(Admin, user_id)
+        if admin is None:
+            raise credentials_exception
+        return {"user_type": user_type, "user": admin}
