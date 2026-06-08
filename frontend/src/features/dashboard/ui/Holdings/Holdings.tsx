@@ -25,6 +25,13 @@ const Holdings = () => {
     fifthDataImg: uni,
   }; 
 
+
+  const style_percentage = (percentage: string) => {  
+    const numericValue = parseFloat(percentage.replace("%", ""));
+    return {
+      color: numericValue > 30 ? "#ADDC7B" : "#FF8663",
+    };
+  };
   const modalRef = useRef<HTMLDivElement>(null);
   const [allTableData, setAllTableData] = useState<HoldingData | null>(null);
   const [selectItemsNumber, setSelectItemsNumber] = useState(false);
@@ -171,23 +178,13 @@ const Holdings = () => {
                       </td>
                       <td
                         className="py-3 md:py-[19px] text-right pl-3 pr-[39px] w-[10.05%] text-base md:text-lg font-medium font-inter"
-                        style={{
-                          color:
-                            data.profit_loss_value > "$50.00"
-                              ? "#FF8663"
-                              : "#ADDC7B",
-                        }}
+                        style={{ color: style_percentage(data.profit_loss_percentage).color }}
                       >
                         {data.profit_loss_value}
                       </td>
                       <td
                         className="py-3 md:py-[19px] text-right pl-3 pr-[39px] w-[10.48%] text-base md:text-lg font-medium font-inter"
-                        style={{
-                          color:
-                            data.profit_loss_percentage > "30.00%"
-                              ? "#ADDC7B"
-                              : "#FF8663",
-                        }}
+                        style={{color:style_percentage(data.profit_loss_percentage).color}}
                       >
                         {data.profit_loss_percentage > "30.00%" ? "+" : "-"}
                         {data.profit_loss_percentage}

@@ -1,6 +1,7 @@
 from sqlmodel import Session, select
-from models import Admin, FinanceCategory
-from admin_db import engine
+from app.models.admin import Admin
+from app.models.finance import FinanceCategory
+from app.services.admin_db import _get_engine
 import bcrypt
 
 
@@ -82,6 +83,7 @@ def seed_categories(session: Session):
 
 # --- Run seeders ---
 if __name__ == "__main__":
+    engine = _get_engine()
     with Session(engine) as session:
         seed_admin(session)
         seed_categories(session)

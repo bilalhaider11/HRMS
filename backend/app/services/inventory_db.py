@@ -1,7 +1,7 @@
 # inventory_db.py
 from fastapi import HTTPException
 from sqlmodel import select, Session
-from models import ItemCategory, ItemCategoryBase, ItemCategoryUpdate, InventoryItem, InventoryItemBase, InventoryItemUpdate
+from app.models.inventory import InventoryItem, InventoryItemBase, InventoryItemUpdate, ItemCategory, ItemCategoryBase, ItemCategoryUpdate
 
 
 # ---------------- ITEM CATEGORY CRUD ----------------

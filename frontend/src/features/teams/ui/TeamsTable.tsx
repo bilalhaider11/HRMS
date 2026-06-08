@@ -30,6 +30,9 @@ const TeamsTable = () => {
     const handleUpdate = (team: TeamsTableData) => {
         navigate(`/teams/update-team/${team.teamId}`);
     }
+    const handleOpenMembers = (team: TeamsTableData) => {
+        navigate(`/teams/${team.teamId}/members`);
+    }
     const deleteModalRef = useRef<HTMLDivElement>(null);
     const modalRef = useRef<HTMLDivElement>(null)
 
@@ -121,7 +124,13 @@ const TeamsTable = () => {
                                         {data.teamId}
                                     </td>
                                     <td className={`${tableDataClassName}`}>
-                                        {data.teamName}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenMembers(data)}
+                                            className="underline text-indigo-300 hover:text-indigo-200 transition-colors"
+                                        >
+                                            {data.teamName}
+                                        </button>
                                     </td>
 
                                     <td className={`${tableDataClassName} w-[20%]`}>
@@ -215,7 +224,7 @@ const TeamsTable = () => {
                     </div>
 
                     <div className="border-t border-solid border-[#CDD6D7] py-6 px-5 flex justify-center">
-                        <Button onClick={() => handleTeamDelete(isDeleteTeamModal)} buttonClasses="flex justify-center mx-auto min-h-[64px] px-11 pb-[15px] pt-4 border border-solid border-[#CDD6D7] bg-[#283573] font-urbanist font-semibold text-xl leading-[160%] rounded-[15px] text-white" type="button">
+                        <Button onClick={async () => handleTeamDelete(isDeleteTeamModal)} buttonClasses="flex justify-center mx-auto min-h-[64px] px-11 pb-[15px] pt-4 border border-solid border-[#CDD6D7] bg-[#283573] font-urbanist font-semibold text-xl leading-[160%] rounded-[15px] text-white" type="button">
                             Confirm Delete
                         </Button>
                     </div>

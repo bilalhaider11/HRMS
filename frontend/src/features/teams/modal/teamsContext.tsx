@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchTeamsTableData } from '../api/teams';
-import { fetchEmploeeTableData } from 'features/dashboard/api/dashboard';
+import { createTeam, deleteTeamById, fetchEmployeesForTeams, fetchTeamById, fetchTeamsTableData, updateTeamById, TeamUpdatePayload } from '../api/teams';
 
 export interface TeamsTableData {
     teamId?: number,
@@ -11,7 +10,8 @@ export interface TeamsTableData {
     teamMembers?: EmployeeTableData[],
 }
 export interface EmployeeTableData {
-  id?: string;
+  id?: number;
+  employeeCode?: string;
   name?: string;
 }
 
@@ -20,7 +20,7 @@ interface TeamsContextType {
     employeeList: EmployeeTableData[];
     editingTeam: TeamsTableData | null;
     setEditingTeam: (team: TeamsTableData | null) => void;
-    addTeam: (team: TeamsTableData) => boolean;
+    addTeam: (team: TeamsTableData) => Promise<boolean>;
     idExistError: string;
     clearError: () => void;
     successfullModal: boolean;
@@ -29,14 +29,15 @@ interface TeamsContextType {
     setIsOpenMembersModal: (value: boolean) => void;
     isDeleteTeamModal: TeamsTableData | null
     setIsDeleteTeamModal: (team: TeamsTableData | null) => void
-    updateTeam: (team: TeamsTableData) => void
+    updateTeam: (team: TeamsTableData) => Promise<void>
     editTeamData: (team: TeamsTableData) => void;
-    handleTeamDelete: (team: TeamsTableData) => void
+    handleTeamDelete: (team: TeamsTableData) => Promise<void>
     handleAddMemberModal: () => void
     handleCloseMemberModal: () => void
     selectedMembers: EmployeeTableData[]
     setSelectedMembers: (members: EmployeeTableData[]) => void
     removeMember: (member: EmployeeTableData) => void
+    getTeamById: (teamId: number) => Promise<TeamsTableData>
 }
 
 
@@ -68,11 +69,66 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
 
     const clearError = () => setIdExistError("");
 
+    const mapTeam = (team: any): TeamsTableData => ({
+        teamId: team.team_id,
+        teamName: team.team_name,
+        teamDescription: team.team_description,
+        teamLeadId: team.team_lead_id || undefined,
+        teamLeadName: team.team_lead_name || "",
+        teamMembers: (team.teams_to_employee || []).map((member: any) => ({
+            id: member.id,
+            employeeCode: member.employee_code,
+            name: member.name,
+        })),
+    });    
+
+    const buildTeamUpdatePayload = (original: TeamsTableData | undefined, updated: TeamsTableData) => {
+        const payload: { team_name?: string; team_description?: string; team_lead_id?: number | null; member_ids?: number[] } = {};
+
+        if (!original) {
+            payload.team_name = updated.teamName || "";
+            payload.team_description = updated.teamDescription || "";
+            payload.team_lead_id = updated.teamLeadId ?? null;
+            payload.member_ids = (updated.teamMembers || []).map((member) => member.id).filter((id): id is number => typeof id === 'number');
+            return payload;
+        }
+
+        if (updated.teamName !== original.teamName) {
+            payload.team_name = updated.teamName || "";
+        }
+
+        if (updated.teamDescription !== original.teamDescription) {
+            payload.team_description = updated.teamDescription || "";
+        }
+
+        if (updated.teamLeadId !== original.teamLeadId) {
+            payload.team_lead_id = updated.teamLeadId ?? null;
+        }
+
+        const originalMemberIds = (original.teamMembers || []).map((member) => member.id).filter((id): id is number => typeof id === 'number');
+        const updatedMemberIds = (updated.teamMembers || []).map((member) => member.id).filter((id): id is number => typeof id === 'number');
+
+        // Send only the changed IDs (added + removed)
+        const originalSet = new Set(originalMemberIds);
+        const updatedSet = new Set(updatedMemberIds);
+        
+        const added = updatedMemberIds.filter(id => !originalSet.has(id));
+        const removed = originalMemberIds.filter(id => !updatedSet.has(id));
+        
+        const changedIds = [...added, ...removed];
+        
+        if (changedIds.length > 0) {
+            payload.member_ids = changedIds;
+        }
+
+        return payload;
+    };
+
     useEffect(() => {
         const loadTeams = async () => {
             try {
                 const data = await fetchTeamsTableData();
-                setTeamList(data.teamsAllList);
+                setTeamList(data.map(mapTeam));
             } catch (error) {
                 console.error(error);
             }
@@ -80,8 +136,14 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
 
         const loadEmployees = async () => {
             try {
-                const data = await fetchEmploeeTableData()
-                setEmployeeList(data.employeesList)
+                const data = await fetchEmployeesForTeams()
+                setEmployeeList(
+                    data.map((emp) => ({
+                        id: emp.id,
+                        employeeCode: emp.employee_code,
+                        name: emp.name,
+                    }))
+                )
             } catch (error) {
                 console.log(error)
             }
@@ -93,10 +155,14 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
     }, []);
 
 
-    const addTeam = (team: TeamsTableData) => {
-        const updatedList = [...teamList, team];
-        console.log("added")
-        setTeamList(updatedList);
+    const addTeam = async (team: TeamsTableData) => {
+        const created = await createTeam({
+            team_name: team.teamName || "",
+            team_description: team.teamDescription || "",
+            team_lead_id: team.teamLeadId || null,
+            member_ids: (team.teamMembers || []).map((member) => member.id as number),
+        });
+        setTeamList((prev) => [...prev, mapTeam(created)]);
         setEditingTeam(null)
         setSelectedMembers([]);
         setIdExistError("")
@@ -117,9 +183,28 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         window.scrollTo(0, 0);
     };
 
-    const updateTeam = (updatedTeam: TeamsTableData) => {
+    const updateTeam = async (updatedTeam: TeamsTableData) => {
+        if (!updatedTeam.teamId) return;
+        const originalTeam = teamList.find((team) => team.teamId === updatedTeam.teamId);
+        const payload = buildTeamUpdatePayload(originalTeam, updatedTeam);
+        
+        // Filter out undefined values from payload
+        const cleanPayload = Object.fromEntries(
+            Object.entries(payload).filter(([, value]) => value !== undefined)
+        ) as TeamUpdatePayload;
+        
+        if (Object.keys(cleanPayload).length === 0) {
+            setSuccessfullModal(true);
+            document.body.style.overflow = "hidden";
+            window.scrollTo(0, 0);
+            setIdExistError("");
+            return;
+        }
+
+        const saved = await updateTeamById(updatedTeam.teamId, cleanPayload);
+        const mappedTeam = mapTeam(saved);
         const updatedList = teamList.map((team) =>
-            team.teamId === updatedTeam.teamId ? updatedTeam : team
+            team.teamId === mappedTeam.teamId ? mappedTeam : team
         );
         console.log("updateList", updatedList)
         setTeamList(updatedList);
@@ -129,7 +214,9 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         setIdExistError("");
     };
 
-    const handleTeamDelete = (team: TeamsTableData) => {
+    const handleTeamDelete = async (team: TeamsTableData) => {
+        if (!team.teamId) return;
+        await deleteTeamById(team.teamId);
         const updatingList = teamList.filter(i => i.teamId !== team.teamId)
         setTeamList(updatingList)
         setIsDeleteTeamModal(null)
@@ -137,7 +224,11 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         document.body.style.overflow = "auto"
     }
     const handleAddMemberModal = () => {
-        setSelectedMembers(editingTeam?.teamMembers || []);
+        // Preserve in-progress selections while creating/editing a team.
+        // Only hydrate from editingTeam when nothing has been selected yet.
+        if (selectedMembers.length === 0 && editingTeam?.teamMembers?.length) {
+            setSelectedMembers(editingTeam.teamMembers);
+        }
         setIsOpenMembersModal(true)
         window.scrollTo(0, 0);
         document.body.style.overflow = "hidden"
@@ -155,9 +246,14 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         setSelectedMembers(selectedMembers.filter(m => m.id !== member.id))
     }
 
+    const getTeamById = async (teamId: number) => {
+        const data = await fetchTeamById(teamId);
+        return mapTeam(data);
+    }
+
 
     return (
-        <TeamsContext.Provider value={{ teamList, employeeList, setEditingTeam, editingTeam, handleTeamDelete, addTeam, updateTeam, editTeamData, idExistError, setIsDeleteTeamModal, isDeleteTeamModal, setSuccessfullModal, successfullModal, clearError, handleAddMemberModal, isOpenMembersModal, setIsOpenMembersModal, handleCloseMemberModal, selectedMembers, setSelectedMembers, removeMember }}>
+        <TeamsContext.Provider value={{ teamList, employeeList, setEditingTeam, editingTeam, handleTeamDelete, addTeam, updateTeam, editTeamData, idExistError, setIsDeleteTeamModal, isDeleteTeamModal, setSuccessfullModal, successfullModal, clearError, handleAddMemberModal, isOpenMembersModal, setIsOpenMembersModal, handleCloseMemberModal, selectedMembers, setSelectedMembers, removeMember, getTeamById }}>
             {children}
         </TeamsContext.Provider>
     );

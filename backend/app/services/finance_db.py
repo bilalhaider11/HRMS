@@ -1,6 +1,8 @@
 from fastapi import HTTPException
 from sqlmodel import select, Session
-from models import Finance, FinanceUpdate, FinanceCategory, FinanceEditHistory, Admin, BankAccount
+from app.models.bank_account import BankAccount
+from app.models.admin import Admin
+from app.models.finance import Finance, FinanceUpdate, FinanceCategory, FinanceEditHistory
 from collections import defaultdict
 import calendar
 
