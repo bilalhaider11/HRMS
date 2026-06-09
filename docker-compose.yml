@@ -21,7 +21,7 @@ services:
       - "8000:8000"
     environment:
       - data_base_url=postgresql://hrms_user:hrms_password@db:5432/hrms_db
-      - secret_key=${SECRET_KEY:-local-dev-secret-key-change-in-production}
+      - secret_key=local-dev-secret-key-change-in-production
       - algorithm=HS256
       - access_token_expire_minutes=30
       - APP_ENV=development
@@ -34,10 +34,9 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "3000:3000"
     environment:
       - WATCHPACK_POLLING=true
-      - REACT_APP_API_URL=http://localhost:8000
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public

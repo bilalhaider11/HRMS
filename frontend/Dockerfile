@@ -1,13 +1,12 @@
-# Stage 1 — build
-FROM node:20-slim AS builder
+FROM node:20-slim
+
 WORKDIR /app
+
 COPY package.json package-lock.json ./
 RUN npm ci
-COPY . .
-RUN npm run build
 
-# Stage 2 — serve with nginx
-FROM nginx:alpine
-COPY --from=builder /app/build /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
