@@ -15,9 +15,9 @@ def get_single_admin_id(session: Session) -> int:
     return admin.id
 
 
-def _category_name_map(session: Session) -> dict:
+def _category_is_income_map(session: Session) -> dict:
     cats = session.exec(select(FinanceCategory)).all()
-    return {c.category_id: c.category_name for c in cats}
+    return {c.category_id: c.is_income for c in cats}
 
 
 # --- Create a new finance record ---
@@ -160,7 +160,7 @@ def get_finance_records_in_db(
         cats = session.exec(
             select(FinanceCategory).where(FinanceCategory.category_id.in_(page_cat_ids))
         ).all()
-        category_map = {c.category_id: {"name": c.category_name, "color": c.color_code} for c in cats}
+        category_map = {c.category_id: {"name": c.category_name, "color": c.color_code, "is_income": c.is_income} for c in cats}
 
     admin_map: dict = {}
     if page_admin_ids:
@@ -203,15 +203,15 @@ def get_finance_records_in_db(
             select(FinanceCategory).where(FinanceCategory.category_id.in_(missing_cat_ids))
         ).all()
         for c in extra_cats:
-            category_map[c.category_id] = {"name": c.category_name, "color": c.color_code}
+            category_map[c.category_id] = {"name": c.category_name, "color": c.color_code, "is_income": c.is_income}
 
     total_income = sum(
         row[0] for row in summary_rows
-        if category_map.get(row[1], {}).get("name", "").startswith("Income")
+        if category_map.get(row[1], {}).get("is_income", False)
     )
     total_expense = sum(
         row[0] for row in summary_rows
-        if not category_map.get(row[1], {}).get("name", "").startswith("Income")
+        if not category_map.get(row[1], {}).get("is_income", False)
     )
 
     return {
@@ -228,13 +228,23 @@ def get_finance_records_in_db(
     }
 
 
+# --- Delete a finance record ---
+def delete_finance_record_in_db(finance_id: int, session: Session):
+    record = session.get(Finance, finance_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Finance record not found")
+    session.delete(record)
+    session.commit()
+    return {"message": "Record deleted"}
+
+
 # --- Finance Categories ---
 
 def get_all_categories_in_db(session: Session):
     return session.exec(select(FinanceCategory)).all()
 
 
-def create_category_in_db(category_name: str, color_code: str, session: Session):
+def create_category_in_db(category_name: str, color_code: str, is_income: bool = False, session: Session = None):
     if not category_name or category_name in ("", "string"):
         raise HTTPException(status_code=400, detail="Enter category name")
     if not color_code or color_code in ("", "string"):
@@ -246,14 +256,14 @@ def create_category_in_db(category_name: str, color_code: str, session: Session)
     if existing:
         raise HTTPException(status_code=409, detail="Category already exists")
 
-    new_category = FinanceCategory(category_name=category_name, color_code=color_code)
+    new_category = FinanceCategory(category_name=category_name, color_code=color_code, is_income=is_income)
     session.add(new_category)
     session.commit()
     session.refresh(new_category)
     return new_category
 
 
-def update_category_in_db(category_id: int, category_name: str, color_code: str, session: Session):
+def update_category_in_db(category_id: int, category_name: str, color_code: str, is_income=None, session: Session = None):
     existing = session.exec(
         select(FinanceCategory).where(FinanceCategory.category_id == category_id)
     ).first()
@@ -264,6 +274,8 @@ def update_category_in_db(category_id: int, category_name: str, color_code: str,
         existing.category_name = category_name
     if color_code and color_code not in ("", "string"):
         existing.color_code = color_code
+    if is_income is not None:
+        existing.is_income = is_income
 
     session.commit()
     session.refresh(existing)
@@ -340,7 +352,7 @@ def get_monthly_summary_in_db(bank_account_id: int, year: int, session: Session)
     if not account:
         raise HTTPException(status_code=404, detail="Bank account not found")
 
-    cat_map = _category_name_map(session)
+    cat_map = _category_is_income_map(session)
 
     all_records = session.exec(
         select(Finance).where(Finance.bank_account_id == bank_account_id)
@@ -349,11 +361,11 @@ def get_monthly_summary_in_db(bank_account_id: int, year: int, session: Session)
     # Compute opening balance of the requested year
     pre_year_income = sum(
         r.amount for r in all_records
-        if r.date.year < year and cat_map.get(r.category_id, "").startswith("Income")
+        if r.date.year < year and cat_map.get(r.category_id, False)
     )
     pre_year_expense = sum(
         r.amount for r in all_records
-        if r.date.year < year and not cat_map.get(r.category_id, "").startswith("Income")
+        if r.date.year < year and not cat_map.get(r.category_id, False)
     )
     year_opening = account.opening_balance + pre_year_income - pre_year_expense
 
@@ -361,7 +373,7 @@ def get_monthly_summary_in_db(bank_account_id: int, year: int, session: Session)
     monthly: dict = defaultdict(lambda: {"income": 0.0, "expense": 0.0})
     for r in all_records:
         if r.date.year == year:
-            if cat_map.get(r.category_id, "").startswith("Income"):
+            if cat_map.get(r.category_id, False):
                 monthly[r.date.month]["income"] += r.amount
             else:
                 monthly[r.date.month]["expense"] += r.amount

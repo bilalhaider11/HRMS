@@ -28,6 +28,11 @@ def get_all_categories(page: int = 1, page_size: int = Query(default=10, ge=1, l
     return inventory_db.get_all_categories_in_db(page, page_size, session=session)
 
 
+@router.delete("/delete_category/{category_id}")
+def delete_category(category_id: int, session: Session = Depends(admin_db.get_session)):
+    return inventory_db.delete_category_in_db(category_id, session=session)
+
+
 @router.post("/create_item")
 def create_item(item: InventoryItemBase, session: Session = Depends(admin_db.get_session)):
     return inventory_db.create_item_in_db(item, session=session)
@@ -41,6 +46,11 @@ def update_item(item_id: int, item: InventoryItemUpdate, session: Session = Depe
 @router.get("/get_item/{item_id}")
 def get_item(item_id: int, session: Session = Depends(admin_db.get_session)):
     return inventory_db.get_item_by_id_in_db(item_id, session=session)
+
+
+@router.delete("/delete_item/{item_id}")
+def delete_item(item_id: int, session: Session = Depends(admin_db.get_session)):
+    return inventory_db.delete_item_in_db(item_id, session=session)
 
 
 @router.get("/get_all_items")

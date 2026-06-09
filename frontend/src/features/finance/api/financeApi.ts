@@ -57,6 +57,11 @@ export async function updateFinanceRecord(financeId: number, data: Record<string
   return res.data;
 }
 
+export async function deleteFinanceRecord(financeId: number) {
+  const res = await api.delete(`/finance/delete_finance_record/${financeId}`);
+  return res.data;
+}
+
 export async function fetchEditHistory(financeId: number) {
   const res = await api.get(`/finance/get_edit_history/${financeId}`);
   return res.data;

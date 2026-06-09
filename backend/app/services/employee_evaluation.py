@@ -114,10 +114,9 @@ def create_employee_evaluation(emp_id: int, payload: EmployeeEvaluationCreate, u
 
     if user_type == "admin":
         created_by = user.company_name
-        employee = employee_db.get_employee(emp_id, session)
     else:
         created_by = user.name
-        employee = user
+    employee = employee_db.get_employee(emp_id, session)
 
     evaluation = EmployeeEvaluation(
         employee_id=emp_id,
@@ -133,12 +132,9 @@ def create_employee_evaluation(emp_id: int, payload: EmployeeEvaluationCreate, u
 
 
 def get_employee_evaluations(emp_id: int,user_type: str,user: object , session: Session) -> dict:
-    
-    if user_type == "admin":
-        employee = employee_db.get_employee(emp_id, session)
-    else:
-        employee = user
-        
+
+    employee = employee_db.get_employee(emp_id, session)
+
     evaluations = session.exec(
         select(EmployeeEvaluation).where(EmployeeEvaluation.employee_id == emp_id)
     ).all()
@@ -179,7 +175,8 @@ def update_employee_evaluation(emp_id: int, evaluation_id: int, payload: Employe
 
     session.exec(statement)
     session.commit()
-    
+    session.refresh(evaluation)
+
     return emp_evaluation_payload(evaluation, employee)
 
 

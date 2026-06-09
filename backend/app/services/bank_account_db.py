@@ -12,7 +12,7 @@ def get_all_bank_accounts_in_db(session: Session):
 
     # Batch-load all categories once
     cats = session.exec(select(FinanceCategory)).all()
-    cat_map = {c.category_id: c.category_name for c in cats}
+    cat_map = {c.category_id: c.is_income for c in cats}
 
     # Batch-load all finance records in a single query, grouped by account
     all_finance = session.exec(
@@ -22,7 +22,7 @@ def get_all_bank_accounts_in_db(session: Session):
     income_by_account: dict = defaultdict(float)
     expense_by_account: dict = defaultdict(float)
     for bank_account_id, cat_id, amount in all_finance:
-        if cat_map.get(cat_id, "").startswith("Income"):
+        if cat_map.get(cat_id, False):
             income_by_account[bank_account_id] += amount
         else:
             expense_by_account[bank_account_id] += amount

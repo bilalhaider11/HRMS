@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchFinanceRecords, fetchFinanceCategories, fetchBankAccounts, deleteFinanceCategory as deleteCategoryApi } from '../api/financeApi';
+import { fetchFinanceRecords, fetchFinanceCategories, fetchBankAccounts, deleteFinanceCategory as deleteCategoryApi, deleteFinanceRecord as deleteFinanceRecordApi } from '../api/financeApi';
 
 export interface FinanceTableData {
   FinanceId?: string;
@@ -69,6 +69,9 @@ interface FinanceContextType {
   isDeleteCategoryModal: FinanceCategoriesData | null;
   setIsDeleteCategoryModal: (cate: FinanceCategoriesData | null) => void;
   handleCategoryDelete: (category: FinanceCategoriesData) => void;
+  isDeleteModal: FinanceTableData | null;
+  setIsDeleteModal: (fin: FinanceTableData | null) => void;
+  handleFinanceDelete: (finance: FinanceTableData) => Promise<void>;
 
   loadFinance: (page?: number, pageSize?: number, startDate?: string, endDate?: string, categoryId?: string, bankAccountId?: string) => Promise<void>;
   financePage: number;
@@ -96,6 +99,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [editingFinance, setEditingFinance] = useState<FinanceTableData | null>(null);
   const [successfullModal, setSuccessfullModal] = useState(false);
   const [isDeleteCategoryModal, setIsDeleteCategoryModal] = useState<FinanceCategoriesData | null>(null);
+  const [isDeleteModal, setIsDeleteModal] = useState<FinanceTableData | null>(null);
   const [editingCategory, setEditingCategory] = useState<FinanceCategoriesData | null>(null);
   const [financePage, setFinancePage] = useState(1);
   const [financeTotalPages, setFinanceTotalPages] = useState(1);
@@ -300,6 +304,13 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     document.body.style.overflow = "auto";
   };
 
+  const handleFinanceDelete = async (finance: FinanceTableData) => {
+    await deleteFinanceRecordApi(parseInt(finance.FinanceId || "0"));
+    setFinanceList(prev => prev.filter(f => f.FinanceId !== finance.FinanceId));
+    loadBankAccounts();
+    setIsDeleteModal(null);
+  };
+
   const clearError = () => setIdExistError("");
 
   return (
@@ -312,6 +323,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       editCategoryData, editingCategory, setEditingCategory,
       addCategory, updateFinanceCategory,
       isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete,
+      isDeleteModal, setIsDeleteModal, handleFinanceDelete,
       loadFinance, financePage, financeTotalPages, financeTotalCount,
     }}>
       {children}

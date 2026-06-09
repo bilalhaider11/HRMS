@@ -1,6 +1,6 @@
 import uuid
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, SQLModel, select
 from slowapi import Limiter
@@ -21,10 +21,11 @@ router = APIRouter(prefix="/admin")
 @limiter.limit("10/minute")
 def admin_login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(admin_db.get_session),
 ):
-    return login_service.login(session,form_data,request,Admin)
+    return login_service.login(session, form_data, request, Admin, response=response)
     
 
 

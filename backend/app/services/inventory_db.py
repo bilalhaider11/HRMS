@@ -70,6 +70,20 @@ def get_all_categories_in_db(page: int, page_size: int, session: Session):
     }
 
 
+def delete_category_in_db(category_id: int, session: Session):
+    existing = session.exec(select(ItemCategory).where(ItemCategory.id == category_id)).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Item Category does not exist")
+
+    linked = session.exec(select(InventoryItem).where(InventoryItem.category_id == category_id)).first()
+    if linked:
+        raise HTTPException(status_code=409, detail="Cannot delete category — items are using it")
+
+    session.delete(existing)
+    session.commit()
+    return {"message": "Category deleted successfully"}
+
+
 # ---------------- INVENTORY ITEMS CRUD ----------------
 
 def create_item_in_db(item: InventoryItemBase, session: Session):
@@ -130,6 +144,15 @@ def update_item_in_db(item_id: int, item: InventoryItemUpdate, session: Session)
     session.commit()
     session.refresh(existing)
     return existing
+
+
+def delete_item_in_db(item_id: int, session: Session):
+    existing = session.exec(select(InventoryItem).where(InventoryItem.id == item_id)).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Item does not exist")
+    session.delete(existing)
+    session.commit()
+    return {"message": "Item deleted successfully"}
 
 
 def get_item_by_id_in_db(item_id: int, session: Session):

@@ -68,7 +68,8 @@ const Form = () => {
     const banksOptions = ["Meezan", "UBL", "Allied", "HBL"];
     const departmentsOptions = ["Engineering", "HR", "Marketing", "Office Maintenance"]
 
-    const modalRef = useRef<HTMLDivElement>(null);
+    const departmentModalRef = useRef<HTMLDivElement>(null);
+    const bankNameModalRef = useRef<HTMLDivElement>(null);
 
     const openBanksDropdown = () => {
         setBankDropdownOpen(!bankDropdownOpen);
@@ -79,10 +80,16 @@ const Form = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
-                modalRef.current &&
-                !modalRef.current.contains(event.target as Node)
+                bankNameModalRef.current &&
+                !bankNameModalRef.current.contains(event.target as Node)
             ) {
                 setBankDropdownOpen(false);
+            }
+            if (
+                departmentModalRef.current &&
+                !departmentModalRef.current.contains(event.target as Node)
+            ) {
+                setDepartmentsDropdownOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -139,11 +146,12 @@ const Form = () => {
                     { ...values, profilePicUrl: profilePicUrl || editingEmployee.image }
                 );
 
-                // Update local state for immediate UI update
+                // Update local state — keep original id as the lookup key so the list
+                // update finds the right entry even when employeeCode was edited
                 updateEmployee({
                     ...editingEmployee,
                     ...values,
-                    id: values.employeeCode,
+                    id: editingEmployee.id,
                 });
                 formik.resetForm();
                 setFile(null);
@@ -333,7 +341,7 @@ const Form = () => {
                 <div>
                     <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 font-inter">Work Details</h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="relative" ref={modalRef}>
+                    <div className="relative" ref={departmentModalRef}>
                         <label className={`${labelStyles}`}>Department</label>
                         <div className={`${inputBorder}`}>
                             <Select
@@ -463,7 +471,7 @@ const Form = () => {
                             </p>
                         )}
                     </div>
-                    <div className="relative" ref={modalRef}>
+                    <div className="relative" ref={bankNameModalRef}>
                         <label className={`${labelStyles}`}>Bank Name</label>
                         <div className={`${inputBorder}`}>
                             <Select

@@ -120,6 +120,7 @@ def update_team_in_db(team_id: int, payload: dict, company_id: int, session: Ses
                 Teams_to_Employee.delete_record == False
             )
             .values(delete_record=True)
+            .execution_options(synchronize_session=False)
         )
 
         # Insert the new member list
@@ -149,6 +150,7 @@ def delete_team_in_db(team_id: int, company_id: int, session: Session):
         update(Teams_to_Employee)
         .where(Teams_to_Employee.team_id == team.id)
         .values(delete_record=True)
+        .execution_options(synchronize_session=False)
     )
     session.commit()
 

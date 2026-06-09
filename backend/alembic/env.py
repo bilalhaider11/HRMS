@@ -25,6 +25,17 @@ if db_url:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+import app.models.employee  # noqa: F401
+import app.models.finance  # noqa: F401
+import app.models.inventory  # noqa: F401
+import app.models.admin  # noqa: F401
+import app.models.attendance  # noqa: F401
+import app.models.increment  # noqa: F401
+import app.models.employee_evaluation  # noqa: F401
+import app.models.bank_account  # noqa: F401
+import app.models.role  # noqa: F401
+import app.models.team  # noqa: F401
+
 target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,

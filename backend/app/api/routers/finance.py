@@ -10,11 +10,13 @@ from app.models.finance import FinanceBase, FinanceUpdate
 class FinanceCategoryCreate(SQLModel):
     category_name: str
     color_code: str
+    is_income: bool = False
 
 
 class FinanceCategoryUpdate(SQLModel):
     category_name: str = ""
     color_code: str = ""
+    is_income: bool | None = None
 
 router = APIRouter(prefix="/finance", dependencies=[Depends(auth.get_current_user)])
 
@@ -60,15 +62,20 @@ def get_finance_categories(session: Session = Depends(admin_db.get_session)):
 @router.post("/create_category")
 def create_finance_category(payload: FinanceCategoryCreate, session: Session = Depends(admin_db.get_session)):
     return finance_db.create_category_in_db(
-        payload.category_name, payload.color_code, session=session
+        payload.category_name, payload.color_code, payload.is_income, session=session
     )
 
 
 @router.patch("/update_category/{category_id}")
 def update_finance_category(category_id: int, payload: FinanceCategoryUpdate, session: Session = Depends(admin_db.get_session)):
     return finance_db.update_category_in_db(
-        category_id, payload.category_name, payload.color_code, session=session
+        category_id, payload.category_name, payload.color_code, payload.is_income, session=session
     )
+
+
+@router.delete("/delete_finance_record/{finance_id}", status_code=200)
+def delete_finance_record(finance_id: int, session: Session = Depends(admin_db.get_session)):
+    return finance_db.delete_finance_record_in_db(finance_id, session=session)
 
 
 @router.delete("/delete_category/{category_id}")

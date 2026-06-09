@@ -6,6 +6,7 @@ from sqlmodel import SQLModel, Field, Relationship
 class FinanceCategoryBase(SQLModel):
     category_name: str
     color_code: str
+    is_income: bool = Field(default=False)
 
 
 class FinanceCategory(FinanceCategoryBase, table=True):
