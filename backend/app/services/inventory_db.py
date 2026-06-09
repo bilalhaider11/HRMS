@@ -1,6 +1,6 @@
 # inventory_db.py
 from fastapi import HTTPException
-from sqlmodel import select, Session
+from sqlmodel import select, func, Session
 from app.models.inventory import InventoryItem, InventoryItemBase, InventoryItemUpdate, ItemCategory, ItemCategoryBase, ItemCategoryUpdate
 
 
@@ -57,17 +57,15 @@ def get_all_categories_in_db(page: int, page_size: int, session: Session):
     if page_size < 1:
         page_size = 10
 
-    all_categories = session.exec(select(ItemCategory)).all()
-    total_count = len(all_categories)
-
+    total_count = session.exec(select(func.count()).select_from(ItemCategory)).one()
     offset = (page - 1) * page_size
-    paginated_categories = all_categories[offset:offset + page_size]
+    paginated_categories = session.exec(select(ItemCategory).offset(offset).limit(page_size)).all()
 
     return {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
-        "total_pages": (total_count + page_size - 1) // page_size,
+        "total_pages": max(1, (total_count + page_size - 1) // page_size),
         "categories": paginated_categories
     }
 
@@ -147,20 +145,21 @@ def get_all_items_in_db(page: int, page_size: int, category_id: int = None, sess
     if page_size < 1:
         page_size = 10
 
-    query = select(InventoryItem)
+    count_q = select(func.count()).select_from(InventoryItem)
     if category_id:
-        query = query.where(InventoryItem.category_id == category_id)
+        count_q = count_q.where(InventoryItem.category_id == category_id)
+    total_count = session.exec(count_q).one()
 
-    all_items = session.exec(query).all()
-    total_count = len(all_items)
-
+    item_q = select(InventoryItem)
+    if category_id:
+        item_q = item_q.where(InventoryItem.category_id == category_id)
     offset = (page - 1) * page_size
-    paginated_items = all_items[offset:offset + page_size]
+    paginated_items = session.exec(item_q.offset(offset).limit(page_size)).all()
 
     return {
         "page": page,
         "page_size": page_size,
         "total_count": total_count,
-        "total_pages": (total_count + page_size - 1) // page_size,
+        "total_pages": max(1, (total_count + page_size - 1) // page_size),
         "items": paginated_items
     }

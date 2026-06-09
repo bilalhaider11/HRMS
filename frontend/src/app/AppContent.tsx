@@ -244,7 +244,7 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
 }
 
 export default function AppContent() {
-  const { user, setUser, superAdmin, authCheckLoading, canAccessEmployees } =
+  const { user, setUser, superAdmin, authCheckLoading, canAccessEmployees, authUserType } =
     useContext(VerifyContext);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -253,8 +253,8 @@ export default function AppContent() {
     localStorage.removeItem("token");
     localStorage.removeItem("authUserType");
     setUser(null);
-    navigate("/employee/login");
-  }, [setUser, navigate]);
+    navigate(authUserType === "admin" ? "/admin/login" : "/employee/login");
+  }, [setUser, navigate, authUserType]);
 
   // Close sidebar on route change (mobile)
   const location = useLocation();

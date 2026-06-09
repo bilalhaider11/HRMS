@@ -16,11 +16,13 @@ const UpdateEmployee = () => {
                 editEmployeeData(foundEmployee);
             }
         }
-        return () => {
-            setEditingEmployee(null);
-        };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [employeesList, employeeCode]);
+
+    useEffect(() => {
+        return () => { setEditingEmployee(null); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <>

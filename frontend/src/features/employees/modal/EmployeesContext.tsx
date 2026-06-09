@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { deactivateEmployee } from '../api/employeesApi';
 
 export interface IncrementHistory {
@@ -126,6 +126,12 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   const [availableRoles, setAvailableRoles] = useState<RoleData[]>([]);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
+  // Centralised overflow management — prevents navigation leaving page locked
+  useEffect(() => {
+    const hasModal = successfullModal || isDeleteModal !== null || isEmployeeDelete !== null || isRoleModalOpen;
+    document.body.style.overflow = hasModal ? "hidden" : "auto";
+    return () => { document.body.style.overflow = "auto"; };
+  }, [successfullModal, isDeleteModal, isEmployeeDelete, isRoleModalOpen]);
 
   const isDuplicateId = (id?: string) => {
     return id ? employeesList.some((employee) => employee.id === id) : false;
@@ -137,7 +143,6 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
       return false
     } else {
       const updatedList = [...employeesList, employee];
-      console.log("added")
       setEmployeesList(updatedList);
       setEditingEmployee(null)
       setIdExistError("")
@@ -166,7 +171,7 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
 
   const updateIncrement = (increament: IncrementHistory) => {
     const updatedList = employeeIncreamentList.map((inc) =>
-      inc.increamentDate === editingIncreamentList?.increamentDate ? increament : inc
+      inc.increamentId === editingIncreamentList?.increamentId ? increament : inc
     );
     setEmployeeIncreamentList(updatedList);
     setEditingIncreamentList(null);
@@ -176,7 +181,6 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   }
 
   const editEmployeeData = (employee: EmployeeTableData) => {
-    console.log(employee)
     setEditingEmployee(employee);
     setSuccessfullModal(false);
     document.body.style.overflow = "auto";
@@ -194,7 +198,6 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
     const updatedList = employeesList.map((emp) =>
       emp.id === updatedEmployee.id ? updatedEmployee : emp
     );
-    console.log("updateList", updatedList)
     setEmployeesList(updatedList);
     setSuccessfullModal(true);
     document.body.style.overflow = "hidden";
@@ -211,14 +214,12 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   const handleEmployeeDelete = async (employee: EmployeeTableData) => {
     try {
       await deactivateEmployee(employee.id || "");
-      // Remove from local list after successful backend call
       const updateEmployeeList = employeesList.filter(e => e.id !== employee.id);
       setEmployeesList(updateEmployeeList);
+      setIsEmployeeDelete(null);
     } catch (error) {
       console.error("Failed to deactivate employee:", error);
     }
-    setIsEmployeeDelete(null);
-    document.body.style.overflow = "auto";
   }
 
 

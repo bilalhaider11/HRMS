@@ -41,3 +41,10 @@ def get_token_expire_minutes() -> int:
 def get_cors_origins() -> list[str]:
     raw = _env()["cors_origins"]
     return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def validate_required_env() -> None:
+    if not _env()["secret_key"]:
+        raise RuntimeError("FATAL: 'secret_key' environment variable is required and must not be empty")
+    if not _env()["data_base_url"]:
+        raise RuntimeError("FATAL: 'data_base_url' environment variable is required and must not be empty")

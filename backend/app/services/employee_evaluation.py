@@ -6,7 +6,7 @@ from sqlalchemy import update
 from sqlmodel import Session, select
 
 from app.services import role_db,employee_db,teams_db
-from app.models.employee_evaluation import EmployeeEvaluation
+from app.models.employee_evaluation import EmployeeEvaluation, EmployeeEvaluationCreate, EmployeeEvaluationUpdate
 from app.models.employee import Employee
 from app.models.team import Team, Teams_to_Employee
 from app.models.admin import Admin
@@ -50,17 +50,6 @@ def _get_team_member_ids_for_lead(current_employee_id: int, session: Session) ->
         )
     ).all()
     
-    get_members = []
-    member_ids = {}
-    for team in teams:
-        team_members = teams_db._serialize_team(team,session)
-        members = team_members['teams_to_employee']
-        
-        for member in members:
-                   
-            get_members.append(teams_db._serialize_team(team,session))
-    
-        
     team_ids = [team.id for team in teams if team.id is not None]
     
     if not team_ids:
@@ -94,7 +83,6 @@ def get_employee_scope_for_evaluation(
 
     if "Team Lead" in role_names:
         member_ids = _get_team_member_ids_for_lead(current_employee.id, session)
-        print("mrmber ids: ",member_ids)
         if not member_ids:
             return "team", []
         employees = session.exec(
@@ -122,16 +110,20 @@ def ensure_can_view_employee_evaluations(
     return check_by_roles(current_employee.id,target_employee_id,session,current_user.role_ids)
 
 
-def create_employee_evaluation(emp_id: int, payload: dict, user_type:str, user:object, session: Session) -> dict:
-    
+def create_employee_evaluation(emp_id: int, payload: EmployeeEvaluationCreate, user_type:str, user:object, session: Session) -> dict:
+
     if user_type == "admin":
         created_by = user.company_name
-        employee = employee_db.get_employee(emp_id, session) 
+        employee = employee_db.get_employee(emp_id, session)
     else:
         created_by = user.name
         employee = user
-        
-    evaluation = EmployeeEvaluation(employee_id=emp_id,created_by=created_by, **payload)
+
+    evaluation = EmployeeEvaluation(
+        employee_id=emp_id,
+        created_by=created_by,
+        **payload.model_dump()
+    )
     
     session.add(evaluation)
     session.commit()
@@ -161,8 +153,8 @@ def get_employee_evaluations(emp_id: int,user_type: str,user: object , session: 
     }
 
 
-def update_employee_evaluation(emp_id: int, evaluation_id: int, payload: dict,update_by:str, session: Session) -> dict:
-    
+def update_employee_evaluation(emp_id: int, evaluation_id: int, payload: EmployeeEvaluationUpdate, update_by:str, session: Session) -> dict:
+
     employee = employee_db.get_employee(emp_id, session)
     evaluation = session.exec(
         select(EmployeeEvaluation).where(
@@ -173,15 +165,16 @@ def update_employee_evaluation(emp_id: int, evaluation_id: int, payload: dict,up
 
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found for the employee to update")
-    
-    payload['updated_by'] = update_by
+
+    update_data = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    update_data["updated_by"] = update_by
     statement = (
-    update(EmployeeEvaluation)
+        update(EmployeeEvaluation)
         .where(
             EmployeeEvaluation.id == evaluation_id,
             EmployeeEvaluation.employee_id == emp_id
         )
-        .values(payload) 
+        .values(update_data)
     )
 
     session.exec(statement)

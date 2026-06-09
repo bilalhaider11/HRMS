@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useEmployees } from "./modal/EmployeesContext";
 import { fetchEmployees, fetchEmployeesForEmployee } from "./api/employeesApi";
 import { UserPlus, Search, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback, useContext, useRef } from "react";
 import { VerifyContext } from "app/VerifyContext";
 
 const PAGE_SIZES = [10, 25, 50];
@@ -23,6 +23,10 @@ const EmployeesBody = () => {
     const [statusFilter, setStatusFilter] = useState("active");
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const mountedRef = useRef(true);
+    useEffect(() => {
+        return () => { mountedRef.current = false; };
+    }, []);
 
     const loadEmployees = useCallback(async (p: number, q: string, size?: number, status?: string) => {
         setLoading(true);
@@ -33,14 +37,16 @@ const EmployeesBody = () => {
             const data = employeeMode
               ? await fetchEmployeesForEmployee(user?.id || 0)
               : await fetchEmployees(p, size || pageSize, undefined, q || undefined, status ?? statusFilter);
+            if (!mountedRef.current) return;
             setEmployeesList(data.employees);
             setTotalPages(data.totalPages);
             setTotalCount(data.totalCount);
             setPage(data.page);
         } catch (error) {
+            if (!mountedRef.current) return;
             console.error("Failed to load employees:", error);
         }
-        setLoading(false);
+        if (mountedRef.current) setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setEmployeesList, pageSize, statusFilter, employeeMode, user?.id]);
 

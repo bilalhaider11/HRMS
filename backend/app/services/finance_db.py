@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlmodel import select, Session
+from sqlmodel import select, func, Session
 from app.models.bank_account import BankAccount
 from app.models.admin import Admin
 from app.models.finance import Finance, FinanceUpdate, FinanceCategory, FinanceEditHistory
@@ -108,7 +108,6 @@ def edit_finance_record_in_db(finance_id: int, finance: FinanceUpdate, session: 
                 session.add(history)
             setattr(existing, key, value)
 
-    existing.added_by = admin_id
     session.commit()
     session.refresh(existing)
     return existing
@@ -137,27 +136,43 @@ def get_finance_records_in_db(
     if bank_account_id:
         query = query.where(Finance.bank_account_id == bank_account_id)
 
-    all_records = session.exec(query).all()
-    total_count = len(all_records)
+    count_query = select(func.count()).select_from(Finance)
+    if start_date:
+        count_query = count_query.where(Finance.date >= start_date)
+    if end_date:
+        count_query = count_query.where(Finance.date <= end_date)
+    if category_id:
+        count_query = count_query.where(Finance.category_id == category_id)
+    if bank_account_id:
+        count_query = count_query.where(Finance.bank_account_id == bank_account_id)
+    total_count = session.exec(count_query).one()
 
     offset = (page - 1) * page_size
-    paginated_records = all_records[offset:offset + page_size]
+    paginated_records = session.exec(query.offset(offset).limit(page_size)).all()
 
-    # Resolve category names/colors and added_by names for paginated records
-    category_map = {}
-    admin_map = {}
-    for record in paginated_records:
-        if record.category_id and record.category_id not in category_map:
-            cat = session.exec(
-                select(FinanceCategory).where(FinanceCategory.category_id == record.category_id)
-            ).first()
-            category_map[record.category_id] = {
-                "name": cat.category_name if cat else str(record.category_id),
-                "color": cat.color_code if cat else "",
-            }
-        if record.added_by and record.added_by not in admin_map:
-            admin = session.exec(select(Admin).where(Admin.id == record.added_by)).first()
-            admin_map[record.added_by] = admin.company_name if admin else str(record.added_by)
+    # Batch-load all categories and admins referenced by paginated records in two queries
+    page_cat_ids = {r.category_id for r in paginated_records if r.category_id}
+    page_admin_ids = {r.added_by for r in paginated_records if r.added_by}
+    page_record_ids = [r.id for r in paginated_records]
+
+    category_map: dict = {}
+    if page_cat_ids:
+        cats = session.exec(
+            select(FinanceCategory).where(FinanceCategory.category_id.in_(page_cat_ids))
+        ).all()
+        category_map = {c.category_id: {"name": c.category_name, "color": c.color_code} for c in cats}
+
+    admin_map: dict = {}
+    if page_admin_ids:
+        admins = session.exec(select(Admin).where(Admin.id.in_(page_admin_ids))).all()
+        admin_map = {a.id: a.company_name for a in admins}
+
+    edited_ids: set = set()
+    if page_record_ids:
+        edited_rows = session.exec(
+            select(FinanceEditHistory.finance_id).where(FinanceEditHistory.finance_id.in_(page_record_ids))
+        ).all()
+        edited_ids = set(edited_rows)
 
     enriched_records = []
     for record in paginated_records:
@@ -166,30 +181,37 @@ def get_finance_records_in_db(
         data["category_name"] = cat_info["name"]
         data["category_color"] = cat_info["color"]
         data["added_by_name"] = admin_map.get(record.added_by, "")
-        data["has_edits"] = session.exec(
-            select(FinanceEditHistory).where(FinanceEditHistory.finance_id == record.id)
-        ).first() is not None
+        data["has_edits"] = record.id in edited_ids
         enriched_records.append(data)
 
-    # Summary — based on category name prefix for all filtered records
-    all_cat_ids = {f.category_id for f in all_records if f.category_id}
-    all_cat_map = {}
-    for cid in all_cat_ids:
-        if cid in category_map:
-            all_cat_map[cid] = category_map[cid]["name"]
-        else:
-            cat = session.exec(
-                select(FinanceCategory).where(FinanceCategory.category_id == cid)
-            ).first()
-            all_cat_map[cid] = cat.category_name if cat else ""
+    # Summary — single query for (amount, category_id) across all filtered records
+    summary_q = select(Finance.amount, Finance.category_id)
+    if start_date:
+        summary_q = summary_q.where(Finance.date >= start_date)
+    if end_date:
+        summary_q = summary_q.where(Finance.date <= end_date)
+    if category_id:
+        summary_q = summary_q.where(Finance.category_id == category_id)
+    if bank_account_id:
+        summary_q = summary_q.where(Finance.bank_account_id == bank_account_id)
+    summary_rows = session.exec(summary_q).all()
+
+    summary_cat_ids = {row[1] for row in summary_rows if row[1]}
+    missing_cat_ids = summary_cat_ids - set(category_map)
+    if missing_cat_ids:
+        extra_cats = session.exec(
+            select(FinanceCategory).where(FinanceCategory.category_id.in_(missing_cat_ids))
+        ).all()
+        for c in extra_cats:
+            category_map[c.category_id] = {"name": c.category_name, "color": c.color_code}
 
     total_income = sum(
-        f.amount for f in all_records
-        if all_cat_map.get(f.category_id, "").startswith("Income")
+        row[0] for row in summary_rows
+        if category_map.get(row[1], {}).get("name", "").startswith("Income")
     )
     total_expense = sum(
-        f.amount for f in all_records
-        if not all_cat_map.get(f.category_id, "").startswith("Income")
+        row[0] for row in summary_rows
+        if not category_map.get(row[1], {}).get("name", "").startswith("Income")
     )
 
     return {

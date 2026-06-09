@@ -22,9 +22,6 @@ def _serialize_team(team: Team, session: Session) -> dict:
             Teams_to_Employee.delete_record == False
         )
     ).all()
-    print("...................................................................................")
-
-    print("member_links:", member_links)
 
     team_obj = member_links[0][0] if member_links else team
     employee_links = [row[1] for row in member_links]
@@ -73,9 +70,9 @@ def create_team_in_db(payload: dict, company_id: int, session: Session):
 
 
 def get_teams_in_db(company_id: Optional[int], session: Session):
-    query = select(Team)
+    query = select(Team).where(Team.delete_record == False)
     if company_id is not None:
-        query = query.where(Team.company_id == company_id,Team.delete_record == False)
+        query = query.where(Team.company_id == company_id)
 
     teams = session.exec(query).all()
     return {"teams": [_serialize_team(team, session) for team in teams]}
@@ -111,49 +108,25 @@ def update_team_in_db(team_id: int, payload: dict, company_id: int, session: Ses
 
     session.add(team)
 
-    # ------------------ Member toggle logic ------------------
+    # ------------------ Member replace logic ------------------
     if "member_ids" in payload:
-        incoming_ids = set(payload.get("member_ids") or [])
+        incoming_ids = list(dict.fromkeys(payload.get("member_ids") or []))
 
-        # get current active members
-        current_members = session.exec(
-            select(Teams_to_Employee).where(
+        # Soft-delete all current members
+        session.exec(
+            update(Teams_to_Employee)
+            .where(
                 Teams_to_Employee.team_id == team.id,
                 Teams_to_Employee.delete_record == False
             )
-        ).all()
+            .values(delete_record=True)
+        )
 
-        current_map = {m.employee_id: m for m in current_members}
-        
-        add_members = []
-        remove_members = []
-
+        # Insert the new member list
         for emp_id in incoming_ids:
-
-            if emp_id in current_map:
-                remove_members.append(emp_id)  
-            else:
-                add_members.append(emp_id)
-            
-            
-        if remove_members:
-            session.exec(
-                update(Teams_to_Employee)
-                .where(
-                    Teams_to_Employee.team_id == team.id,
-                    Teams_to_Employee.employee_id.in_(remove_members)
-                )
-                .values(delete_record=True)
-            )
-        if add_members:
-            session.add_all([
-                Teams_to_Employee(
-                    team_id=team.id,
-                    employee_id=emp_id,
-                    delete_record=False
-                )
-                for emp_id in add_members
-            ])
+            if session.get(Employee, emp_id) is None:
+                raise HTTPException(status_code=404, detail=f"Employee {emp_id} not found")
+            session.add(Teams_to_Employee(team_id=team.id, employee_id=emp_id, delete_record=False))
         
     session.commit()
     session.refresh(team)

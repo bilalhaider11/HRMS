@@ -2,7 +2,6 @@ from fastapi import HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
-from app.services import admin_db
 from app.services import auth
 
 
@@ -25,6 +24,4 @@ def login(
         payload.update(extra_jwt_claims)
 
     token = auth.create_access_token(data=payload)
-    client_ip = request.client.host if request and request.client else "unknown"
-    admin_db.add_jwt_token_in_db(client_ip, token, session)
     return {"access_token": token, "token_type": "bearer"}

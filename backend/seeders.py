@@ -1,18 +1,22 @@
 from sqlmodel import Session, select
 from app.models.admin import Admin
 from app.models.finance import FinanceCategory
-from app.services.admin_db import _get_engine
+from app.db.session import engine
 import bcrypt
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # --- Seed default admin account ---
 def seed_admin(session: Session):
     existing = session.exec(select(Admin)).first()
     if existing:
-        print("Admin already exists, skipping.")
+        logger.info("Admin already exists, skipping.")
         return
 
     hashed_password = bcrypt.hashpw("admin123".encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    hashed_access_key = bcrypt.hashpw("hrms-default-access-key".encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     admin = Admin(
         company_name="HRMS Company",
         website="https://hrms.com",
@@ -20,11 +24,11 @@ def seed_admin(session: Session):
         phone="0000000000",
         email="admin@hrms.com",
         password=hashed_password,
-        access_key="hrms-default-access-key",
+        access_key=hashed_access_key,
     )
     session.add(admin)
     session.commit()
-    print("Default admin seeded (email: admin@hrms.com, password: admin123, access_key: hrms-default-access-key).")
+    logger.info("Default admin seeded (email: admin@hrms.com, password: admin123, access_key: hrms-default-access-key).")
 
 
 # --- Seed default finance categories ---
@@ -53,7 +57,7 @@ def seed_categories(session: Session):
         ).first()
         if old_cat:
             old_cat.category_name = new_name
-            print(f"Renamed category '{old_name}' → '{new_name}'")
+            logger.info(f"Renamed category '{old_name}' -> '{new_name}'")
 
     # Upsert: create missing categories, fix color codes on existing ones
     for name, color in default_categories:
@@ -63,7 +67,7 @@ def seed_categories(session: Session):
         if existing:
             if existing.color_code != color:
                 existing.color_code = color
-                print(f"Updated color for '{name}' → {color}")
+                logger.info(f"Updated color for '{name}' -> {color}")
         else:
             session.add(FinanceCategory(category_name=name, color_code=color))
 
@@ -75,15 +79,15 @@ def seed_categories(session: Session):
         ).first()
         if old:
             session.delete(old)
-            print(f"Removed category '{name}'")
+            logger.info(f"Removed category '{name}'")
 
     session.commit()
-    print("Default finance categories seeded successfully.")
+    logger.info("Default finance categories seeded successfully.")
 
 
 # --- Run seeders ---
 if __name__ == "__main__":
-    engine = _get_engine()
+    logging.basicConfig(level=logging.INFO)
     with Session(engine) as session:
         seed_admin(session)
         seed_categories(session)

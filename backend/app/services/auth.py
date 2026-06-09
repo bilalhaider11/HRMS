@@ -54,13 +54,9 @@ def authenticate_admin(session: Session, email: str, password: str) -> Optional[
     statement = select(Admin).where((Admin.email == email))
     admin = session.exec(statement).first()
 
-    # Return None if admin not found
     if not admin:
-        print("Incorrect username/email:", email)
         return None
-    # Verify provided password
     if not verify_password(password, admin.password):
-        print("Incorrect password for user:", email)
         return None
     # Return admin object if authenticated
     return admin

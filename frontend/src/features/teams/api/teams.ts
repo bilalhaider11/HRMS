@@ -58,7 +58,7 @@ export async function deleteTeamById(teamId: number): Promise<void> {
 
 export async function fetchEmployeesForTeams(): Promise<TeamEmployee[]> {
   const res = await api.get("/admin/display_all_employees", {
-    params: { page: 1, page_size: 10, status: "active" },
+    params: { page: 1, page_size: 100, status: "active" },
   });
   return (res.data.employees || []).map((emp: any) => ({
     id: emp.id,

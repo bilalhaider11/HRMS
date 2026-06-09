@@ -1,10 +1,20 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from datetime import date
-from sqlmodel import Session
+from sqlmodel import Session, SQLModel
 from app.services import admin_db
 from app.services import auth
 from app.services import finance_db
 from app.models.finance import FinanceBase, FinanceUpdate
+
+
+class FinanceCategoryCreate(SQLModel):
+    category_name: str
+    color_code: str
+
+
+class FinanceCategoryUpdate(SQLModel):
+    category_name: str = ""
+    color_code: str = ""
 
 router = APIRouter(prefix="/finance", dependencies=[Depends(auth.get_current_user)])
 
@@ -22,7 +32,7 @@ def edit_finance(finance_id: int, finance: FinanceUpdate, session: Session = Dep
 @router.get("/get_finance_records")
 def get_finance_records(
     page: int = 1,
-    page_size: int = 10,
+    page_size: int = Query(default=10, ge=1, le=200),
     start_date: date | None = None,
     end_date: date | None = None,
     category_id: int | None = None,
@@ -48,16 +58,16 @@ def get_finance_categories(session: Session = Depends(admin_db.get_session)):
 
 
 @router.post("/create_category")
-def create_finance_category(payload: dict, session: Session = Depends(admin_db.get_session)):
+def create_finance_category(payload: FinanceCategoryCreate, session: Session = Depends(admin_db.get_session)):
     return finance_db.create_category_in_db(
-        payload.get("category_name", ""), payload.get("color_code", ""), session=session
+        payload.category_name, payload.color_code, session=session
     )
 
 
 @router.patch("/update_category/{category_id}")
-def update_finance_category(category_id: int, payload: dict, session: Session = Depends(admin_db.get_session)):
+def update_finance_category(category_id: int, payload: FinanceCategoryUpdate, session: Session = Depends(admin_db.get_session)):
     return finance_db.update_category_in_db(
-        category_id, payload.get("category_name", ""), payload.get("color_code", ""), session=session
+        category_id, payload.category_name, payload.color_code, session=session
     )
 
 

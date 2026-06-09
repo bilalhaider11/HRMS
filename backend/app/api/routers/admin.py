@@ -1,20 +1,28 @@
-import os
 import uuid
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session, select
+from sqlmodel import Session, SQLModel, select
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.services import admin_db,login_service
 from app.services import auth
 from app.models.admin import Admin, AdminProfileUpdate, AdminPasswordUpdate
+
+limiter = Limiter(key_func=get_remote_address)
+
+UPLOAD_DIR = Path(__file__).parents[3] / "uploads" / "profile_pics"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 router = APIRouter(prefix="/admin")
 
 
 @router.post("/login", status_code=200)
+@limiter.limit("10/minute")
 def admin_login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(admin_db.get_session),
-    request: Request = None,
 ):
     return login_service.login(session,form_data,request,Admin)
     
@@ -28,7 +36,7 @@ def get_company_profile(current_user: Admin = Depends(auth.get_current_user)):
         "address": current_user.address,
         "phone": current_user.phone,
         "email": current_user.email,
-        "access_key": current_user.access_key or "",
+        "access_key_set": bool(current_user.access_key),
     }
 
 
@@ -52,30 +60,37 @@ def update_password(
     return admin_db.update_password_in_db(passwords.new_password, current_user, session)
 
 
+class AccessKeyUpdate(SQLModel):
+    access_key: str
+
+
 @router.patch("/update_access_key")
 def update_access_key(
-    payload: dict,
+    payload: AccessKeyUpdate,
     current_user: Admin = Depends(auth.get_current_user),
     session: Session = Depends(admin_db.get_session),
 ):
-    new_key = payload.get("access_key", "").strip()
+    new_key = payload.access_key.strip()
     if not new_key:
         raise HTTPException(status_code=400, detail="Access key cannot be empty")
-    current_user.access_key = new_key
+    current_user.access_key = auth.hash_password(new_key)
     session.add(current_user)
     session.commit()
     return {"message": "Access key updated successfully"}
 
 
 @router.post("/upload_profile_pic")
-def upload_profile_pic(file: UploadFile = File(...)):
-    allowed = {"image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/webp"}
-    if file.content_type not in allowed:
-        raise HTTPException(status_code=400, detail="File type not allowed. Use JPG, PNG, GIF, SVG, or WebP.")
+def upload_profile_pic(
+    file: UploadFile = File(...),
+    current_user: Admin = Depends(auth.get_current_user),
+):
+    ext_map = {"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp"}
+    ext = ext_map.get(file.content_type)
+    if not ext:
+        raise HTTPException(status_code=400, detail="Unsupported file type. Use JPG, PNG, GIF, or WebP.")
 
-    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
     filename = f"{uuid.uuid4()}.{ext}"
-    filepath = f"uploads/profile_pics/{filename}"
+    filepath = UPLOAD_DIR / filename
 
     with open(filepath, "wb") as f:
         f.write(file.file.read())

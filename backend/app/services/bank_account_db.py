@@ -1,32 +1,34 @@
+from collections import defaultdict
 from fastapi import HTTPException
 from sqlmodel import select, Session
 from app.models.bank_account import BankAccount
 from app.models.finance import Finance, FinanceCategory
 
 
-def _category_name_map(session: Session) -> dict:
-    cats = session.exec(select(FinanceCategory)).all()
-    return {c.category_id: c.category_name for c in cats}
-
-
 def get_all_bank_accounts_in_db(session: Session):
     accounts = session.exec(select(BankAccount)).all()
-    cat_map = _category_name_map(session)
+    if not accounts:
+        return []
 
-    result = []
-    for acc in accounts:
-        records = session.exec(
-            select(Finance).where(Finance.bank_account_id == acc.id)
-        ).all()
-        total_income = sum(
-            r.amount for r in records
-            if cat_map.get(r.category_id, "").startswith("Income")
-        )
-        total_expense = sum(
-            r.amount for r in records
-            if not cat_map.get(r.category_id, "").startswith("Income")
-        )
-        result.append({
+    # Batch-load all categories once
+    cats = session.exec(select(FinanceCategory)).all()
+    cat_map = {c.category_id: c.category_name for c in cats}
+
+    # Batch-load all finance records in a single query, grouped by account
+    all_finance = session.exec(
+        select(Finance.bank_account_id, Finance.category_id, Finance.amount)
+    ).all()
+
+    income_by_account: dict = defaultdict(float)
+    expense_by_account: dict = defaultdict(float)
+    for bank_account_id, cat_id, amount in all_finance:
+        if cat_map.get(cat_id, "").startswith("Income"):
+            income_by_account[bank_account_id] += amount
+        else:
+            expense_by_account[bank_account_id] += amount
+
+    return [
+        {
             "id": acc.id,
             "account_name": acc.account_name,
             "bank_name": acc.bank_name,
@@ -34,11 +36,12 @@ def get_all_bank_accounts_in_db(session: Session):
             "branch_code": acc.branch_code,
             "iban_number": acc.iban_number,
             "opening_balance": acc.opening_balance,
-            "total_income": total_income,
-            "total_expense": total_expense,
-            "current_balance": acc.opening_balance + total_income - total_expense,
-        })
-    return result
+            "total_income": income_by_account[acc.id],
+            "total_expense": expense_by_account[acc.id],
+            "current_balance": acc.opening_balance + income_by_account[acc.id] - expense_by_account[acc.id],
+        }
+        for acc in accounts
+    ]
 
 
 def create_bank_account_in_db(data: dict, session: Session):

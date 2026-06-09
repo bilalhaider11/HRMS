@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import { login, verify } from "../features/auth/api/auth";
 
 export type AppUser = {
@@ -37,9 +37,10 @@ export const VerifyContextProvider = ({
 }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [authCheckLoading, setAuthCheckLoading] = useState(true);
-  const [authUserType, setAuthUserType] = useState<"admin" | "employee">(
-    (localStorage.getItem("authUserType") as "admin" | "employee") || "employee"
-  );
+  const [authUserType, setAuthUserType] = useState<"admin" | "employee">(() => {
+    const raw = localStorage.getItem("authUserType");
+    return raw === "admin" || raw === "employee" ? raw : "employee";
+  });
 
   // Single-admin system: any logged-in user is the admin
   const superAdmin = user !== null && authUserType === "admin";
@@ -50,33 +51,34 @@ export const VerifyContextProvider = ({
     employeeRoles.includes("Team Lead") ||
     employeeRoles.includes("Technical Manager");
 
-  const loginUser = async (
+  const loginUser = useCallback(async (
     email: string,
     password: string,
     userType: "admin" | "employee" = "employee"
   ) => {
-    setAuthUserType(userType);
-    localStorage.setItem("authUserType", userType);
-
     const { ok, data } = await login(email, password, userType);
-    if (ok && data.success) {
-      localStorage.setItem("token", data.token);
-
-      // Fetch user profile using the token
-      const profileResult = await verify(data.token, userType);
-      if (profileResult.ok && profileResult.data.success) {
-        setUser({
-          ...profileResult.data.user,
-          roles: profileResult.data.roles || [],
-        });
-        return { success: true };
-      }
-
-      return { success: true };
-    } else {
+    if (!ok || !data.success) {
       return { success: false, message: data.message };
     }
-  };
+
+    // Only persist after confirmed login success
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("authUserType", userType);
+    setAuthUserType(userType);
+
+    const profileResult = await verify(data.token, userType);
+    if (!profileResult.ok || !profileResult.data.success) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("authUserType");
+      return { success: false, message: "Could not load profile. Please try again." };
+    }
+
+    setUser({
+      ...profileResult.data.user,
+      roles: profileResult.data.roles || [],
+    });
+    return { success: true };
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -107,18 +109,13 @@ export const VerifyContextProvider = ({
     checkAuth();
   }, []);
 
+  const contextValue = useMemo(
+    () => ({ user, setUser, loginUser, superAdmin, authUserType, authCheckLoading, canAccessEmployees }),
+    [user, loginUser, superAdmin, authUserType, authCheckLoading, canAccessEmployees]
+  );
+
   return (
-    <VerifyContext.Provider
-      value={{
-        user,
-        setUser,
-        loginUser,
-        superAdmin,
-        authUserType,
-        authCheckLoading,
-        canAccessEmployees,
-      }}
-    >
+    <VerifyContext.Provider value={contextValue}>
       {children}
     </VerifyContext.Provider>
   );

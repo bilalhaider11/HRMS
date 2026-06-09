@@ -145,7 +145,7 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
                     }))
                 )
             } catch (error) {
-                console.log(error)
+                console.error(error)
             }
         }
 
@@ -174,7 +174,6 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
     };
 
     const editTeamData = (team: TeamsTableData) => {
-        console.log(team)
         setTeamList(prev => prev.map(t => t.teamId === team.teamId ? team : t));
         setEditingTeam(team);
         setSelectedMembers(team.teamMembers || []);
@@ -206,7 +205,6 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         const updatedList = teamList.map((team) =>
             team.teamId === mappedTeam.teamId ? mappedTeam : team
         );
-        console.log("updateList", updatedList)
         setTeamList(updatedList);
         setSuccessfullModal(true);
         document.body.style.overflow = "hidden";

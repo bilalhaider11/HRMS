@@ -1,46 +1,11 @@
-from sqlmodel import create_engine, Session, select
+from sqlmodel import select
 from fastapi import HTTPException
-from app.models.jwt import jwt_tokens
-from jose import jwt, JWTError, ExpiredSignatureError
 import bcrypt
 from app.models.admin import Admin
-from app.core.load_env import get_database_url, get_secret_key, get_algorithm
+from app.db.session import get_session  # single shared engine
 
-# Lazy initialization - do NOT load environment at module import time
-_engine = None
-_SECRET_KEY = None
-_ALGORITHM = None
-
-def _get_engine():
-    global _engine
-    if _engine is None:
-        _engine = create_engine(get_database_url(), echo=True)
-    return _engine
-
-def _get_secret_key():
-    global _SECRET_KEY
-    if _SECRET_KEY is None:
-        _SECRET_KEY = get_secret_key()
-    return _SECRET_KEY
-
-def _get_algorithm():
-    global _ALGORITHM
-    if _ALGORITHM is None:
-        _ALGORITHM = get_algorithm()
-    return _ALGORITHM
-
-
-# ---------- DB UTILS ----------
-
-def get_session():
-    engine = _get_engine()
-    with Session(engine) as session:
-        yield session
-
-def get_db():
-    engine = _get_engine()
-    with Session(engine) as session:
-        yield session
+# Alias for routers that use get_db
+get_db = get_session
 
 
 # ---------- ADMIN OPERATIONS ----------
@@ -60,8 +25,13 @@ def create_admin_in_db(admin, session):
     if admin.password == 'string':
         raise HTTPException(status_code=400, detail="Enter password")
     
-    # Check if admin already exists
-    existing = session.exec(select(admin).where(admin.email == admin.email)).first()
+    # Enforce single-admin constraint
+    any_admin = session.exec(select(Admin)).first()
+    if any_admin:
+        raise HTTPException(status_code=409, detail="System already has an admin account")
+
+    # Check for duplicate email
+    existing = session.exec(select(Admin).where(Admin.email == admin.email)).first()
     if existing:
         raise HTTPException(status_code=409, detail="Admin already exists")
     
@@ -114,27 +84,3 @@ def update_password_in_db(new, current_admin, session):
     return "Password Updated"
 
 
-# ---------- JWT OPERATIONS ----------
-
-def add_jwt_token_in_db(client_ip: str, token: str, session: Session):
-    jwt_record = session.exec(select(jwt_tokens).where(jwt_tokens.client_ip == client_ip)).first()
-    if jwt_record:
-        jwt_record.token = token
-    else:
-        jwt_record = jwt_tokens(client_ip=client_ip, token=token)
-        session.add(jwt_record)
-    session.commit()
-    session.refresh(jwt_record)
-    return jwt_record
-
-
-def get_client_token_in_db(client_ip: str, session: Session):
-    jwt_record = session.exec(select(jwt_tokens).where(jwt_tokens.client_ip == client_ip)).first()
-    if jwt_record:
-        token = jwt_record.token
-        try:
-            jwt.decode(token, _get_secret_key(), algorithms=[_get_algorithm()])
-            return token
-        except (ExpiredSignatureError, JWTError):
-            return None
-    return None

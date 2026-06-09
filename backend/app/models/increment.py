@@ -25,7 +25,7 @@ class IncrementResponse(BaseModel):
     employee_code: str  # business code output
     increment_amount: float
     effective_date: date
-    notes: str
+    notes: Optional[str] = None
 
 
 

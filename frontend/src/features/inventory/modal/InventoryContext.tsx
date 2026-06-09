@@ -56,6 +56,8 @@ interface InventoryProviderProps {
 }
 
 export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }) => {
+    useEffect(() => () => { document.body.style.overflow = "auto"; }, []);
+
     const [categoryList, setCategoryList] = useState<CategoryTableData[]>([])
     const [itemsList, setItemsList] = useState<ItemsTableData[]>([])
     const [editingCategory, setEditingCategory] = useState<CategoryTableData | null>(null)

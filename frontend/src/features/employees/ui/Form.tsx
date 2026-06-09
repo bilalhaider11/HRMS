@@ -20,7 +20,7 @@ const createFormSchema = Yup.object().shape({
     name: Yup.string().required("Name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
     password: Yup.string().required("Password is required"),
-    cnic: Yup.string().required("CNIC is required"),
+    cnic: Yup.string().required("CNIC is required").matches(/^\d{5}-\d{7}-\d$/, "CNIC must be in format XXXXX-XXXXXXX-X"),
     designation: Yup.string().required("Designation is required"),
     department: Yup.string().required("Department is required"),
     dateOfBirth: Yup.string().required("Date of birth is required"),
@@ -37,7 +37,7 @@ const createFormSchema = Yup.object().shape({
 const editFormSchema = Yup.object().shape({
     employeeCode: Yup.string().required("Employee Code is required"),
     name: Yup.string().required("Name is required"),
-    cnic: Yup.string().required("CNIC is required"),
+    cnic: Yup.string().required("CNIC is required").matches(/^\d{5}-\d{7}-\d$/, "CNIC must be in format XXXXX-XXXXXXX-X"),
     designation: Yup.string().required("Designation is required"),
     department: Yup.string().required("Department is required"),
     dateOfBirth: Yup.string().required("Date of birth is required"),
@@ -58,7 +58,7 @@ const Form = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { addEmployee, clearError, idExistError, successfullModal, setSuccessfullModal, setEditingEmployee, editingEmployee, updateEmployee } = useEmployees();
     const [apiError, setApiError] = useState("");
-    const [isEditMode] = useState(editingEmployee !== null);
+    const isEditMode = editingEmployee !== null;
     const navigate = useNavigate();
     const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
     const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false)
@@ -507,7 +507,7 @@ const Form = () => {
                         )}
                     </div>
                     <div className="relative">
-                        <FormInput type="number" label="Bank Account Number" name="bankAccountNumber" value={formik.values.bankAccountNumber} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} placeholder="12345678" inputClassName={`${inputStyles}`} />
+                        <FormInput type="text" label="Bank Account Number" name="bankAccountNumber" value={formik.values.bankAccountNumber} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} placeholder="12345678" inputClassName={`${inputStyles}`} />
                         {formik.errors.bankAccountNumber && formik.touched.bankAccountNumber && (
                             <p className={`${errorClasses}`}>
                                 {formik.errors.bankAccountNumber}

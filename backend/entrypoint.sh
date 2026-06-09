@@ -29,4 +29,8 @@ echo "Running seeders..."
 python seeders.py
 
 echo "Starting server..."
-exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+if [ "${APP_ENV:-production}" = "development" ]; then
+    exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+else
+    exec uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2
+fi

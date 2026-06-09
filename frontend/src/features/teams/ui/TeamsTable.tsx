@@ -213,7 +213,7 @@ const TeamsTable = () => {
 
             {isDeleteTeamModal &&
                 <DeleteModal ref={deleteModalRef} closeButtonCLick={deleteModalClose}>
-                    <h1 className="text-2xl text-center font-urbanist leading-[150%] text-white border-b border-solid border-[#CDD6D7] p-6 mb-8">Delete Finance</h1>
+                    <h1 className="text-2xl text-center font-urbanist leading-[150%] text-white border-b border-solid border-[#CDD6D7] p-6 mb-8">Delete Team</h1>
                     <div className="flex flex-col gap-4 px-5 mb-5">
                         <p className="text-xl font-poppins text-slate-200">
                             Team Id: <span className="font-bold">{isDeleteTeamModal.teamId}</span>

@@ -8,6 +8,7 @@ from app.services.employee_evaluation import (
     get_employee_scope_for_evaluation,
     ensure_can_view_employee_evaluations,
 )
+from app.models.employee_evaluation import EmployeeEvaluationCreate, EmployeeEvaluationUpdate
 from app.services.admin_db import get_session
 from app.services import auth
 
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/evaluation")
 @router.post("/evaluate/{emp_id}", status_code=200)
 def employee_evaluation(
     emp_id: int,
-    form_data: dict,
+    form_data: EmployeeEvaluationCreate,
     user = Depends(auth.get_current_role),
     session: Session = Depends(get_session),
 ):
@@ -71,7 +72,7 @@ def get_evaluations_by_employee(
 @router.patch("/update-evaluation/{emp_id}", status_code=200)
 def update_evaluation(
     emp_id: int,
-    form_data: dict,
+    form_data: EmployeeEvaluationUpdate,
     evaluation_id: int,
     user=Depends(auth.get_current_role),
     session: Session = Depends(get_session),

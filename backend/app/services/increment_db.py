@@ -37,8 +37,10 @@ def create_increment_in_db(new_increment: IncrementCreate, session: Session) -> 
         .where(EmployeeIncrement.employee_id == employee.id)
         .order_by(EmployeeIncrement.effective_date.desc())
     ).first()
+    if new_increment.effective_date < date.today():
+        raise HTTPException(status_code=400, detail="Effective date cannot be in the past")
     if last_increment:
-        days_diff = (new_increment.effective_date - last_increment.effective_date).days
+        days_diff = (date.today() - last_increment.effective_date).days
         if days_diff < 30:
             raise HTTPException(
                 status_code=409,
@@ -163,6 +165,11 @@ def delete_increment_in_db(increment_id: int, session: Session) -> dict:
     increment = session.exec(select(EmployeeIncrement).where(EmployeeIncrement.id == increment_id)).first()
     if not increment:
         raise HTTPException(status_code=404, detail="Increment does not exist")
+
+    employee = session.exec(select(Employee).where(Employee.id == increment.employee_id)).first()
+    if employee:
+        employee.current_base_salary -= increment.increment_amount
+        session.add(employee)
 
     session.delete(increment)
     session.commit()

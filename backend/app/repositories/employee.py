@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from models import Employee
+from app.models.employee import Employee
 
 
 def get_employee_by_id(emp_id: int, session: Session):

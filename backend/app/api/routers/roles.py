@@ -57,9 +57,12 @@ def assign_role_to_employee(
     roles = session.exec(
         select(Role).where(Role.id.in_(requested_role_ids), Role.is_active == True)
     ).all()
-   
-    
-    employee.role_ids = requested_role_ids
+
+    valid_ids = [r.id for r in roles]
+    if len(valid_ids) != len(requested_role_ids):
+        raise HTTPException(status_code=400, detail="One or more role IDs are invalid or inactive")
+
+    employee.role_ids = valid_ids
     employee_repo.save_employee(employee, session)
 
 

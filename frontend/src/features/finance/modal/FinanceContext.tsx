@@ -66,11 +66,8 @@ interface FinanceContextType {
   editFinanceData: (fin: FinanceTableData) => void;
   updateFinanceCategory: (cate: FinanceCategoriesData) => void;
   editCategoryData: (cate: FinanceCategoriesData) => void;
-  isDeleteModal: FinanceTableData | null;
-  setIsDeleteModal: (fin: FinanceTableData | null) => void;
   isDeleteCategoryModal: FinanceCategoriesData | null;
   setIsDeleteCategoryModal: (cate: FinanceCategoriesData | null) => void;
-  handleFinanceDelete: (finance: FinanceTableData) => void;
   handleCategoryDelete: (category: FinanceCategoriesData) => void;
 
   loadFinance: (page?: number, pageSize?: number, startDate?: string, endDate?: string, categoryId?: string, bankAccountId?: string) => Promise<void>;
@@ -88,6 +85,8 @@ export const useFinance = () => {
 };
 
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  useEffect(() => () => { document.body.style.overflow = "auto"; }, []);
+
   const [financeList, setFinanceList] = useState<FinanceTableData[]>([]);
   const [financeCategoriesList, setFinanceCategoriesList] = useState<FinanceCategoriesData[]>([]);
   const [bankAccountsList, setBankAccountsList] = useState<BankAccountData[]>([]);
@@ -96,7 +95,6 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [idExistError, setIdExistError] = useState("");
   const [editingFinance, setEditingFinance] = useState<FinanceTableData | null>(null);
   const [successfullModal, setSuccessfullModal] = useState(false);
-  const [isDeleteModal, setIsDeleteModal] = useState<FinanceTableData | null>(null);
   const [isDeleteCategoryModal, setIsDeleteCategoryModal] = useState<FinanceCategoriesData | null>(null);
   const [editingCategory, setEditingCategory] = useState<FinanceCategoriesData | null>(null);
   const [financePage, setFinancePage] = useState(1);
@@ -252,12 +250,19 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIdExistError("");
   };
 
-  const handleFinanceDelete = (_finance: FinanceTableData) => {
-    setIsDeleteModal(null);
-  };
-
   const addCategory = (category: FinanceCategoriesData) => {
-    setFinanceCategoriesList(prev => [...prev, category]);
+    fetchFinanceCategories()
+      .then((catData) => {
+        const mapped = (catData || []).map((c: any) => ({
+          id: String(c.category_id),
+          name: c.category_name,
+          colorCode: c.color_code,
+        }));
+        setFinanceCategoriesList(mapped);
+      })
+      .catch(() => {
+        setFinanceCategoriesList(prev => [...prev, category]);
+      });
     setEditingCategory(null);
     setIdExistError("");
     setSuccessfullModal(true);
@@ -304,7 +309,6 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       loadBankAccounts, addFinance, clearError, idExistError,
       successfullModal, setSuccessfullModal,
       editingFinance, editFinanceData, updateFinance, setEditingFinance,
-      isDeleteModal, setIsDeleteModal, handleFinanceDelete,
       editCategoryData, editingCategory, setEditingCategory,
       addCategory, updateFinanceCategory,
       isDeleteCategoryModal, setIsDeleteCategoryModal, handleCategoryDelete,

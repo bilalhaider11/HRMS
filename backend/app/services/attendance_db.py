@@ -11,10 +11,11 @@ logger = logging.getLogger("attendance")
 
 
 def validate_access_key(access_key: str, session: Session) -> bool:
+    from app.services.auth import verify_password
     admin = session.exec(select(Admin)).first()
     if not admin or not admin.access_key:
         return False
-    return access_key == admin.access_key
+    return verify_password(access_key, admin.access_key)
 
 
 def insert_raw_attendances(records: list, session: Session) -> dict:
@@ -25,22 +26,24 @@ def insert_raw_attendances(records: list, session: Session) -> dict:
 
     for i, raw in enumerate(records):
         try:
-            timestamp = raw.get("timestamp")
-            if isinstance(timestamp, str):
-                timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            timestamp_raw = raw.timestamp if hasattr(raw, "timestamp") else raw.get("timestamp")
+            if isinstance(timestamp_raw, str):
+                timestamp = datetime.fromisoformat(timestamp_raw.replace("Z", "+00:00"))
+            else:
+                timestamp = timestamp_raw
 
             if not timestamp:
                 logger.warning(f"[ATTENDANCE] Record #{i+1}: FAILED - missing timestamp, raw={raw}")
                 failures += 1
                 continue
 
-            employee_code = str(raw.get("employee_code", ""))
+            employee_code = str(raw.employee_code if hasattr(raw, "employee_code") else raw.get("employee_code", ""))
             if not employee_code:
                 logger.warning(f"[ATTENDANCE] Record #{i+1}: FAILED - missing employee_code, raw={raw}")
                 failures += 1
                 continue
 
-            status = raw.get("status", 0)
+            status = raw.status if hasattr(raw, "status") else raw.get("status", 0)
 
             # Check for duplicate: same employee_code + timestamp
             existing = session.exec(
@@ -55,7 +58,7 @@ def insert_raw_attendances(records: list, session: Session) -> dict:
                 continue
 
             record = AttendanceRaw(
-                serial_number=str(raw.get("serial_number", "")),
+                serial_number=str(raw.serial_number if hasattr(raw, "serial_number") else raw.get("serial_number", "")),
                 employee_code=employee_code,
                 status=status,
                 timestamp=timestamp,
@@ -96,6 +99,20 @@ def insert_raw_attendances(records: list, session: Session) -> dict:
     }
 
 
+def _build_emp_code_map(employees) -> dict:
+    """Build employee_code → name map, also mapping numeric biometric codes."""
+    emp_map: dict = {}
+    for e in employees:
+        emp_map[e.employee_code] = e.name
+        if "-" in e.employee_code:
+            suffix = e.employee_code.rsplit("-", 1)[-1]
+            try:
+                emp_map[str(int(suffix))] = e.name
+            except ValueError:
+                pass
+    return emp_map
+
+
 def get_attendance_records_in_db(
     page: int,
     page_size: int,
@@ -107,36 +124,25 @@ def get_attendance_records_in_db(
 ) -> dict:
     """Return paginated attendance records joined with employee names."""
 
-    # Build employee code → name map.
-    # Biometric devices often send plain integer codes (e.g. "7", "32") while
-    # employees may be stored as "EMP-007", "EMP-032". Map both forms so that
-    # attendance records resolve names regardless of which format is stored.
-    employees = session.exec(select(Employee)).all()
-    emp_map: dict = {}
-    for e in employees:
-        emp_map[e.employee_code] = e.name
-        if "-" in e.employee_code:
-            suffix = e.employee_code.rsplit("-", 1)[-1]
-            try:
-                emp_map[str(int(suffix))] = e.name  # "EMP-007" → also map "7"
-            except ValueError:
-                pass
-
-    # If search term matches an employee name or code, collect all matching
-    # attendance codes (both stored format and numeric biometric format).
+    # If searching, query only matching employees instead of loading all.
     matching_codes: Optional[set] = None
     if search:
-        search_lower = search.strip().lower()
+        search_lower = f"%{search.strip().lower()}%"
+        matching_employees = session.exec(
+            select(Employee).where(
+                (Employee.name.ilike(search_lower)) |
+                (Employee.employee_code.ilike(search_lower))
+            )
+        ).all()
         matching_codes = set()
-        for e in employees:
-            if search_lower in e.name.lower() or search_lower in e.employee_code.lower():
-                matching_codes.add(e.employee_code)
-                if "-" in e.employee_code:
-                    suffix = e.employee_code.rsplit("-", 1)[-1]
-                    try:
-                        matching_codes.add(str(int(suffix)))
-                    except ValueError:
-                        pass
+        for e in matching_employees:
+            matching_codes.add(e.employee_code)
+            if "-" in e.employee_code:
+                suffix = e.employee_code.rsplit("-", 1)[-1]
+                try:
+                    matching_codes.add(str(int(suffix)))
+                except ValueError:
+                    pass
 
     # Build base query
     base = select(AttendanceRaw)
@@ -169,6 +175,21 @@ def get_attendance_records_in_db(
             .offset((page - 1) * page_size)
             .limit(page_size)
     ).all()
+
+    # Build name map only for employee codes in this page, plus their
+    # derived numeric forms (biometric devices store "7" for "EMP-007").
+    page_codes = {r.employee_code for r in records}
+    derived_codes = set()
+    for code in page_codes:
+        try:
+            derived_codes.add(f"EMP-{int(code):03d}")
+        except ValueError:
+            pass
+    lookup_codes = page_codes | derived_codes
+    page_employees = session.exec(
+        select(Employee).where(Employee.employee_code.in_(list(lookup_codes)))
+    ).all() if lookup_codes else []
+    emp_map = _build_emp_code_map(page_employees)
 
     status_label = {0: "Check In", 1: "Check Out"}
 

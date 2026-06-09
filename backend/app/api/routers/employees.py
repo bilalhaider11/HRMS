@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from typing import List, Optional
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.services import login_service
 from app.services.admin_db import get_session
 from app.services import auth, admin_db
+
+limiter = Limiter(key_func=get_remote_address)
 from app.services.increment_db import get_increment_by_id_in_db, create_increment_in_db, update_increment_in_db, delete_increment_in_db, get_increments_by_business_id
 from app.models.increment import IncrementCreate, IncrementUpdate, IncrementResponse
 from app.services import employee_db
@@ -20,10 +24,11 @@ employee_router = APIRouter(prefix="/employee")
 
 
 @employee_router.post("/login", status_code=200)
+@limiter.limit("10/minute")
 def employee_login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
-    request: Request = None,
 ):
     return login_service.login(
         session,

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 from app.services import admin_db
 from app.services import auth
@@ -24,7 +24,7 @@ def get_category(category_id: int, session: Session = Depends(admin_db.get_sessi
 
 
 @router.get("/get_all_categories")
-def get_all_categories(page: int = 1, page_size: int = 10, session: Session = Depends(admin_db.get_session)):
+def get_all_categories(page: int = 1, page_size: int = Query(default=10, ge=1, le=200), session: Session = Depends(admin_db.get_session)):
     return inventory_db.get_all_categories_in_db(page, page_size, session=session)
 
 
@@ -44,5 +44,5 @@ def get_item(item_id: int, session: Session = Depends(admin_db.get_session)):
 
 
 @router.get("/get_all_items")
-def get_all_items(page: int = 1, page_size: int = 10, category_id: int | None = None, session: Session = Depends(admin_db.get_session)):
+def get_all_items(page: int = 1, page_size: int = Query(default=10, ge=1, le=200), category_id: int | None = None, session: Session = Depends(admin_db.get_session)):
     return inventory_db.get_all_items_in_db(page, page_size, category_id, session=session)

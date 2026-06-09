@@ -1,8 +1,28 @@
+from typing import Optional
 from fastapi import APIRouter, Depends
-from sqlmodel import Session
+from sqlmodel import Session, SQLModel
 from app.services import admin_db
 from app.services import auth
 from app.services import bank_account_db
+
+
+class BankAccountCreate(SQLModel):
+    account_name: str
+    bank_name: str
+    account_number: str
+    branch_code: Optional[str] = None
+    iban_number: Optional[str] = None
+    opening_balance: float = 0.0
+
+
+class BankAccountUpdate(SQLModel):
+    account_name: Optional[str] = None
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    branch_code: Optional[str] = None
+    iban_number: Optional[str] = None
+    opening_balance: Optional[float] = None
+
 
 router = APIRouter(prefix="/bank_accounts", dependencies=[Depends(auth.get_current_user)])
 
@@ -13,13 +33,13 @@ def get_bank_accounts(session: Session = Depends(admin_db.get_session)):
 
 
 @router.post("/")
-def create_bank_account(payload: dict, session: Session = Depends(admin_db.get_session)):
-    return bank_account_db.create_bank_account_in_db(payload, session=session)
+def create_bank_account(payload: BankAccountCreate, session: Session = Depends(admin_db.get_session)):
+    return bank_account_db.create_bank_account_in_db(payload.model_dump(), session=session)
 
 
 @router.patch("/{account_id}")
-def update_bank_account(account_id: int, payload: dict, session: Session = Depends(admin_db.get_session)):
-    return bank_account_db.update_bank_account_in_db(account_id, payload, session=session)
+def update_bank_account(account_id: int, payload: BankAccountUpdate, session: Session = Depends(admin_db.get_session)):
+    return bank_account_db.update_bank_account_in_db(account_id, payload.model_dump(exclude_unset=True), session=session)
 
 
 @router.delete("/{account_id}")

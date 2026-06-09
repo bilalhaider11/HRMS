@@ -14,10 +14,6 @@ import { useContext } from "react";
 import { VerifyContext } from "app/VerifyContext";
 
 
-// import eatures/roles/ui/RoleModal as a module import and export
-
-console.log("table body")
-
 const EmployeeTable = () => {
     const { employeesList, updateStatus, handleEmployeeDelete, isEmployeeDelete, setIsEmployeeDelete, openRoleModal, selectedEmployeeForRole, isRoleModalOpen, closeRoleModal } = useEmployees();
     const { superAdmin } = useContext(VerifyContext);
@@ -42,7 +38,6 @@ const EmployeeTable = () => {
 
 
     const handleNameClick = (employee: EmployeeTableData) => {
-        console.log(employee,)
         navigate(`/employees/update-employees/${employee.id}`);
     };
 
