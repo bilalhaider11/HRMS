@@ -25,7 +25,6 @@ const AddTeamForm = () => {
   const navigate = useNavigate();
   const {
     addTeam,
-    clearError,
     successfullModal,
     setSuccessfullModal,
     setEditingTeam,
@@ -130,7 +129,7 @@ const AddTeamForm = () => {
     } else {
       setInitialMemberIds([]);
     }
-  }, [editingTeam?.teamId]);
+  }, [editingTeam]);
 
   const selectedMemberIds = getMemberIds(selectedMembers);
   const membersChanged =

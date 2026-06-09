@@ -81,7 +81,7 @@ export default function EmployeeEvaluationDetails() {
 
   const numericEmployeeId = Number(employeeId || 0);
   const roleNames = user?.roles || [];
-  const canCreate = (superAdmin || roleNames.includes("HR") || roleNames.includes("Team Lead")) && numericEmployeeId != user?.id;
+  const canCreate = (superAdmin || roleNames.includes("HR") || roleNames.includes("Team Lead")) && numericEmployeeId !== user?.id;
   const canEditDelete = superAdmin;
 
   const loadEvaluations = async () => {

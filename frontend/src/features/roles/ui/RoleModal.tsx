@@ -84,15 +84,12 @@ export const RoleModal = ({ employee, onClose, onRolesUpdated }: RoleModalProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Handle click outside to close modal - stable reference
-  const handleClickOutside = (event: MouseEvent) => {
-    if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-      onClose();
-    }
-  };
-
   useEffect(() => {
-    // Add event listener with a small delay to avoid immediate trigger
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
     const timer = setTimeout(() => {
       document.addEventListener("mousedown", handleClickOutside);
     }, 100);

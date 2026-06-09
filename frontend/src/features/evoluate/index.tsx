@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { VerifyContext } from "app/VerifyContext";
 import { fetchEvaluationEmployees } from "./api/evaluate";
 import { EvaluationEmployee } from "./modal/evaluate_context"
-import {verify} from "../auth/api/auth"
 
 
 export default function EmployeeEvaluationPage() {
