@@ -1,9 +1,10 @@
 """
-add_is_income_to_finance_category
+0007_updated_at_evaluation
 
-Revision ID: 0006_add_is_income
-Revises: 0005_create_employee_evaluation
-Create Date: 2026-06-09
+
+Revision ID: 0007_updated_at_evaluation
+Revises: 0006_add_is_income
+Create Date: 2026-06-10
 """
 
 from typing import Sequence, Union
@@ -20,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.add_column(
         "employee_evaluation",
-        sa.Column("updated_at",  sa.String(length=50), nullable=True),
+        sa.Column("updated_at",  sa.DateTime(), nullable=True),
     )
 
 

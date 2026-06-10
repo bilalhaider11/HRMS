@@ -52,6 +52,6 @@ class EmployeeEvaluation(SQLModel, table=True):
     updated_by: str = Field(default="", nullable=True)
     created_by: str = Field(default="", nullable=False)
     created_at: Optional[datetime] = Field(default=None, nullable=True)
-    updated_at: Optional[str] = Field(default=None, nullable=True)
+    updated_at: Optional[datetime] = Field(default=None, nullable=True)
 
      

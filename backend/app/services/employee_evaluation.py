@@ -242,7 +242,7 @@ def update_employee_evaluation(emp_id: int, evaluation_id: int, payload: Employe
         raw_update["created_at"] = _parse_created_at(raw_update["created_at"])
     update_data = {k: v for k, v in raw_update.items() if v is not None}
     update_data["updated_by"] = update_by
-    update_data["updated_at"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+    update_data["updated_at"] = datetime.now()
     statement = (
         update(EmployeeEvaluation)
         .where(
