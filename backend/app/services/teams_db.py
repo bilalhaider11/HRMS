@@ -1,0 +1,163 @@
+from typing import Optional
+from sqlalchemy import update
+
+from fastapi import HTTPException
+from sqlmodel import Session, select, delete
+
+from app.models.team import Team, Teams_to_Employee
+from app.models.employee import Employee
+
+
+def _serialize_team(team: Team, session: Session) -> dict:
+    team_lead_name = None
+    if team.team_lead_id is not None:
+        lead = session.get(Employee, team.team_lead_id)
+        team_lead_name = lead.name if lead else None
+
+    members = session.exec(
+        select(Employee)
+        .join(Teams_to_Employee, Teams_to_Employee.employee_id == Employee.id)
+        .where(
+            Teams_to_Employee.team_id == team.id,
+            Teams_to_Employee.delete_record == False,
+        )
+    ).all()
+
+    team_members = [
+        {
+            "id": employee.id,
+            "employee_code": employee.employee_code,
+            "name": employee.name,
+        }
+        for employee in members
+    ]
+
+    return {
+        "team_id": team.id,
+        "team_name": team.team_name,
+        "team_description": team.team_description,
+        "team_lead_id": team.team_lead_id,
+        "team_lead_name": team_lead_name,
+        "company_id": team.company_id,
+        "team_members": team_members,
+    }
+
+
+def create_team_in_db(payload: dict, company_id: int, session: Session):
+    team_name = (payload.get("team_name") or "").strip()
+    if not team_name:
+        raise HTTPException(status_code=400, detail="team_name is required")
+
+    team_description = payload.get("team_description")
+    team_lead_id = payload.get("team_lead_id")
+    member_ids = payload.get("member_ids", [])
+
+    if team_lead_id is not None and session.get(Employee, team_lead_id) is None:
+        raise HTTPException(status_code=404, detail="Team lead employee not found")
+
+    team = Team(
+        team_name=team_name,
+        team_description=team_description,
+        team_lead_id=team_lead_id,
+        company_id=company_id,
+    )
+    session.add(team)
+    session.commit()
+    session.refresh(team)
+
+    unique_member_ids = list(dict.fromkeys(member_ids or []))
+    for employee_id in unique_member_ids:
+        if session.get(Employee, employee_id) is None:
+            raise HTTPException(status_code=404, detail=f"Employee {employee_id} not found")
+        session.add(Teams_to_Employee(team_id=team.id, employee_id=employee_id, delete_record=False))
+
+    session.commit()
+    return {"message": "Team created successfully", "team": _serialize_team(team, session)}
+
+
+def get_teams_in_db(company_id: Optional[int], session: Session):
+    query = select(Team).where(Team.delete_record == False)
+    if company_id is not None:
+        query = query.where(Team.company_id == company_id)
+
+    teams = session.exec(query).all()
+    return {"teams": [_serialize_team(team, session) for team in teams]}
+
+
+def get_team_by_id_in_db(team_id: int, company_id: int, session: Session):
+    team = session.get(Team, team_id)
+    if not team or team.company_id != company_id:
+        raise HTTPException(status_code=404, detail="Team not found")
+    return {"team": _serialize_team(team, session)}
+
+
+def update_team_in_db(team_id: int, payload: dict, company_id: int, session: Session):
+    team = session.get(Team, team_id)
+    if not team or team.company_id != company_id:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    # ------------------ Update team fields ------------------
+    if "team_name" in payload:
+        team_name = (payload.get("team_name") or "").strip()
+        if not team_name:
+            raise HTTPException(status_code=400, detail="team_name cannot be empty")
+        team.team_name = team_name
+
+    if "team_description" in payload:
+        team.team_description = payload.get("team_description")
+
+    if "team_lead_id" in payload:
+        team_lead_id = payload.get("team_lead_id")
+        if team_lead_id is not None and not session.get(Employee, team_lead_id):
+            raise HTTPException(status_code=404, detail="Team lead employee not found")
+        team.team_lead_id = team_lead_id
+
+    session.add(team)
+
+    # ------------------ Member replace logic ------------------
+    if "member_ids" in payload:
+        incoming_ids = list(dict.fromkeys(payload.get("member_ids") or []))
+
+        # Soft-delete all current members
+        session.exec(
+            update(Teams_to_Employee)
+            .where(
+                Teams_to_Employee.team_id == team.id,
+                Teams_to_Employee.delete_record == False
+            )
+            .values(delete_record=True)
+            .execution_options(synchronize_session=False)
+        )
+
+        # Insert the new member list
+        for emp_id in incoming_ids:
+            if session.get(Employee, emp_id) is None:
+                raise HTTPException(status_code=404, detail=f"Employee {emp_id} not found")
+            session.add(Teams_to_Employee(team_id=team.id, employee_id=emp_id, delete_record=False))
+        
+    session.commit()
+    session.refresh(team)
+
+    return {
+        "message": "Team updated successfully",
+        "team": _serialize_team(team, session)
+    }
+    
+    
+def delete_team_in_db(team_id: int, company_id: int, session: Session):
+    team = session.get(Team, team_id)
+
+    if not team or team.company_id != company_id:
+        raise HTTPException(status_code=404, detail="Team not found")
+    
+    team.delete_record = True
+    # soft delete members (bulk query)
+    session.exec(
+        update(Teams_to_Employee)
+        .where(Teams_to_Employee.team_id == team.id)
+        .values(delete_record=True)
+        .execution_options(synchronize_session=False)
+    )
+    session.commit()
+
+    return {"message": "Team deleted successfully"}

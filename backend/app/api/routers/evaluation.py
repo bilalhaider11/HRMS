@@ -1,0 +1,107 @@
+from fastapi import APIRouter, Depends
+from sqlmodel import Session
+from app.services.employee_evaluation import (
+    create_employee_evaluation,
+    update_employee_evaluation,
+    delete_employee_evaluation,
+    get_employee_evaluations,
+    get_employee_scope_for_evaluation,
+    ensure_can_do_evaluation,
+)
+from app.models.employee_evaluation import EmployeeEvaluationCreate, EmployeeEvaluationUpdate
+from app.services.admin_db import get_session
+from app.services import auth
+
+router = APIRouter(prefix="/evaluation")
+
+@router.post("/evaluate/{emp_id}", status_code=200)
+def employee_evaluation(
+    emp_id: int,
+    form_data: EmployeeEvaluationCreate,
+    user = Depends(auth.get_current_role),
+    session: Session = Depends(get_session),
+):
+
+    ensure_can_do_evaluation(
+        user["user_type"], "create", user["user"], session, target_employee_id=emp_id
+    )
+    return create_employee_evaluation(
+        emp_id,
+        form_data,
+        user["user_type"], 
+        user["user"],
+        session=session,
+    )
+
+@router.get("/employees", status_code=200)
+def get_employees_for_evaluation(
+    user = Depends(auth.get_current_role),
+    session: Session = Depends(get_session),
+):
+    
+    ensure_can_do_evaluation(user["user_type"], "list", user["user"], session)
+    scope, employees = get_employee_scope_for_evaluation(
+        user["user_type"],
+        user["user"],
+        session,
+    )
+    return {
+        "scope": scope,
+        "employees": [
+            {
+                "id": employee.id,
+                "employee_code": employee.employee_code,
+                "name": employee.name,
+                "email": employee.email,
+                "department": employee.department,
+                "designation": employee.designation,
+            }
+            for employee in employees
+        ],
+    }
+
+
+@router.get("/evaluate/{emp_id}", status_code=200)
+def get_evaluations_by_employee(
+    emp_id: int,
+    user=Depends(auth.get_current_role),
+    session: Session = Depends(get_session),
+):
+    
+    ensure_can_do_evaluation(
+        user["user_type"], "view", user["user"], session, target_employee_id=emp_id
+    )
+    return get_employee_evaluations(emp_id ,user["user_type"], user["user"], session=session)
+
+
+@router.patch("/update-evaluation/{emp_id}", status_code=200)
+def update_evaluation(
+    emp_id: int,
+    form_data: EmployeeEvaluationUpdate,
+    evaluation_id: int,
+    user=Depends(auth.get_current_role),
+    session: Session = Depends(get_session),
+):
+    
+    ensure_can_do_evaluation(
+        user["user_type"], "update", user["user"], session, target_employee_id=emp_id
+    )
+    return update_employee_evaluation(
+        emp_id,
+        evaluation_id,
+        form_data,
+        user["user"].company_name,
+        session=session,
+    )
+    
+    
+@router.delete("/delete-evaluation/{emp_id}", status_code=200)
+def delete_evaluation(
+    emp_id: int, evaluation_id: int, user=Depends(auth.get_current_role), session: Session = Depends(get_session),
+):
+    
+    ensure_can_do_evaluation(
+        user["user_type"], "delete", user["user"], session, target_employee_id=emp_id
+    )
+    return delete_employee_evaluation(emp_id, evaluation_id, session=session)
+

@@ -14,12 +14,10 @@ const CategoryTable = () => {
     const tableHeadingClassName = "py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[15%]"
     const navigate = useNavigate()
 
-        const [allTableData] = useState<CategoryTableData[]>([]);
-      const [selectItemsNumber, setSelectItemsNumber] = useState(false);
-
+    const [selectItemsNumber, setSelectItemsNumber] = useState(false);
     const [itemValue, setItemValue] = useState(10);
-        const itemsPerPageOptions = allTableData.length > 0
-            ? [10, 20, 30, allTableData.length]
+    const itemsPerPageOptions = categoryList.length > 0
+            ? [10, 20, 30, categoryList.length]
             : [10, 20, 30];
     
 
@@ -103,7 +101,7 @@ const CategoryTable = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {categoryList.map((data: CategoryTableData, index: number) => (
+                            {categoryList.slice(tableFirstPage, tableLastPage).map((data: CategoryTableData, index: number) => (
                                 <tr key={index}>
                                     <td className={`${tableDataClassName} w-[20%]`}>
                                         {data.categoryId}
@@ -130,7 +128,7 @@ const CategoryTable = () => {
                             ))}
                         </tbody>
                     </table>
-                    {allTableData && (
+                    {categoryList.length > 0 && (
                     <div className="flex flex-wrap items-center p-4 md:p-6 justify-end border-t border-solid border-slate-800 gap-3 md:gap-[79px]">
                         <p className="text-xs md:text-lg font-medium font-inter text-slate-400 flex gap-3 md:gap-[39px] items-center">
                             Items per Page
@@ -168,14 +166,14 @@ const CategoryTable = () => {
                             <p className="text-xs md:text-lg font-medium font-inter text-slate-400">
                                 {`${tableFirstPage + 1}-${Math.min(
                                     tableLastPage,
-                                    allTableData.length
+                                    categoryList.length
                                 )}`}{" "}
-                                of {allTableData.length}
+                                of {categoryList.length}
                             </p>
 
                             <Pagination
                                 postsPerPage={postsPerPage}
-                                totalPosts={allTableData.length}
+                                totalPosts={categoryList.length}
                                 currentPageSet={setCurrentPage}
                                 currentPage={currentPage}
                             />

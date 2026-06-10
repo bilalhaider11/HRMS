@@ -4,8 +4,8 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from sqlmodel import SQLModel
 from alembic import context
-from models import *
-import load_env
+from app.core.load_env import get_database_url
+import os
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -16,12 +16,26 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
     
-config.set_main_option("sqlalchemy.url", load_env.get_database_url())
+# Prefer env var `data_base_url` (same as app), fallback to config if set.
+db_url = os.getenv("data_base_url") or get_database_url() or config.get_main_option("sqlalchemy.url")
+if db_url:
+    config.set_main_option("sqlalchemy.url", db_url)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+import app.models.employee  # noqa: F401
+import app.models.finance  # noqa: F401
+import app.models.inventory  # noqa: F401
+import app.models.admin  # noqa: F401
+import app.models.attendance  # noqa: F401
+import app.models.increment  # noqa: F401
+import app.models.employee_evaluation  # noqa: F401
+import app.models.bank_account  # noqa: F401
+import app.models.role  # noqa: F401
+import app.models.team  # noqa: F401
+
 target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,

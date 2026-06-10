@@ -1,0 +1,215 @@
+# attendance_db.py
+import logging
+from datetime import date as date_type, datetime
+from typing import Optional
+from sqlmodel import select, func, Session
+from app.models.attendance import AttendanceRaw
+from app.models.admin import Admin
+from app.models.employee import Employee
+
+logger = logging.getLogger("attendance")
+
+
+def validate_access_key(access_key: str, session: Session) -> bool:
+    from app.services.auth import verify_password
+    admin = session.exec(select(Admin)).first()
+    if not admin or not admin.access_key:
+        return False
+    return verify_password(access_key, admin.access_key)
+
+
+def insert_raw_attendances(records: list, session: Session) -> dict:
+    """Insert bulk raw attendance records. Skips duplicates by employee_code + timestamp."""
+    inserted = 0
+    duplicates = 0
+    failures = 0
+
+    for i, raw in enumerate(records):
+        try:
+            timestamp_raw = raw.timestamp if hasattr(raw, "timestamp") else raw.get("timestamp")
+            if isinstance(timestamp_raw, str):
+                timestamp = datetime.fromisoformat(timestamp_raw.replace("Z", "+00:00"))
+            else:
+                timestamp = timestamp_raw
+
+            if not timestamp:
+                logger.warning(f"[ATTENDANCE] Record #{i+1}: FAILED - missing timestamp, raw={raw}")
+                failures += 1
+                continue
+
+            employee_code = str(raw.employee_code if hasattr(raw, "employee_code") else raw.get("employee_code", ""))
+            if not employee_code:
+                logger.warning(f"[ATTENDANCE] Record #{i+1}: FAILED - missing employee_code, raw={raw}")
+                failures += 1
+                continue
+
+            status = raw.status if hasattr(raw, "status") else raw.get("status", 0)
+
+            # Check for duplicate: same employee_code + timestamp
+            existing = session.exec(
+                select(AttendanceRaw).where(
+                    AttendanceRaw.employee_code == employee_code,
+                    AttendanceRaw.timestamp == timestamp,
+                )
+            ).first()
+
+            if existing:
+                duplicates += 1
+                continue
+
+            record = AttendanceRaw(
+                serial_number=str(raw.serial_number if hasattr(raw, "serial_number") else raw.get("serial_number", "")),
+                employee_code=employee_code,
+                status=status,
+                timestamp=timestamp,
+                date=timestamp.date(),
+            )
+            session.add(record)
+            inserted += 1
+            logger.debug(f"[ATTENDANCE] Record #{i+1}: INSERT employee={employee_code} status={status} time={timestamp}")
+
+        except Exception as e:
+            logger.error(f"[ATTENDANCE] Record #{i+1}: ERROR - {e}, raw={raw}")
+            failures += 1
+
+    # Single commit for the entire batch
+    if inserted > 0:
+        try:
+            session.commit()
+            logger.info(f"[ATTENDANCE] Batch committed: {inserted} new records saved to DB")
+        except Exception as e:
+            logger.error(f"[ATTENDANCE] Batch COMMIT FAILED: {e}")
+            session.rollback()
+            return {
+                "total": len(records),
+                "inserted": 0,
+                "duplicates_skipped": duplicates,
+                "failures": failures + inserted,
+            }
+
+    if duplicates > 0:
+        logger.info(f"[ATTENDANCE] {duplicates} duplicate records skipped (already in DB)")
+
+    total = len(records)
+    return {
+        "total": total,
+        "inserted": inserted,
+        "duplicates_skipped": duplicates,
+        "failures": failures,
+    }
+
+
+def _build_emp_code_map(employees) -> dict:
+    """Build employee_code → name map, also mapping numeric biometric codes."""
+    emp_map: dict = {}
+    for e in employees:
+        emp_map[e.employee_code] = e.name
+        if "-" in e.employee_code:
+            suffix = e.employee_code.rsplit("-", 1)[-1]
+            try:
+                emp_map[str(int(suffix))] = e.name
+            except ValueError:
+                pass
+    return emp_map
+
+
+def get_attendance_records_in_db(
+    page: int,
+    page_size: int,
+    start_date: Optional[date_type],
+    end_date: Optional[date_type],
+    search: Optional[str],
+    status: Optional[int],
+    session: Session,
+) -> dict:
+    """Return paginated attendance records joined with employee names."""
+
+    # If searching, query only matching employees instead of loading all.
+    matching_codes: Optional[set] = None
+    if search:
+        search_lower = f"%{search.strip().lower()}%"
+        matching_employees = session.exec(
+            select(Employee).where(
+                (Employee.name.ilike(search_lower)) |
+                (Employee.employee_code.ilike(search_lower))
+            )
+        ).all()
+        matching_codes = set()
+        for e in matching_employees:
+            matching_codes.add(e.employee_code)
+            if "-" in e.employee_code:
+                suffix = e.employee_code.rsplit("-", 1)[-1]
+                try:
+                    matching_codes.add(str(int(suffix)))
+                except ValueError:
+                    pass
+
+    # Build base query
+    base = select(AttendanceRaw)
+    if start_date:
+        base = base.where(AttendanceRaw.date >= start_date)
+    if end_date:
+        base = base.where(AttendanceRaw.date <= end_date)
+    if matching_codes is not None:
+        if not matching_codes:
+            return {"items": [], "total_count": 0, "page": page, "total_pages": 1}
+        base = base.where(AttendanceRaw.employee_code.in_(matching_codes))
+    if status is not None:
+        base = base.where(AttendanceRaw.status == status)
+
+    # Count
+    count_q = select(func.count(AttendanceRaw.id))
+    if start_date:
+        count_q = count_q.where(AttendanceRaw.date >= start_date)
+    if end_date:
+        count_q = count_q.where(AttendanceRaw.date <= end_date)
+    if matching_codes is not None:
+        count_q = count_q.where(AttendanceRaw.employee_code.in_(matching_codes))
+    if status is not None:
+        count_q = count_q.where(AttendanceRaw.status == status)
+    total_count = session.exec(count_q).one()
+
+    # Paginate
+    records = session.exec(
+        base.order_by(AttendanceRaw.date.desc(), AttendanceRaw.timestamp.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+    ).all()
+
+    # Build name map only for employee codes in this page, plus their
+    # derived numeric forms (biometric devices store "7" for "EMP-007").
+    page_codes = {r.employee_code for r in records}
+    derived_codes = set()
+    for code in page_codes:
+        try:
+            derived_codes.add(f"EMP-{int(code):03d}")
+        except ValueError:
+            pass
+    lookup_codes = page_codes | derived_codes
+    page_employees = session.exec(
+        select(Employee).where(Employee.employee_code.in_(list(lookup_codes)))
+    ).all() if lookup_codes else []
+    emp_map = _build_emp_code_map(page_employees)
+
+    status_label = {0: "Check In", 1: "Check Out"}
+
+    items = [
+        {
+            "id": r.id,
+            "date": str(r.date),
+            "timestamp": r.timestamp.isoformat(),
+            "employee_code": r.employee_code,
+            "employee_name": emp_map.get(r.employee_code, "—"),
+            "status": r.status,
+            "status_label": status_label.get(r.status, str(r.status)),
+            "serial_number": r.serial_number,
+        }
+        for r in records
+    ]
+
+    return {
+        "items": items,
+        "total_count": total_count,
+        "page": page,
+        "total_pages": max(1, (total_count + page_size - 1) // page_size),
+    }

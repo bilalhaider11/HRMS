@@ -21,7 +21,7 @@ export default function Setting() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [accessKey, setAccessKey] = useState("");
+  const [accessKeySet, setAccessKeySet] = useState(false);
   const [editingAccessKey, setEditingAccessKey] = useState(false);
   const [accessKeyInput, setAccessKeyInput] = useState("");
   const [accessKeySaving, setAccessKeySaving] = useState(false);
@@ -39,8 +39,7 @@ export default function Setting() {
         const res = await api.get("/admin/company_profile");
         setProfile(res.data);
         setFormData(res.data);
-        setAccessKey(res.data.access_key || "");
-        setAccessKeyInput(res.data.access_key || "");
+        setAccessKeySet(Boolean(res.data.access_key_set));
       } catch (error) {
         console.error("Failed to load profile:", error);
       }
@@ -94,7 +93,8 @@ export default function Setting() {
     setAccessKeySuccess(false);
     try {
       await api.patch("/admin/update_access_key", { access_key: accessKeyInput.trim() });
-      setAccessKey(accessKeyInput.trim());
+      setAccessKeySet(true);
+      setAccessKeyInput("");
       setEditingAccessKey(false);
       setAccessKeySuccess(true);
       setTimeout(() => setAccessKeySuccess(false), 3000);
@@ -246,13 +246,13 @@ export default function Setting() {
                     className="mt-1 w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white font-inter placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />
                 ) : (
-                  <p className="text-sm text-slate-400 font-inter mt-0.5 font-mono">{accessKey || "—"}</p>
+                  <p className="text-sm text-slate-400 font-inter mt-0.5 font-mono">{accessKeySet ? "••••••••" : "—"}</p>
                 )}
               </div>
             </div>
             {editingAccessKey ? (
               <div className="flex items-center gap-2 ml-4">
-                <button onClick={() => { setEditingAccessKey(false); setAccessKeyInput(accessKey); setAccessKeyError(""); }} className="text-sm text-slate-400 hover:text-white font-inter transition-colors">
+                <button onClick={() => { setEditingAccessKey(false); setAccessKeyInput(""); setAccessKeyError(""); }} className="text-sm text-slate-400 hover:text-white font-inter transition-colors">
                   Cancel
                 </button>
                 <button
@@ -265,7 +265,7 @@ export default function Setting() {
               </div>
             ) : (
               <button
-                onClick={() => { setEditingAccessKey(true); setAccessKeyInput(accessKey); setAccessKeyError(""); setAccessKeySuccess(false); }}
+                onClick={() => { setEditingAccessKey(true); setAccessKeyInput(""); setAccessKeyError(""); setAccessKeySuccess(false); }}
                 className="text-sm text-indigo-400 hover:text-indigo-300 font-inter font-medium transition-colors"
               >
                 Change

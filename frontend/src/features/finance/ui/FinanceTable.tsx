@@ -29,7 +29,7 @@ const hexToRowBg = (hex: string) => {
 };
 
 const FinanceTable = () => {
-    const { financeList, financeSummary } = useFinance()
+    const { financeList, financeSummary, setIsDeleteModal, isDeleteModal, handleFinanceDelete } = useFinance()
     const tableDataClassName = "py-4 px-4 text-sm text-slate-200 font-inter w-[10%] truncate"
     const tableHeadingClassName = "py-3 px-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider font-inter w-[10%]"
     const navigate = useNavigate()
@@ -139,6 +139,9 @@ const FinanceTable = () => {
                                             <Button type="button" onClick={() => handleUpdate(data)} buttonClasses="text-sm px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
                                                 Edit
                                             </Button>
+                                            <Button type="button" onClick={() => setIsDeleteModal(data)} buttonClasses="text-sm px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors font-inter">
+                                                Delete
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -164,6 +167,26 @@ const FinanceTable = () => {
                     </table>
                 </div>
             </Box>
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsDeleteModal(null)}>
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-lg font-semibold text-white font-inter mb-2">Delete Finance Record</h3>
+                        <p className="text-sm text-slate-400 font-inter mb-6">
+                            Are you sure you want to delete this record? This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <Button type="button" onClick={() => setIsDeleteModal(null)} buttonClasses="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-inter">
+                                Cancel
+                            </Button>
+                            <Button type="button" onClick={() => handleFinanceDelete(isDeleteModal)} buttonClasses="px-4 py-2 text-sm bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors font-inter">
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Edit History Modal */}
             {historyModal && (

@@ -24,6 +24,7 @@ services:
       - secret_key=local-dev-secret-key-change-in-production
       - algorithm=HS256
       - access_token_expire_minutes=30
+      - APP_ENV=development
     volumes:
       - ./backend:/app
     depends_on:
@@ -36,6 +37,7 @@ services:
       - "3000:3000"
     environment:
       - WATCHPACK_POLLING=true
+      - NODE_OPTIONS=--no-deprecation
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public

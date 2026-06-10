@@ -20,7 +20,7 @@ const createFormSchema = Yup.object().shape({
     name: Yup.string().required("Name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
     password: Yup.string().required("Password is required"),
-    cnic: Yup.string().required("CNIC is required"),
+    cnic: Yup.string().required("CNIC is required").matches(/^\d{5}-\d{7}-\d$/, "CNIC must be in format XXXXX-XXXXXXX-X"),
     designation: Yup.string().required("Designation is required"),
     department: Yup.string().required("Department is required"),
     dateOfBirth: Yup.string().required("Date of birth is required"),
@@ -37,7 +37,7 @@ const createFormSchema = Yup.object().shape({
 const editFormSchema = Yup.object().shape({
     employeeCode: Yup.string().required("Employee Code is required"),
     name: Yup.string().required("Name is required"),
-    cnic: Yup.string().required("CNIC is required"),
+    cnic: Yup.string().required("CNIC is required").matches(/^\d{5}-\d{7}-\d$/, "CNIC must be in format XXXXX-XXXXXXX-X"),
     designation: Yup.string().required("Designation is required"),
     department: Yup.string().required("Department is required"),
     dateOfBirth: Yup.string().required("Date of birth is required"),
@@ -58,7 +58,7 @@ const Form = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { addEmployee, clearError, idExistError, successfullModal, setSuccessfullModal, setEditingEmployee, editingEmployee, updateEmployee } = useEmployees();
     const [apiError, setApiError] = useState("");
-    const [isEditMode] = useState(editingEmployee !== null);
+    const isEditMode = editingEmployee !== null;
     const navigate = useNavigate();
     const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
     const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false)
@@ -68,7 +68,8 @@ const Form = () => {
     const banksOptions = ["Meezan", "UBL", "Allied", "HBL"];
     const departmentsOptions = ["Engineering", "HR", "Marketing", "Office Maintenance"]
 
-    const modalRef = useRef<HTMLDivElement>(null);
+    const departmentModalRef = useRef<HTMLDivElement>(null);
+    const bankNameModalRef = useRef<HTMLDivElement>(null);
 
     const openBanksDropdown = () => {
         setBankDropdownOpen(!bankDropdownOpen);
@@ -79,10 +80,16 @@ const Form = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
-                modalRef.current &&
-                !modalRef.current.contains(event.target as Node)
+                bankNameModalRef.current &&
+                !bankNameModalRef.current.contains(event.target as Node)
             ) {
                 setBankDropdownOpen(false);
+            }
+            if (
+                departmentModalRef.current &&
+                !departmentModalRef.current.contains(event.target as Node)
+            ) {
+                setDepartmentsDropdownOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -139,11 +146,12 @@ const Form = () => {
                     { ...values, profilePicUrl: profilePicUrl || editingEmployee.image }
                 );
 
-                // Update local state for immediate UI update
+                // Update local state — keep original id as the lookup key so the list
+                // update finds the right entry even when employeeCode was edited
                 updateEmployee({
                     ...editingEmployee,
                     ...values,
-                    id: values.employeeCode,
+                    id: editingEmployee.id,
                 });
                 formik.resetForm();
                 setFile(null);
@@ -333,7 +341,7 @@ const Form = () => {
                 <div>
                     <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 font-inter">Work Details</h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="relative" ref={modalRef}>
+                    <div className="relative" ref={departmentModalRef}>
                         <label className={`${labelStyles}`}>Department</label>
                         <div className={`${inputBorder}`}>
                             <Select
@@ -463,7 +471,7 @@ const Form = () => {
                             </p>
                         )}
                     </div>
-                    <div className="relative" ref={modalRef}>
+                    <div className="relative" ref={bankNameModalRef}>
                         <label className={`${labelStyles}`}>Bank Name</label>
                         <div className={`${inputBorder}`}>
                             <Select
@@ -507,7 +515,7 @@ const Form = () => {
                         )}
                     </div>
                     <div className="relative">
-                        <FormInput type="number" label="Bank Account Number" name="bankAccountNumber" value={formik.values.bankAccountNumber} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} placeholder="12345678" inputClassName={`${inputStyles}`} />
+                        <FormInput type="text" label="Bank Account Number" name="bankAccountNumber" value={formik.values.bankAccountNumber} onChange={formik.handleChange} labelClassName={`${labelStyles}`} inputMainBorder={`${inputBorder}`} placeholder="12345678" inputClassName={`${inputStyles}`} />
                         {formik.errors.bankAccountNumber && formik.touched.bankAccountNumber && (
                             <p className={`${errorClasses}`}>
                                 {formik.errors.bankAccountNumber}

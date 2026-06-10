@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { deactivateEmployee } from '../api/employeesApi';
 
 export interface IncrementHistory {
@@ -9,6 +9,7 @@ export interface IncrementHistory {
 }
 
 export interface EmployeeTableData {
+  empId?: number;
   id?: string;
   name: string;
   status: string;
@@ -47,7 +48,14 @@ export interface StatusListData {
   resigned: "string", retired: "string", onLeave: "string", suspended: "string", probationary: "string",
 }
 
-interface EmployeesContextType {
+// Role data interface
+export interface RoleData {
+  id: number;
+  role_name: string;
+  is_active: boolean;
+}
+
+export interface EmployeesContextType {
   employeesList: EmployeeTableData[];
   setEmployeesList: (list: EmployeeTableData[]) => void;
   addEmployee: (employee: EmployeeTableData) => boolean;
@@ -74,6 +82,16 @@ interface EmployeesContextType {
   updateIncrement: (increament: IncrementHistory) => void;
   handleIncrementDelete:(increament: IncrementHistory) => void;
   handleEmployeeDelete:(employee: EmployeeTableData) => void
+  selectedEmployeeForRole: EmployeeTableData | null;
+  setSelectedEmployeeForRole: (emp: EmployeeTableData | null) => void;
+  employeeRoles: RoleData[];
+  setRolesForEmployee: (roles: RoleData[]) => void;
+  availableRoles: RoleData[];
+  setRolesAvailable: (roles: RoleData[]) => void;
+  isRoleModalOpen: boolean;
+  setIsRoleModalOpen: (open: boolean) => void;
+  openRoleModal: (employee: EmployeeTableData) => void;
+  closeRoleModal: () => void;
 }
 
 
@@ -101,7 +119,19 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   const [employeeIncreamentList, setEmployeeIncreamentList] = useState<IncrementHistory[]>([])
   const [isEmployeeDelete, setIsEmployeeDelete] = useState<EmployeeTableData | null>(null)
   const [isDeleteModal, setIsDeleteModal] = useState<IncrementHistory | null>(null);
+  
+  // Role management state
+  const [selectedEmployeeForRole, setSelectedEmployeeForRole] = useState<EmployeeTableData | null>(null);
+  const [employeeRoles, setEmployeeRoles] = useState<RoleData[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<RoleData[]>([]);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
+  // Centralised overflow management — prevents navigation leaving page locked
+  useEffect(() => {
+    const hasModal = successfullModal || isDeleteModal !== null || isEmployeeDelete !== null || isRoleModalOpen;
+    document.body.style.overflow = hasModal ? "hidden" : "auto";
+    return () => { document.body.style.overflow = "auto"; };
+  }, [successfullModal, isDeleteModal, isEmployeeDelete, isRoleModalOpen]);
 
   const isDuplicateId = (id?: string) => {
     return id ? employeesList.some((employee) => employee.id === id) : false;
@@ -113,7 +143,6 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
       return false
     } else {
       const updatedList = [...employeesList, employee];
-      console.log("added")
       setEmployeesList(updatedList);
       setEditingEmployee(null)
       setIdExistError("")
@@ -142,7 +171,7 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
 
   const updateIncrement = (increament: IncrementHistory) => {
     const updatedList = employeeIncreamentList.map((inc) =>
-      inc.increamentDate === editingIncreamentList?.increamentDate ? increament : inc
+      inc.increamentId === editingIncreamentList?.increamentId ? increament : inc
     );
     setEmployeeIncreamentList(updatedList);
     setEditingIncreamentList(null);
@@ -152,7 +181,6 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   }
 
   const editEmployeeData = (employee: EmployeeTableData) => {
-    console.log(employee)
     setEditingEmployee(employee);
     setSuccessfullModal(false);
     document.body.style.overflow = "auto";
@@ -170,7 +198,6 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
     const updatedList = employeesList.map((emp) =>
       emp.id === updatedEmployee.id ? updatedEmployee : emp
     );
-    console.log("updateList", updatedList)
     setEmployeesList(updatedList);
     setSuccessfullModal(true);
     document.body.style.overflow = "hidden";
@@ -187,14 +214,12 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
   const handleEmployeeDelete = async (employee: EmployeeTableData) => {
     try {
       await deactivateEmployee(employee.id || "");
-      // Remove from local list after successful backend call
       const updateEmployeeList = employeesList.filter(e => e.id !== employee.id);
       setEmployeesList(updateEmployeeList);
+      setIsEmployeeDelete(null);
     } catch (error) {
       console.error("Failed to deactivate employee:", error);
     }
-    setIsEmployeeDelete(null);
-    document.body.style.overflow = "auto";
   }
 
 
@@ -207,8 +232,42 @@ export const EmployeesProvider: React.FC<EmployeesProviderProps> = ({ children }
 
   const clearError = () => setIdExistError("");
 
+  // Employee-role management functions
+  const openRoleModal = (employee: EmployeeTableData) => {
+    setSelectedEmployeeForRole(employee);
+    setIsRoleModalOpen(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeRoleModal = () => {
+    setSelectedEmployeeForRole(null);
+    setEmployeeRoles([]);
+    setIsRoleModalOpen(false);
+    document.body.style.overflow = "auto";
+  };
+
+  const setRolesForEmployee = (roles: RoleData[]) => {
+    setEmployeeRoles(roles);
+  };
+
+  const setRolesAvailable = (roles: RoleData[]) => {
+    setAvailableRoles(roles);
+  };
+
   return (
-    <EmployeesContext.Provider value={{ employeesList, setEmployeesList, addEmployee, idExistError, clearError, successfullModal, setSuccessfullModal, editEmployeeData, editingEmployee, updateEmployee, setEditingEmployee, statusList, updateStatus, addNewIncrement, editIncreamentList, editingIncreamentList, setEditingIncreamentList, employeeIncreamentList, setEmployeeIncreamentList, updateIncrement, handleIncrementDelete, setIsDeleteModal, isDeleteModal, setIsEmployeeDelete, isEmployeeDelete, handleEmployeeDelete }}>
+    <EmployeesContext.Provider value={{ 
+      employeesList, setEmployeesList, addEmployee, idExistError, clearError, successfullModal, setSuccessfullModal, 
+      editEmployeeData, editingEmployee, updateEmployee, setEditingEmployee, statusList, updateStatus, 
+      addNewIncrement, editIncreamentList, editingIncreamentList, setEditingIncreamentList, employeeIncreamentList, 
+      setEmployeeIncreamentList, updateIncrement, handleIncrementDelete, setIsDeleteModal, isDeleteModal, 
+      setIsEmployeeDelete, isEmployeeDelete, handleEmployeeDelete,
+      // Role management
+      selectedEmployeeForRole, setSelectedEmployeeForRole,
+      employeeRoles, setRolesForEmployee,
+      availableRoles, setRolesAvailable,
+      isRoleModalOpen, setIsRoleModalOpen,
+      openRoleModal, closeRoleModal
+    }}>
       {children}
     </EmployeesContext.Provider>
   );
