@@ -42,7 +42,7 @@ def emp_evaluation_payload(evaluation: EmployeeEvaluation, employee: Employee) -
         "general_comments": evaluation.general_comments,
         "extra_comments": evaluation.extra_comments,
         "created_at": _format_created_at(evaluation.created_at),
-        "updated_at": evaluation.updated_at or "",
+        "updated_at": evaluation.updated_at.strftime("%Y-%m-%d %H:%M:%S") if evaluation.updated_at else "",
         "created_by": evaluation.created_by or "",
         "updated_by": evaluation.updated_by or "",
     }
@@ -170,6 +170,8 @@ def ensure_can_do_evaluation(
         return
 
     if action == "view":
+        if current_employee.id == target_employee_id:
+            return
         if not _has_target_evaluation_access(
             current_employee.id, target_employee_id, session, role_ids
         ):

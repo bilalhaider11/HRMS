@@ -1,6 +1,5 @@
 """
-0007_updated_at_evaluation
-
+add_updated_at_to_employee_evaluation
 
 Revision ID: 0007_updated_at_evaluation
 Revises: 0006_add_is_income
@@ -21,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.add_column(
         "employee_evaluation",
-        sa.Column("updated_at",  sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
     )
 
 
