@@ -1,5 +1,5 @@
-import datetime
-from typing import Dict, List, Optional, Set, Tuple
+from datetime import datetime
+from typing import List, Optional, Set, Tuple
 
 from fastapi import HTTPException
 from sqlalchemy import update
@@ -10,6 +10,21 @@ from app.models.employee_evaluation import EmployeeEvaluation, EmployeeEvaluatio
 from app.models.employee import Employee
 from app.models.team import Team, Teams_to_Employee
 from app.models.admin import Admin
+
+def _parse_created_at(value: Optional[str]) -> datetime:
+    if not value:
+        return datetime.now()
+    try:
+        return datetime.strptime(value, "%Y-%m-%d")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="created_at must be YYYY-MM-DD") from exc
+
+
+def _format_created_at(value: Optional[datetime]) -> str:
+    if value is None:
+        return ""
+    return value.strftime("%Y-%m-%d")
+
 
 def emp_evaluation_payload(evaluation: EmployeeEvaluation, employee: Employee) -> dict:
     return {
@@ -26,21 +41,38 @@ def emp_evaluation_payload(evaluation: EmployeeEvaluation, employee: Employee) -
         "punctuality": evaluation.punctuality,
         "general_comments": evaluation.general_comments,
         "extra_comments": evaluation.extra_comments,
+        "created_at": _format_created_at(evaluation.created_at),
+        "updated_at": evaluation.updated_at or "",
+        "created_by": evaluation.created_by or "",
+        "updated_by": evaluation.updated_by or "",
     }
 
 
-def check_by_roles(employee_id,target_employee_id,session,role_ids):
-    role_names = set(role_db.get_active_role_names_for_employee(employee_id, session,role_ids))
+def _get_role_names(employee_id: int, session: Session, role_ids) -> Set[str]:
+    return set(role_db.get_active_role_names_for_employee(employee_id, session, role_ids))
+
+
+def _has_evaluation_feature_access(employee_id: int, session: Session, role_ids) -> bool:
+    role_names = _get_role_names(employee_id, session, role_ids)
+    return "HR" in role_names or "Team Lead" in role_names
+
+
+def _has_target_evaluation_access(
+    employee_id: int,
+    target_employee_id: int,
+    session: Session,
+    role_ids,
+) -> bool:
+    role_names = _get_role_names(employee_id, session, role_ids)
 
     if "HR" in role_names:
-        return
+        return True
 
     if "Team Lead" in role_names:
         member_ids = _get_team_member_ids_for_lead(employee_id, session)
-        if target_employee_id in member_ids:
-            return
+        return target_employee_id in member_ids
 
-    raise HTTPException(status_code=403, detail="You do not have permission to view these evaluations")
+    return False
 
 def _get_team_member_ids_for_lead(current_employee_id: int, session: Session) -> Set[int]:
     teams = session.exec(
@@ -75,7 +107,7 @@ def get_employee_scope_for_evaluation(
         return "all", employees
 
     current_employee: Employee = user
-    role_names = set(role_db.get_active_role_names_for_employee(current_employee.id, session, user.role_ids))
+    role_names = _get_role_names(current_employee.id, session, user.role_ids)
 
     if "HR" in role_names:
         employees = session.exec(select(Employee).where(Employee.status == True)).all()
@@ -90,24 +122,64 @@ def get_employee_scope_for_evaluation(
         ).all()
         return "team", employees
 
-    return "self", [current_employee]
+    return "self", []
 
 
-def ensure_can_view_employee_evaluations(
+def ensure_can_do_evaluation(
     user_type: str,
+    evaluation_type: str,
     current_user: object,
-    target_employee_id: int,
     session: Session,
+    target_employee_id: Optional[int] = None,
 ) -> None:
-    
+    action = evaluation_type.lower()
+
     if user_type == "admin":
         return
 
     current_employee: Employee = current_user
-    if current_employee.id == target_employee_id:
+    role_ids = current_user.role_ids
+
+    if action == "list":
+        if not _has_evaluation_feature_access(current_employee.id, session, role_ids):
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have permission to access employee evaluations",
+            )
         return
-    
-    return check_by_roles(current_employee.id,target_employee_id,session,current_user.role_ids)
+
+    if action in ("update", "delete"):
+        raise HTTPException(status_code=403, detail="Only admin can update or delete evaluations")
+
+    if target_employee_id is None:
+        raise HTTPException(status_code=400, detail="target_employee_id is required")
+
+    if action == "create":
+        if current_employee.id == target_employee_id:
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot do evaluation for yourself",
+            )
+        if not _has_target_evaluation_access(
+            current_employee.id, target_employee_id, session, role_ids
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have permission to create evaluations",
+            )
+        return
+
+    if action == "view":
+        if not _has_target_evaluation_access(
+            current_employee.id, target_employee_id, session, role_ids
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have permission to view these evaluations",
+            )
+        return
+
+    raise HTTPException(status_code=400, detail="Invalid evaluation action")
 
 
 def create_employee_evaluation(emp_id: int, payload: EmployeeEvaluationCreate, user_type:str, user:object, session: Session) -> dict:
@@ -118,10 +190,13 @@ def create_employee_evaluation(emp_id: int, payload: EmployeeEvaluationCreate, u
         created_by = user.name
     employee = employee_db.get_employee(emp_id, session)
 
+    evaluation_data = payload.model_dump(exclude={"created_at"})
     evaluation = EmployeeEvaluation(
         employee_id=emp_id,
         created_by=created_by,
-        **payload.model_dump()
+        updated_by="",
+        created_at=_parse_created_at(payload.created_at),
+        **evaluation_data,
     )
     
     session.add(evaluation)
@@ -162,8 +237,12 @@ def update_employee_evaluation(emp_id: int, evaluation_id: int, payload: Employe
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found for the employee to update")
 
-    update_data = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    raw_update = payload.model_dump(exclude_unset=True)
+    if "created_at" in raw_update:
+        raw_update["created_at"] = _parse_created_at(raw_update["created_at"])
+    update_data = {k: v for k, v in raw_update.items() if v is not None}
     update_data["updated_by"] = update_by
+    update_data["updated_at"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
     statement = (
         update(EmployeeEvaluation)
         .where(

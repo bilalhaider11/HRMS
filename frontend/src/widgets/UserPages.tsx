@@ -34,13 +34,20 @@ interface UserPageProps {
   name: string;
   superAdmin: boolean;
   canAccessEmployees: boolean;
+  canAccessEmployeeEvaluation: boolean;
 }
 
-export default function UserPage({ superAdmin, canAccessEmployees }: UserPageProps) {
+export default function UserPage({
+  superAdmin,
+  canAccessEmployees,
+  canAccessEmployeeEvaluation,
+}: UserPageProps) {
   const withAdminGuard = (element: ReactElement) =>
     superAdmin ? element : <Navigate to="/" replace />;
   const withEmployeeGuard = (element: ReactElement) =>
     canAccessEmployees ? element : <Navigate to="/" replace />;
+  const withEvaluationGuard = (element: ReactElement) =>
+    canAccessEmployeeEvaluation ? element : <Navigate to="/" replace />;
 
   return (
     <>
@@ -72,8 +79,11 @@ export default function UserPage({ superAdmin, canAccessEmployees }: UserPagePro
         <Route path="/roles" element={withAdminGuard(<RolesPage />)} />
         <Route path="/roles/employees" element={withAdminGuard(<RoleEmployeesPage />)} />
         <Route path="/settings" element={withAdminGuard(<Setting />)} />
-        <Route path="/employee-evaluation" element={<EmployeeEvaluationPage />} />
-        <Route path="/employee-evaluation/:employeeId" element={<EmployeeEvaluationDetailsPage />} />
+        <Route path="/employee-evaluation" element={withEvaluationGuard(<EmployeeEvaluationPage />)} />
+        <Route
+          path="/employee-evaluation/:employeeId"
+          element={withEvaluationGuard(<EmployeeEvaluationDetailsPage />)}
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

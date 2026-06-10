@@ -16,16 +16,12 @@ const TeamMembers = () => {
       const parsedTeamId = Number(teamId);
       if (!parsedTeamId) return;
 
-      const localTeam = teamList.find((item) => item.teamId === parsedTeamId);
-      if (localTeam) {
-        setTeam(localTeam);
-        return;
-      }
-
       try {
         const remoteTeam = await getTeamById(parsedTeamId);
         setTeam(remoteTeam);
       } catch (error) {
+        const localTeam = teamList.find((item) => item.teamId === parsedTeamId);
+        if (localTeam) setTeam(localTeam);
         console.error(error);
       }
     };

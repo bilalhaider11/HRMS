@@ -75,9 +75,9 @@ export const TeamsProvider: React.FC<TeamsProviderProps> = ({ children }) => {
         teamDescription: team.team_description,
         teamLeadId: team.team_lead_id || undefined,
         teamLeadName: team.team_lead_name || "",
-        teamMembers: (team.teams_to_employee || []).map((member: any) => ({
-            id: member.id,
-            employeeCode: member.employee_code,
+        teamMembers: (team.team_members || team.teams_to_employee || []).map((member: any) => ({
+            id: member.id ?? member.employee_id,
+            employeeCode: member.employee_code ?? member.employeeCode,
             name: member.name,
         })),
     });    

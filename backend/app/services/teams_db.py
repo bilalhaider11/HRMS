@@ -14,26 +14,32 @@ def _serialize_team(team: Team, session: Session) -> dict:
         lead = session.get(Employee, team.team_lead_id)
         team_lead_name = lead.name if lead else None
 
-    member_links = session.exec(
-        select(Team, Teams_to_Employee)
-        .join(Teams_to_Employee, Teams_to_Employee.team_id == Team.id)
+    members = session.exec(
+        select(Employee)
+        .join(Teams_to_Employee, Teams_to_Employee.employee_id == Employee.id)
         .where(
             Teams_to_Employee.team_id == team.id,
-            Teams_to_Employee.delete_record == False
+            Teams_to_Employee.delete_record == False,
         )
     ).all()
 
-    team_obj = member_links[0][0] if member_links else team
-    employee_links = [row[1] for row in member_links]
+    team_members = [
+        {
+            "id": employee.id,
+            "employee_code": employee.employee_code,
+            "name": employee.name,
+        }
+        for employee in members
+    ]
 
     return {
-        "team_id": team_obj.id,
-        "team_name": team_obj.team_name,
-        "team_description": team_obj.team_description,
-        "team_lead_id": team_obj.team_lead_id,
+        "team_id": team.id,
+        "team_name": team.team_name,
+        "team_description": team.team_description,
+        "team_lead_id": team.team_lead_id,
         "team_lead_name": team_lead_name,
-        "company_id": team_obj.company_id,
-        "teams_to_employee": employee_links,
+        "company_id": team.company_id,
+        "team_members": team_members,
     }
 
 

@@ -14,6 +14,23 @@ import {
   EvaluationPayload
 } from "./modal/evaluate_context"
 
+const today = () => new Date().toISOString().split("T")[0];
+
+const toDateInputValue = (value?: string) => {
+  if (!value) return today();
+  return value.split("T")[0].split(" ")[0];
+};
+
+const formatDisplayDate = (value?: string) => {
+  if (!value) return "-";
+  return value.split("T")[0].split(" ")[0];
+};
+
+const formatDisplayDateTime = (value?: string) => {
+  if (!value) return "-";
+  return value.replace(/\.\d+$/, "");
+};
+
 const EMPTY_FORM: EvaluationPayload = {
   task_completion: 0,
   team_player: 0,
@@ -25,6 +42,7 @@ const EMPTY_FORM: EvaluationPayload = {
   punctuality: 0,
   general_comments: "",
   extra_comments: "",
+  created_at: today(),
 };
 
 const SCORE_FIELDS: Array<keyof EvaluationPayload> = [
@@ -81,7 +99,10 @@ export default function EmployeeEvaluationDetails() {
 
   const numericEmployeeId = Number(employeeId || 0);
   const roleNames = user?.roles || [];
-  const canCreate = (superAdmin || roleNames.includes("HR") || roleNames.includes("Team Lead")) && numericEmployeeId !== user?.id;
+  const isHrOrTeamLead = roleNames.includes("HR") || roleNames.includes("Team Lead");
+  const canViewEmployeeList = superAdmin || isHrOrTeamLead;
+  const canCreate =
+    canViewEmployeeList && numericEmployeeId !== user?.id;
   const canEditDelete = superAdmin;
 
   const loadEvaluations = async () => {
@@ -131,6 +152,7 @@ export default function EmployeeEvaluationDetails() {
       punctuality: evaluation.punctuality,
       general_comments: evaluation.general_comments || "",
       extra_comments: evaluation.extra_comments || "",
+      created_at: toDateInputValue(evaluation.created_at),
     });
     setShowCreateModal(true);
   };
@@ -148,13 +170,14 @@ export default function EmployeeEvaluationDetails() {
       ability_to_learn: toScore(String(form.ability_to_learn)),
       problem_solving: toScore(String(form.problem_solving)),
       punctuality: toScore(String(form.punctuality)),
+      created_at: form.created_at || today(),
     };
 
     setSubmitting(true);
     setMessage("");
     try {
       if (editingEvaluationId) {
-  
+
         await updateEmployeeEvaluation(numericEmployeeId, editingEvaluationId, payload);
       } else {
         await postEmployeeEvaluation(numericEmployeeId, payload);
@@ -185,13 +208,14 @@ export default function EmployeeEvaluationDetails() {
   return (
     <div className="max-w-4xl space-y-4">
 
-      {canCreate && <button
-        className="text-sm text-indigo-300 hover:text-indigo-200"
-        onClick={() => navigate("/employee-evaluation")}
-      >
-        Back to employees
-      </button>
-      }
+      {canViewEmployeeList && (
+        <button
+          className="text-sm text-indigo-300 hover:text-indigo-200"
+          onClick={() => navigate("/employee-evaluation")}
+        >
+          Back to employees
+        </button>
+      )}
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
@@ -214,6 +238,7 @@ export default function EmployeeEvaluationDetails() {
             <table className="min-w-full text-sm text-slate-200">
               <thead className="bg-slate-800 text-slate-300">
                 <tr>
+                  <th className="px-3 py-2 text-left">Date</th>
                   <th className="px-3 py-2 text-left">Task Completion</th>
                   <th className="px-3 py-2 text-left">Team Player</th>
                   <th className="px-3 py-2 text-left">Time Management</th>
@@ -224,12 +249,16 @@ export default function EmployeeEvaluationDetails() {
                   <th className="px-3 py-2 text-left">Punctuality</th>
                   <th className="px-3 py-2 text-left">General Comments</th>
                   <th className="px-3 py-2 text-left">Extra Comments</th>
+                  <th className="px-3 py-2 text-left">Updated At</th>
+                  <th className="px-3 py-2 text-left">Created By</th>
+                  <th className="px-3 py-2 text-left">Updated By</th>
                   {canEditDelete && <th className="px-3 py-2 text-left">Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {evaluations.map((evaluation) => (
                   <tr key={evaluation.evaluation_id} className="border-t border-slate-700 align-top">
+                    <td className="px-3 py-2">{formatDisplayDate(evaluation.created_at)}</td>
                     <td className="px-3 py-2">{ScaleRemarks[evaluation.task_completion as keyof typeof ScaleRemarks]}</td>
                     <td className="px-3 py-2">{ScaleRemarks[evaluation.team_player as keyof typeof ScaleRemarks]}</td>
                     <td className="px-3 py-2">{ScaleRemarks[evaluation.time_management as keyof typeof ScaleRemarks]}</td>
@@ -244,6 +273,9 @@ export default function EmployeeEvaluationDetails() {
                     <td className="px-3 py-2 whitespace-pre-wrap min-w-[200px]">
                       {evaluation.extra_comments || "-"}
                     </td>
+                    <td className="px-3 py-2">{formatDisplayDateTime(evaluation.updated_at)}</td>
+                    <td className="px-3 py-2">{evaluation.created_by || "-"}</td>
+                    <td className="px-3 py-2">{evaluation.updated_by || "-"}</td>
                     {canEditDelete && (
                       <td className="px-3 py-2">
                         <div className="flex gap-2">
@@ -261,7 +293,9 @@ export default function EmployeeEvaluationDetails() {
                           </button>
                         </div>
                       </td>
+                      
                     )}
+                    
                   </tr>
                 ))}
               </tbody>
@@ -300,7 +334,22 @@ export default function EmployeeEvaluationDetails() {
                 </label>
               ))}
             </div>
+            <div className="grid grid-cols-1 gap-3 mt-3">
+              <label className="text-sm text-slate-300 flex flex-col gap-1" htmlFor="calendar">
+                Evaluation Date
+                <input
+                  className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                  type="date"
+                  id="calendar"
+                  value={form.created_at || today()}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, created_at: e.target.value }))
+                  }
+                />
+              </label>
+            </div>
             <div className="mt-3 space-y-2">
+              <div className="text-white">General Comments</div>
               <textarea
                 value={form.general_comments}
                 onChange={(e) =>
@@ -309,6 +358,7 @@ export default function EmployeeEvaluationDetails() {
                 className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
                 placeholder="General comments"
               />
+              <div className="text-white"> Extra Comments</div>
               <textarea
                 value={form.extra_comments}
                 onChange={(e) =>

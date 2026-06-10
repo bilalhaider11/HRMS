@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field as PydanticField
 from sqlmodel import SQLModel, Field
@@ -14,6 +15,7 @@ class EmployeeEvaluationCreate(BaseModel):
     punctuality: int = PydanticField(default=0, ge=0, le=5)
     general_comments: str = ""
     extra_comments: Optional[str] = None
+    created_at: Optional[str] = None
 
 
 class EmployeeEvaluationUpdate(BaseModel):
@@ -27,6 +29,7 @@ class EmployeeEvaluationUpdate(BaseModel):
     punctuality: Optional[int] = PydanticField(default=None, ge=0, le=5)
     general_comments: Optional[str] = None
     extra_comments: Optional[str] = None
+    created_at: Optional[str] = None
 
 
 class EmployeeEvaluation(SQLModel, table=True):
@@ -46,7 +49,9 @@ class EmployeeEvaluation(SQLModel, table=True):
     punctuality: int = Field(default=0, nullable=False,ge=0, le=5)
     general_comments: str = Field(default="", nullable=False)
     extra_comments: Optional[str] = Field(default=None, nullable=True)
-    updated_by: Optional[str] = Field(default=None, nullable=True)
-    created_by: Optional[str] = Field(default=None, nullable=True)
+    updated_by: str = Field(default="", nullable=True)
+    created_by: str = Field(default="", nullable=False)
+    created_at: Optional[datetime] = Field(default=None, nullable=True)
+    updated_at: Optional[str] = Field(default=None, nullable=True)
 
      

@@ -62,6 +62,7 @@ function Sidebar({
   user,
   superAdmin,
   canAccessEmployees,
+  canAccessEmployeeEvaluation,
   onLogout,
   sidebarOpen,
   onClose,
@@ -69,6 +70,7 @@ function Sidebar({
   user: { name: string; email: string };
   superAdmin: boolean;
   canAccessEmployees: boolean;
+  canAccessEmployeeEvaluation: boolean;
   onLogout: () => void;
   sidebarOpen: boolean;
   onClose: () => void;
@@ -78,9 +80,11 @@ function Sidebar({
 
   const visibleItems = NAV_ITEMS.filter((item) => {
     const employeesNav = item.path === "/employees";
+    const evaluationNav = item.path === "/employee-evaluation";
     return (
       (!item.adminOnly || superAdmin) &&
-      (!employeesNav || canAccessEmployees)
+      (!employeesNav || canAccessEmployees) &&
+      (!evaluationNav || canAccessEmployeeEvaluation)
     );
   });
 
@@ -244,8 +248,15 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
 }
 
 export default function AppContent() {
-  const { user, setUser, superAdmin, authCheckLoading, canAccessEmployees, authUserType } =
-    useContext(VerifyContext);
+  const {
+    user,
+    setUser,
+    superAdmin,
+    authCheckLoading,
+    canAccessEmployees,
+    canAccessEmployeeEvaluation,
+    authUserType,
+  } = useContext(VerifyContext);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -286,6 +297,7 @@ export default function AppContent() {
         user={user}
         superAdmin={superAdmin}
         canAccessEmployees={canAccessEmployees}
+        canAccessEmployeeEvaluation={canAccessEmployeeEvaluation}
         onLogout={handleLogOut}
         sidebarOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -303,6 +315,7 @@ export default function AppContent() {
                 <UserPage
                   superAdmin={superAdmin}
                   canAccessEmployees={canAccessEmployees}
+                  canAccessEmployeeEvaluation={canAccessEmployeeEvaluation}
                   name={user?.name || ""}
                 />
               }

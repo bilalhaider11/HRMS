@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Response, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from typing import List, Optional
@@ -27,7 +27,6 @@ employee_router = APIRouter(prefix="/employee")
 @limiter.limit("10/minute")
 def employee_login(
     request: Request,
-    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):
@@ -37,7 +36,6 @@ def employee_login(
         request,
         Employee,
         extra_jwt_claims={"user_type": "employee"},
-        response=response,
     )
 
 

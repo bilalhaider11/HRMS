@@ -11,7 +11,6 @@
 //        "extra_comments": "keep it up"
 //}
 
-
 //form data
 
 export interface EvaluationPayload {
@@ -25,6 +24,7 @@ export interface EvaluationPayload {
   punctuality: number;
   general_comments: string;
   extra_comments?: string;
+  created_at?:string
 }
 
 //employee evaluate
@@ -50,8 +50,12 @@ export interface EvaluationItem {
   punctuality: number;
   general_comments: string;
   extra_comments?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
 }
-
+//employee evaluation sidebar can only view for employee role HR and eam Lead and Admin hide Employees evaluation for simple employee
 //table data
 export interface EvaluateEmployeeData {
     empId?: number,

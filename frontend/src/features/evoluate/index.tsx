@@ -1,12 +1,10 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { VerifyContext } from "app/VerifyContext";
 import { fetchEvaluationEmployees } from "./api/evaluate";
 import { EvaluationEmployee } from "./modal/evaluate_context"
 
 
 export default function EmployeeEvaluationPage() {
-  const { user } = useContext(VerifyContext);
   const navigate = useNavigate();
   const [employees, setEmployees] = useState<EvaluationEmployee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,11 +15,8 @@ export default function EmployeeEvaluationPage() {
     setLoading(true);
     try {
       const data = await fetchEvaluationEmployees();
-      setScope(data.scope || "self");
+      setScope(data.scope || "team");
       setEmployees(data.employees || []);
-      if ((data.scope === "self" || !(user?.roles || []).length) && (data.employees || []).length === 1) {
-        navigate(`/employee-evaluation/${data.employees[0].id}`, { replace: true });
-      }
     } catch (error) {
       setMessage("Unable to load employees for evaluation.");
     } finally {

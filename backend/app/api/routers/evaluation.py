@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 from app.services.employee_evaluation import (
     create_employee_evaluation,
@@ -6,7 +6,7 @@ from app.services.employee_evaluation import (
     delete_employee_evaluation,
     get_employee_evaluations,
     get_employee_scope_for_evaluation,
-    ensure_can_view_employee_evaluations,
+    ensure_can_do_evaluation,
 )
 from app.models.employee_evaluation import EmployeeEvaluationCreate, EmployeeEvaluationUpdate
 from app.services.admin_db import get_session
@@ -22,7 +22,9 @@ def employee_evaluation(
     session: Session = Depends(get_session),
 ):
 
-    ensure_can_view_employee_evaluations(user["user_type"], user["user"], emp_id, session)
+    ensure_can_do_evaluation(
+        user["user_type"], "create", user["user"], session, target_employee_id=emp_id
+    )
     return create_employee_evaluation(
         emp_id,
         form_data,
@@ -37,6 +39,7 @@ def get_employees_for_evaluation(
     session: Session = Depends(get_session),
 ):
     
+    ensure_can_do_evaluation(user["user_type"], "list", user["user"], session)
     scope, employees = get_employee_scope_for_evaluation(
         user["user_type"],
         user["user"],
@@ -65,7 +68,9 @@ def get_evaluations_by_employee(
     session: Session = Depends(get_session),
 ):
     
-    ensure_can_view_employee_evaluations(user["user_type"], user["user"], emp_id, session)
+    ensure_can_do_evaluation(
+        user["user_type"], "view", user["user"], session, target_employee_id=emp_id
+    )
     return get_employee_evaluations(emp_id ,user["user_type"], user["user"], session=session)
 
 
@@ -78,8 +83,9 @@ def update_evaluation(
     session: Session = Depends(get_session),
 ):
     
-    if user["user_type"] != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can update evaluations")
+    ensure_can_do_evaluation(
+        user["user_type"], "update", user["user"], session, target_employee_id=emp_id
+    )
     return update_employee_evaluation(
         emp_id,
         evaluation_id,
@@ -94,7 +100,8 @@ def delete_evaluation(
     emp_id: int, evaluation_id: int, user=Depends(auth.get_current_role), session: Session = Depends(get_session),
 ):
     
-    if user["user_type"] != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can delete evaluations")
+    ensure_can_do_evaluation(
+        user["user_type"], "delete", user["user"], session, target_employee_id=emp_id
+    )
     return delete_employee_evaluation(emp_id, evaluation_id, session=session)
 

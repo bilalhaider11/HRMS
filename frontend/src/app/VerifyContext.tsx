@@ -20,6 +20,7 @@ export const VerifyContext = createContext<{
     userType?: "admin" | "employee"
   ) => Promise<{ success: boolean; message?: string }>;
   canAccessEmployees: boolean;
+  canAccessEmployeeEvaluation: boolean;
 }>({
   user: null,
   setUser: () => {},
@@ -28,6 +29,7 @@ export const VerifyContext = createContext<{
   loginUser: async () => ({ success: false }),
   authCheckLoading: false,
   canAccessEmployees: false,
+  canAccessEmployeeEvaluation: false,
 });
 
 export const VerifyContextProvider = ({
@@ -50,6 +52,10 @@ export const VerifyContextProvider = ({
     employeeRoles.includes("HR") ||
     employeeRoles.includes("Team Lead") ||
     employeeRoles.includes("Technical Manager");
+  const canAccessEmployeeEvaluation =
+    superAdmin ||
+    employeeRoles.includes("HR") ||
+    employeeRoles.includes("Team Lead");
 
   const loginUser = useCallback(async (
     email: string,
@@ -110,8 +116,25 @@ export const VerifyContextProvider = ({
   }, []);
 
   const contextValue = useMemo(
-    () => ({ user, setUser, loginUser, superAdmin, authUserType, authCheckLoading, canAccessEmployees }),
-    [user, loginUser, superAdmin, authUserType, authCheckLoading, canAccessEmployees]
+    () => ({
+      user,
+      setUser,
+      loginUser,
+      superAdmin,
+      authUserType,
+      authCheckLoading,
+      canAccessEmployees,
+      canAccessEmployeeEvaluation,
+    }),
+    [
+      user,
+      loginUser,
+      superAdmin,
+      authUserType,
+      authCheckLoading,
+      canAccessEmployees,
+      canAccessEmployeeEvaluation,
+    ]
   );
 
   return (
